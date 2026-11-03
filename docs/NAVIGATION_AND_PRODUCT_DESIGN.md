@@ -29,6 +29,7 @@ Pohl Solutions Energiemanager
 │       ├── Verbindung und Erkennung
 │       ├── Messkanäle und Zuordnung
 │       ├── Fähigkeiten und technische Grenzen
+│       ├── Externe Vorgaben (bei Gateway/Anlagenregler)
 │       └── Diagnose
 ├── Planung
 │   ├── Zeitplan und erwarteter SOC
@@ -109,6 +110,18 @@ Fehlende optionale Geräte verhindern nicht den Einstieg. Fehlende entscheidende
 - Jede Fähigkeit erhält eine eigene belegte Anbindung: Ein/Aus beispielsweise direkt über Modbus TCP/RTU, über Solarman bei unterstütztem Geräteprofil, über MQTT oder optional über HA. HA ist kein vorgeschriebener Schaltweg. Auch Messung und Leistungsvorgabe können unterschiedliche Verbindungen desselben logischen Geräts nutzen.
 - Befehlszuordnung enthält Ziel, Operation, Wert/Einheit und ggf. Antwort-/Statuszuordnung: etwa dokumentiertes Modbus-Coil/Register oder MQTT-Topic/Payload. MQTT-Veröffentlichung bzw. erfolgreiche Protokollantwort allein beweist noch keinen ausgeführten Schaltzustand; bestätigten Zustand oder fehlende Rückmeldung sichtbar machen. Keine universellen Register oder Payloads voraussetzen.
 - Erst belegte Modelle und Funktionen anbieten. Transportunterstützung ist keine universelle Geräteunterstützung.
+
+### Bestehender Anlagenregler, beispielsweise Plexlog
+
+Als eigenes Gerät mit Rollen Logger, Messgateway und Anlagenregler führen. Geräte unterhalb eines Gateways mit ihren tatsächlichen Identitäten abbilden, ohne dieselben Messwerte direkt und über Gateway doppelt zu zählen.
+
+Die bereitgestellte OpenGateway-V2-Modellbeschreibung dokumentiert lesende System-/WR-/Zähler-/Speichermessungen. Sie belegt damit nicht automatisch das Auslesen von Direktvermarkter-Sollwerten. Dokumentierter aktueller Tarifwert ist nicht automatisch der vertragliche Einspeiseerlös. Modell-/Firmwarestand, aktivierte Schnittstelle und logische Gerätezuordnung prüfen.
+
+Laut [Plexlog-Diagnosedokumentation](https://doc.plexlog.de/de/dokumentation/plexlog-hardware/diagnose/) sind im Plexlog selbst Quelle/Stufe der Leistungsreduzierung, Blindleistungszustand und Direktvermarktungsverbindung sichtbar. Ob diese Informationen extern maschinenlesbar bereitstehen, separat belegen. Der [Direktvermarktungsabschnitt](https://doc.plexlog.de/de/dokumentation/plexlog-hardware/konfiguration/direktvermarktung/) beschreibt eine Modbus-TCP-Kommunikation zum Direktvermarkter; dies allein ist keine freigegebene universelle EMS-Leseschnittstelle. Quellen geprüft am 03.11.2026.
+
+Im Gerätereiter externe Vorgaben mit Gültigkeit, Quelle, Bezugsgröße und Datenqualität anzeigen, sofern verfügbar: Wirkleistungsgrenze, Blindleistungs-/cos-phi-Vorgabe und Regel-/Verbindungsstatus. Unbekannt ausdrücklich von „keine Begrenzung“ unterscheiden. Klären, ob eine Grenze für Erzeugung, Einspeisung am Netzanschluss oder bestimmte Geräte gilt; keine automatische Umgehung durch Batterie/Verbraucher ableiten.
+
+Für jeden Stellwert Zuständigkeit festlegen: vorhandener Anlagenregler, Energiemanager oder abgestimmte Übergabe. Ein WR kann bereits extern geregelt sein; keine parallelen widersprüchlichen Befehle. Wirtschaftliche Planung bleibt innerhalb der geltenden externen Grenzen. Blindleistung kann die verfügbare Wirkleistung beeinflussen; belegte Gerätegrenzen in der Leistungszuteilung berücksichtigen. Verhalten bei fehlenden Vorgaben und Wiederanlauf vor Regelbetrieb abstimmen.
 
 ## Planung und Betriebsregeln
 
