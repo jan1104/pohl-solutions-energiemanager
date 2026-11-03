@@ -4,8 +4,8 @@ Stand: 2026-11-03. Dieser Plan steuert die weitere Entwicklung in diesem Chat un
 
 ## Auftrag und Grenzen
 
-- Repository: `D:\depot\pohl-solutions-energiemanager`, privates GitHub-Repository `jan1104/pohl-solutions-energiemanager`.
-- Änderungen in kleinen zusammenhängenden Schritten implementieren, passend testen, dokumentieren, committen und in dieses private Repository pushen.
+- Repository: `D:\depot\pohl-solutions-energiemanager`, GitHub-Repository `jan1104/pohl-solutions-energiemanager`. Nutzer hat es für HACS öffentlich gestellt (am 03.11.2026 geprüft). Persönliche Projektdateien bleiben außerhalb von Git.
+- Änderungen in kleinen zusammenhängenden Schritten implementieren, passend testen, dokumentieren, committen und in dieses Repository pushen. Nach erfolgreicher Prüfung angeforderte Testupdates als HACS-Release bereitstellen.
 - Fremde oder uncommittete Änderungen erhalten. Vor Beginn Status, letzte Commits und AGENTS.md lesen.
 - Keine Live-Gerätesteuerung, Veröffentlichung, Bereitstellung an einer Anlage oder Lizenzänderung. Geräteadapter zunächst lesend beziehungsweise simuliert.
 - Bei wesentlichen abgeschlossenen Verbesserungen, Fehlern oder erforderlichen Entscheidungen berichten. Unveränderte oder nicht handlungsrelevante Stände nicht wiederholt melden.
@@ -34,6 +34,8 @@ Stand: 2026-11-03. Dieser Plan steuert die weitere Entwicklung in diesem Chat un
 V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberflächenprüfungen getestet. Die erweiterte echte HA-Laufzeitprüfung ist im GitHub-Lauf 41618373561 auf Commit e02b711 erfolgreich. Die lokale Vorschau ruft keine Preise ab; die aktive Integration kann konfigurierte Quellen lesen. Der SMARD-Nutzungsstatus ist in PRICE_SOURCES.md dokumentiert.
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
+
+0.3.1: Einstieg auf frei benannten Energiemanager ohne HA-Sensorpflicht umgestellt; bestehende Simulation separat in Optionen. Neue Projekte leer anlegen, bestehende Importe erhalten. Standort/Netzanschluss/Bereich/Gerätegruppe künftig sauber trennen, siehe PROJECT_HIERARCHY.md. Eigene Standortverwaltung und direkter Geräteassistent noch offen.
 
 ### Implementierter Zwischenstand 0.3: erste testbare Projektverwaltung
 

@@ -3,80 +3,25 @@
   "config": {
     "step": {
       "user": {
-        "title": "Data sources",
-        "description": "This version plans and simulates; it sends no device commands. The forecast sensor supplies quarter-hour PV and load. Import and export prices can be selected independently next. Optional power sensors are mappings only. Project management requires no sensors and opens no device connections. Forecast and SOC are required for the existing simulation.",
+        "title": "Create your energy manager",
+        "description": "Name your energy manager. Devices and measurement sources are assigned later in the project; no Home Assistant sensors are required now. Direct device connections are not implemented yet.",
         "data": {
-          "name": "System name",
-          "forecast_entity": "Quarter-hour forecast (sensor with slots attribute)",
-          "soc_entity": "Current battery state of charge (%)",
-          "grid_entity": "Grid power (optional, mapping only)",
-          "pv_entity": "PV power (optional, mapping only)",
-          "load_entity": "Load power (optional, mapping only)",
-          "project_only": "Project management only (without forecast or SOC)"
-        }
-      },
-      "battery": {
-        "title": "Battery and planning assumptions",
-        "description": "Values are assumptions, not manufacturer approval. The final SOC is at least the initial SOC. A smaller step increases precision and computation time. Do not count the same investment twice as wear and capital cost.",
-        "data": {
-          "capacity_kwh": "Nominal capacity (kWh)",
-          "min_soc_pct": "Minimum state of charge (%)",
-          "max_soc_pct": "Maximum state of charge (%)",
-          "max_charge_kw": "Maximum AC charging power (kW)",
-          "max_discharge_kw": "Maximum AC discharging power (kW)",
-          "charge_efficiency": "Charging efficiency (0 to 1)",
-          "discharge_efficiency": "Discharging efficiency (0 to 1)",
-          "wear_cost_eur_per_kwh": "Additional wear per discharged AC kWh (EUR)",
-          "allow_grid_charge": "Allow grid charging in the simulation",
-          "allow_battery_export": "Allow battery export in the simulation",
-          "soc_step_kwh": "SOC calculation step (kWh)"
-        }
-      },
-      "prices": {
-        "title": "Select price sources",
-        "description": "Import and export are separate tariffs. Existing forecast prices remain the default. SMARD is an experimental DE/LU data adapter, not a complete retail tariff; check availability and terms of use.",
-        "data": {
-          "import_price_mode": "Import: price source",
-          "export_price_mode": "Export: price source"
-        }
-      },
-      "price_details": {
-        "title": "Prices and tariff components",
-        "description": "Final price = converted source price × multiplier + adder in EUR/kWh. For complete prices use multiplier 1 and adder 0. Examples: 100 EUR/MWh = 0.10 EUR/kWh; 10 ct/kWh = 0.10 EUR/kWh. URL and entity sources need prices rows with start, duration_hours or end, and value; no HTML pages or credentials. Missing values are not filled.",
-        "data": {
-          "import_price_entity": "Import: sensor with prices attribute",
-          "import_price_url": "Import: JSON API URL (not a web page)",
-          "import_price_unit": "Import: source unit",
-          "import_fixed_price": "Import: fixed price in selected unit",
-          "import_price_multiplier": "Import: price multiplier",
-          "import_price_adder_eur_kwh": "Import: adder/deduction in EUR/kWh",
-          "export_price_entity": "Export: sensor with prices attribute",
-          "export_price_url": "Export: JSON API URL (not a web page)",
-          "export_price_unit": "Export: source unit",
-          "export_fixed_price": "Export: fixed price in selected unit",
-          "export_price_multiplier": "Export: price multiplier",
-          "export_price_adder_eur_kwh": "Export: adder/deduction in EUR/kWh"
+          "name": "Energy manager name"
         }
       }
     },
     "error": {
-      "invalid_battery": "Check SOC limits, power, efficiencies and calculation step.",
-      "invalid_prices": "Check price source, unit, address and numbers.",
-      "required_source": "Required for simulation; alternatively select project management only."
+      "invalid_name": "Enter a name with 1 to 160 characters."
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "Data sources",
-        "description": "This version plans and simulates; it sends no device commands. The forecast sensor supplies quarter-hour PV and load. Import and export prices can be selected independently next. Optional power sensors are mappings only. Project management requires no sensors and opens no device connections. Forecast and SOC are required for the existing simulation.",
-        "data": {
-          "forecast_entity": "Quarter-hour forecast (sensor with slots attribute)",
-          "soc_entity": "Current battery state of charge (%)",
-          "grid_entity": "Grid power (optional, mapping only)",
-          "pv_entity": "PV power (optional, mapping only)",
-          "load_entity": "Load power (optional, mapping only)",
-          "project_only": "Project management only (without forecast or SOC)"
+        "title": "Settings",
+        "description": "Choose project management or the optional test simulation.",
+        "menu_options": {
+          "project": "Use project management",
+          "simulation": "Optional simulation using HA sensors"
         }
       },
       "battery": {
@@ -121,12 +66,28 @@
           "export_price_multiplier": "Export: price multiplier",
           "export_price_adder_eur_kwh": "Export: adder/deduction in EUR/kWh"
         }
+      },
+      "simulation": {
+        "title": "Test simulation sources",
+        "description": "Only for the existing single-battery simulation: forecast and SOC sensors are required here. This does not set up Modbus or MQTT devices.",
+        "data": {
+          "forecast_entity": "Quarter-hour forecast (sensor with slots attribute)",
+          "soc_entity": "Current battery state of charge (%)",
+          "grid_entity": "Grid power (optional, mapping only)",
+          "pv_entity": "PV power (optional, mapping only)",
+          "load_entity": "Load power (optional, mapping only)"
+        }
+      },
+      "project": {
+        "title": "Project management",
+        "description": "Use project management without required HA sensors. Any saved project is preserved. Direct device connections and the graphical device wizard are still under development.",
+        "data": {}
       }
     },
     "error": {
       "invalid_battery": "Check battery parameters.",
       "invalid_prices": "Check price source, unit, address and numbers.",
-      "required_source": "Required for simulation; alternatively select project management only."
+      "required_source": "Required for this optional simulation. Project management does not need these sensors."
     }
   },
   "entity": {

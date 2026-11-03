@@ -1,14 +1,14 @@
 # Installation und Updates über HACS
 
-HACS verwendet öffentliche GitHub-Repositories. Ein privater Release ist für angemeldete berechtigte GitHub-Nutzer herunterladbar, aber nicht dadurch automatisch über HACS installierbar. Das Entwicklungsrepository bleibt privat, bis eine Änderung der Sichtbarkeit ausdrücklich freigegeben wurde. [Offizielle HACS-Einschränkung](https://hacs.xyz/docs/faq/private_repositories/), geprüft am 03.11.2026.
+HACS verwendet öffentliche GitHub-Repositories. Das Repository wurde vom Nutzer öffentlich gestellt; Sichtbarkeit am 03.11.2026 bestätigt. Persönliche Konfiguration bleibt außerhalb des Repositorys. [Offizielle HACS-Einschränkung](https://hacs.xyz/docs/faq/private_repositories/), geprüft am 03.11.2026.
 
 ## Nach öffentlicher Freigabe
 
 1. In HACS das Menü „Benutzerdefinierte Repositories“ öffnen.
 2. `https://github.com/jan1104/pohl-solutions-energiemanager` eintragen, Typ „Integration“ auswählen.
-3. Pohl Solutions Energiemanager herunterladen und Release `v0.3.0` auswählen.
+3. Pohl Solutions Energiemanager herunterladen und das aktuelle Release auswählen.
 4. Home Assistant neu starten.
-5. Unter Einstellungen → Geräte & Dienste die Integration hinzufügen. Zum Einstieg „Nur Projektverwaltung (ohne Prognose und SOC)“ aktivieren.
+5. Unter Einstellungen → Geräte & Dienste die Integration hinzufügen. Ab 0.3.1 zunächst nur den Namen des Energiemanagers eingeben. Sensorbasierte Testsimulation ist anschließend optional in den Integrationseinstellungen erreichbar.
 
 Aktualisierungen werden über weitere GitHub-Releases bereitgestellt. Es gibt keine behauptete Aufnahme in den HACS-Standardkatalog. Die genaue Menübezeichnung kann je nach HACS-/HA-Version abweichen.
 

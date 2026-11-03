@@ -3,80 +3,25 @@
   "config": {
     "step": {
       "user": {
-        "title": "Datenquellen",
-        "description": "Diese Version plant und simuliert; sie sendet keine Gerätebefehle. Der Prognose-Sensor liefert PV und Verbrauch als Viertelstunden. Bezugs- und Einspeisepreise können anschließend unabhängig gewählt werden. Optionale Leistungssensoren dienen nur der Zuordnung. Projektverwaltung benötigt keine Sensoren und öffnet keine Geräteverbindungen. Für die bisherige Simulation sind Prognose und SOC erforderlich.",
+        "title": "Energiemanager anlegen",
+        "description": "Gib deinem Energiemanager einen Namen. Geräte und Messquellen werden später im Projekt zugeordnet; jetzt sind keine Home-Assistant-Sensoren erforderlich. Direkte Geräteverbindungen sind noch nicht implementiert.",
         "data": {
-          "name": "Name der Anlage",
-          "forecast_entity": "Viertelstunden-Prognose (Sensor mit slots-Attribut)",
-          "soc_entity": "Aktueller Batterie-Ladezustand (%)",
-          "grid_entity": "Netzleistung (optional, nur Zuordnung)",
-          "pv_entity": "PV-Leistung (optional, nur Zuordnung)",
-          "load_entity": "Verbrauchsleistung (optional, nur Zuordnung)",
-          "project_only": "Nur Projektverwaltung (ohne Prognose und SOC)"
-        }
-      },
-      "battery": {
-        "title": "Speicher und Planungsannahmen",
-        "description": "Werte sind Annahmen und keine Herstellerfreigabe. Am Planungshorizont wird mindestens der anfängliche Ladezustand erhalten. Ein kleinerer Rechenschritt erhöht Genauigkeit und Rechenzeit. Verschleißkosten nicht zusätzlich zu denselben umgelegten Anschaffungskosten ansetzen.",
-        "data": {
-          "capacity_kwh": "Nennkapazität (kWh)",
-          "min_soc_pct": "Minimaler Ladezustand (%)",
-          "max_soc_pct": "Maximaler Ladezustand (%)",
-          "max_charge_kw": "Maximale AC-Ladeleistung (kW)",
-          "max_discharge_kw": "Maximale AC-Entladeleistung (kW)",
-          "charge_efficiency": "Ladewirkungsgrad (0 bis 1)",
-          "discharge_efficiency": "Entladewirkungsgrad (0 bis 1)",
-          "wear_cost_eur_per_kwh": "Zusätzlicher Verschleiß je abgegebener AC-kWh (EUR)",
-          "allow_grid_charge": "Netzladung in der Simulation erlauben",
-          "allow_battery_export": "Batterieeinspeisung in der Simulation erlauben",
-          "soc_step_kwh": "Rechenschritt des Ladezustands (kWh)"
-        }
-      },
-      "prices": {
-        "title": "Preisquellen auswählen",
-        "description": "Bezug und Einspeisung sind getrennte Tarife. Vorhandene Prognosepreise bleiben der Standard. SMARD: experimenteller DE/LU-Datenadapter, kein fertiger Endkundentarif; Verfügbarkeit und Nutzungsbedingungen prüfen.",
-        "data": {
-          "import_price_mode": "Bezug: Preisquelle",
-          "export_price_mode": "Einspeisung: Preisquelle"
-        }
-      },
-      "price_details": {
-        "title": "Preise und Vertragsbestandteile",
-        "description": "Endpreis = umgerechneter Quellpreis × Faktor + Aufschlag in EUR/kWh. Bereits vollständige Preise: Faktor 1, Aufschlag 0. Beispiele: 100 EUR/MWh = 0,10 EUR/kWh; 10 ct/kWh = 0,10 EUR/kWh. URL und Sensor benötigen prices-Einträge mit start, duration_hours oder end und value; keine HTML-Seiten oder Zugangsdaten. Fehlende Werte werden nicht ersetzt.",
-        "data": {
-          "import_price_entity": "Bezug: Sensor mit prices-Attribut",
-          "import_price_url": "Bezug: JSON-API-Adresse (keine Webseite)",
-          "import_price_unit": "Bezug: Einheit der Quelldaten",
-          "import_fixed_price": "Bezug: Fester Preis in gewählter Einheit",
-          "import_price_multiplier": "Bezug: Preisfaktor",
-          "import_price_adder_eur_kwh": "Bezug: Aufschlag/Abzug in EUR/kWh",
-          "export_price_entity": "Einspeisung: Sensor mit prices-Attribut",
-          "export_price_url": "Einspeisung: JSON-API-Adresse (keine Webseite)",
-          "export_price_unit": "Einspeisung: Einheit der Quelldaten",
-          "export_fixed_price": "Einspeisung: Fester Preis in gewählter Einheit",
-          "export_price_multiplier": "Einspeisung: Preisfaktor",
-          "export_price_adder_eur_kwh": "Einspeisung: Aufschlag/Abzug in EUR/kWh"
+          "name": "Name des Energiemanagers"
         }
       }
     },
     "error": {
-      "invalid_battery": "Bitte SOC-Grenzen, Leistungen, Wirkungsgrade und Rechenschritt prüfen.",
-      "invalid_prices": "Preisquelle, Einheit, Adresse und Zahlen prüfen.",
-      "required_source": "Für die Simulation erforderlich; alternativ nur Projektverwaltung wählen."
+      "invalid_name": "Bitte einen Namen mit 1 bis 160 Zeichen eingeben."
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "Datenquellen",
-        "description": "Diese Version plant und simuliert; sie sendet keine Gerätebefehle. Der Prognose-Sensor liefert PV und Verbrauch als Viertelstunden. Bezugs- und Einspeisepreise können anschließend unabhängig gewählt werden. Optionale Leistungssensoren dienen nur der Zuordnung. Projektverwaltung benötigt keine Sensoren und öffnet keine Geräteverbindungen. Für die bisherige Simulation sind Prognose und SOC erforderlich.",
-        "data": {
-          "forecast_entity": "Viertelstunden-Prognose (Sensor mit slots-Attribut)",
-          "soc_entity": "Aktueller Batterie-Ladezustand (%)",
-          "grid_entity": "Netzleistung (optional, nur Zuordnung)",
-          "pv_entity": "PV-Leistung (optional, nur Zuordnung)",
-          "load_entity": "Verbrauchsleistung (optional, nur Zuordnung)",
-          "project_only": "Nur Projektverwaltung (ohne Prognose und SOC)"
+        "title": "Einstellungen",
+        "description": "Projektverwaltung oder optionale Testsimulation auswählen.",
+        "menu_options": {
+          "project": "Projektverwaltung verwenden",
+          "simulation": "Optionale Simulation mit HA-Sensoren"
         }
       },
       "battery": {
@@ -121,12 +66,28 @@
           "export_price_multiplier": "Einspeisung: Preisfaktor",
           "export_price_adder_eur_kwh": "Einspeisung: Aufschlag/Abzug in EUR/kWh"
         }
+      },
+      "simulation": {
+        "title": "Datenquellen für die Testsimulation",
+        "description": "Nur für die bisherige Einzelbatterie-Simulation: Hierfür benötigst du einen Prognose- und SOC-Sensor. Diese Auswahl richtet keine Modbus- oder MQTT-Geräte ein.",
+        "data": {
+          "forecast_entity": "Viertelstunden-Prognose (Sensor mit slots-Attribut)",
+          "soc_entity": "Aktueller Batterie-Ladezustand (%)",
+          "grid_entity": "Netzleistung (optional, nur Zuordnung)",
+          "pv_entity": "PV-Leistung (optional, nur Zuordnung)",
+          "load_entity": "Verbrauchsleistung (optional, nur Zuordnung)"
+        }
+      },
+      "project": {
+        "title": "Projektverwaltung",
+        "description": "Projektverwaltung ohne erforderliche HA-Sensoren verwenden. Ein bereits gespeichertes Projekt bleibt erhalten. Direkte Geräteverbindungen und der grafische Geräteassistent folgen in einem weiteren Ausbauschritt.",
+        "data": {}
       }
     },
     "error": {
       "invalid_battery": "Bitte Speicherparameter prüfen.",
       "invalid_prices": "Preisquelle, Einheit, Adresse und Zahlen prüfen.",
-      "required_source": "Für die Simulation erforderlich; alternativ nur Projektverwaltung wählen."
+      "required_source": "Für diese optionale Simulation erforderlich. Die Projektverwaltung benötigt diese Sensoren nicht."
     }
   },
   "entity": {

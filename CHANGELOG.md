@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.3.1 — 2026-11-03
+
+- Ersteinrichtung fragt nur den Namen des Energiemanagers ab; keine Prognose-/SOC-/Leistungssensoren und kein Projektmodus-Schalter mehr im Einstieg.
+- Bei Projektverwaltung ein leeres benanntes Projekt einmalig anlegen; gespeicherte Projekte bei Reload oder erneutem Setup erhalten.
+- Bisherige sensorbasierte Simulation in ein separates Optionsmenü verschoben; bestehende Simulationseinträge bleiben nutzbar.
+- HA-Laufzeitprüfung für Namensvalidierung, einfache Einrichtung, getrennte Simulation und Erhalt importierter Daten erweitert.
+- Standort-/Gerätegruppenmodell präzisiert, noch kein grafischer Geräteassistent oder direkter Gerätetreiber.
+
 ## 0.3.0 — 2026-11-03
 
 - HACS-Releasepaket mit passendem Assetnamen, wiederholbarem Build und Prüfung von ZIP-Struktur/Versionen. HACS erfordert ein öffentliches Repository; Sichtbarkeit bleibt bis ausdrücklicher Freigabe privat.

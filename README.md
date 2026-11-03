@@ -49,9 +49,9 @@ docs/                   Architektur, Datenvertrag, Annahmen und nächste Schritt
 
 ## Home Assistant
 
-Für reine Projektverwaltung beim Einrichten den Projektmodus wählen; Prognose/SOC sind dann nicht erforderlich. Import/Export erfolgen über HA-Aktionen und das Projektformat. Der bisherige Simulationsmodus benötigt einen SOC-Sensor sowie einen Sensor mit vollständiger PV-/Lastprognosereihe im Attribut `slots`. Die Daten können zunächst von Node-RED bereitgestellt werden. Die Preise können in dieser Reihe stehen oder getrennt ausgewählt werden. Siehe [Testanleitung](docs/TESTING_0_3.md), [Datenvertrag](docs/DATA_CONTRACT.md) und [Preisquellen](docs/PRICE_SOURCES.md).
+Ab 0.3.1 beim Einrichten nur den Namen des Energiemanagers eingeben; ein leeres Projekt wird angelegt, falls noch keines gespeichert ist. Prognose/SOC sind dafür nicht erforderlich. Import/Export erfolgen über HA-Aktionen und das Projektformat. Die bisherige Einzelbatterie-Simulation ist separat über die Integrationseinstellungen erreichbar und benötigt dort einen SOC-Sensor sowie eine vollständige PV-/Lastprognosereihe im Attribut `slots`. Die Daten können zunächst von Node-RED bereitgestellt werden. Siehe [Bedienhierarchie](docs/PROJECT_HIERARCHY.md), [Testanleitung](docs/TESTING_0_3.md), [Datenvertrag](docs/DATA_CONTRACT.md) und [Preisquellen](docs/PRICE_SOURCES.md).
 
-Zur Entwicklung den Ordner `custom_components/pohl_solutions_energiemanager` in das entsprechende `custom_components`-Verzeichnis einer **Testinstanz** kopieren, HA neu starten und unter Geräte & Dienste hinzufügen. Für HACS wird ein GitHub-Release mit Integrations-ZIP bereitgestellt. **HACS unterstützt keine privaten Repositories**; die Sichtbarkeit muss vor Nutzung über HACS ausdrücklich freigegeben und auf öffentlich geändert werden. Siehe [Installation und Updates](docs/HACS_INSTALLATION.md). Keine Aufnahme in einen öffentlichen Katalog behauptet.
+Zur Entwicklung den Ordner `custom_components/pohl_solutions_energiemanager` in das entsprechende `custom_components`-Verzeichnis einer **Testinstanz** kopieren, HA neu starten und unter Geräte & Dienste hinzufügen. Für HACS wird ein GitHub-Release mit Integrations-ZIP bereitgestellt. Das Repository ist öffentlich und kann als benutzerdefinierte Integration hinzugefügt werden. Siehe [Installation und Updates](docs/HACS_INSTALLATION.md). Keine Aufnahme in einen öffentlichen Katalog behauptet.
 
 Zielbasis: Home Assistant 2026.1 oder neuer. Der reine Rechenkern läuft mit Python 3.12+. Home Assistant selbst hat eigene Python-/Betriebssystemanforderungen.
 
@@ -81,4 +81,4 @@ Der Arbeitsplan steht in [docs/WORK_PLAN.md](docs/WORK_PLAN.md). Für dieses Rep
 
 Originale Standortunterlagen, Verträge, Seriennummern und HA-Zugangsdaten gehören in `private/` oder außerhalb dieses Repositories. Sie werden nicht mit versioniert.
 
-Copyright © 2026 Pohl Solutions. Eine Freigabe als Open Source ist mit diesem privaten Repository nicht verbunden; eine Lizenzentscheidung ist offen.
+Copyright © 2026 Pohl Solutions. Öffentliche Sichtbarkeit ersetzt keine Open-Source-Lizenz; eine Lizenzentscheidung ist offen.

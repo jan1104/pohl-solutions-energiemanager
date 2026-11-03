@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
 
 from .const import DOMAIN
-from .core.project import export_project_json, load_project_json, project_summary, validate_project
+from .core.project import COLLECTIONS, export_project_json, load_project_json, project_summary, validate_project
 
 DATA_PROJECT_STORE = f"{DOMAIN}_project_store"
 
@@ -37,14 +37,27 @@ class ProjectStore:
         """Reject invalid input without touching disk or the active project."""
         candidate = await self._hass.async_add_executor_job(load_project_json, project_json)
         async with self._lock:
-            await self._store.async_save(candidate)
-            # HA Store logs some write errors instead of raising them. Verify
-            # the actual file, not Store's in-memory/cache state, before swapping.
-            persisted = await self._hass.async_add_executor_job(self._read_persisted)
-            if persisted != candidate:
-                raise OSError("Project could not be confirmed in persistent storage")
-            self._project = candidate
+            await self._async_commit(candidate)
             return self.status()
+
+    async def async_ensure_project(self, name: str, project_id: str) -> None:
+        """Create an empty named project once, never overwrite an existing import."""
+        candidate = validate_project({
+            "format": "pohl-energy-project", "schema_version": 1,
+            "id": project_id, "name": name, "mode": "planning_only",
+            **{key: [] for key in COLLECTIONS}, "settings": {},
+        })
+        async with self._lock:
+            if self._project is None:
+                await self._async_commit(candidate)
+
+    async def _async_commit(self, candidate: dict[str, Any]) -> None:
+        await self._store.async_save(candidate)
+        # HA may log a write failure without raising it. Confirm the disk file.
+        persisted = await self._hass.async_add_executor_job(self._read_persisted)
+        if persisted != candidate:
+            raise OSError("Project could not be confirmed in persistent storage")
+        self._project = candidate
 
     def _read_persisted(self) -> dict[str, Any]:
         envelope = json.loads(Path(self._store.path).read_text(encoding="utf-8"))

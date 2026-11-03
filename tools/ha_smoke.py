@@ -64,37 +64,49 @@ async def main() -> None:
                 options={}, source="user", unique_id=None,
                 discovery_keys=MappingProxyType({}), subentries_data=(),
             )
-            flow = PohlSolutionsConfigFlow()
-            flow.hass = hass
-            form = await flow.async_step_user()
-            assert form["type"] == "form" and form["step_id"] == "user"
-            mode_form = await flow.async_step_user({"name": "CI", "forecast_entity": "sensor.pohl_test_forecast", "soc_entity": "sensor.pohl_test_soc"})
-            assert mode_form["step_id"] == "prices"
-            details_form = await flow.async_step_prices({"import_price_mode": "fixed", "export_price_mode": "entity"})
-            assert details_form["step_id"] == "price_details"
-            battery_form = await flow.async_step_price_details({
-                "import_price_unit": "ct_kwh", "import_fixed_price": 30.0,
-                "import_price_multiplier": 1.0, "import_price_adder_eur_kwh": 0.0,
-                "export_price_entity": "sensor.pohl_test_prices", "export_price_unit": "eur_mwh",
-                "export_price_multiplier": 1.0, "export_price_adder_eur_kwh": 0.0,
-            })
-            assert battery_form["step_id"] == "battery"
-            created = await flow.async_step_battery(BATTERY_DEFAULTS)
-            assert created["type"] == "create_entry"
-            assert created["data"]["import_price_mode"] == "fixed"
-            unchanged_flow = PohlSolutionsConfigFlow()
-            unchanged_flow.hass = hass
-            await unchanged_flow.async_step_user({"name": "CI embedded", "forecast_entity": "sensor.pohl_test_forecast", "soc_entity": "sensor.pohl_test_soc"})
-            no_details = await unchanged_flow.async_step_prices({"import_price_mode": "forecast", "export_price_mode": "forecast"})
-            assert no_details["step_id"] == "battery"
-            assert issubclass(PohlSolutionsOptionsFlow, object)
-            # Project management is useful before forecasts, SOC or devices exist.
             project_flow = PohlSolutionsConfigFlow()
             project_flow.hass = hass
-            missing_sources = await project_flow.async_step_user({"name": "Missing sources"})
-            assert missing_sources["errors"] == {"forecast_entity": "required_source", "soc_entity": "required_source"}
-            project_created = await project_flow.async_step_user({"name": "Project CI", "project_only": True})
+            form = await project_flow.async_step_user()
+            assert form["type"] == "form" and form["step_id"] == "user"
+            assert {key.schema for key in form["data_schema"].schema} == {"name"}
+            invalid_name = await project_flow.async_step_user({"name": "   "})
+            assert invalid_name["errors"] == {"name": "invalid_name"}
+            project_created = await project_flow.async_step_user({"name": "  Project CI  "})
             assert project_created["type"] == "create_entry"
+            assert project_created["title"] == "Project CI"
+            assert project_created["data"] == {"name": "Project CI", "project_only": True}
+            # Existing simulation remains available in options, never first setup.
+            flow = PohlSolutionsOptionsFlow()
+            flow.hass = hass
+            flow.handler = entry.entry_id
+            with patch.object(hass.config_entries, "async_get_known_entry", return_value=entry):
+                menu = await flow.async_step_init()
+                assert menu["type"] == "menu" and menu["menu_options"] == ["project", "simulation"]
+                missing = await flow.async_step_simulation({})
+                assert missing["errors"] == {"forecast_entity": "required_source", "soc_entity": "required_source"}
+                mode_form = await flow.async_step_simulation({"forecast_entity": "sensor.pohl_test_forecast", "soc_entity": "sensor.pohl_test_soc"})
+                assert mode_form["step_id"] == "prices"
+                details_form = await flow.async_step_prices({"import_price_mode": "fixed", "export_price_mode": "entity"})
+                assert details_form["step_id"] == "price_details"
+                battery_form = await flow.async_step_price_details({
+                    "import_price_unit": "ct_kwh", "import_fixed_price": 30.0,
+                    "import_price_multiplier": 1.0, "import_price_adder_eur_kwh": 0.0,
+                    "export_price_entity": "sensor.pohl_test_prices", "export_price_unit": "eur_mwh",
+                    "export_price_multiplier": 1.0, "export_price_adder_eur_kwh": 0.0,
+                })
+                assert battery_form["step_id"] == "battery"
+                created = await flow.async_step_battery(BATTERY_DEFAULTS)
+                assert created["type"] == "create_entry"
+                assert created["data"]["import_price_mode"] == "fixed"
+                assert created["data"]["project_only"] is False
+                unchanged_flow = PohlSolutionsOptionsFlow()
+                unchanged_flow.hass = hass
+                unchanged_flow.handler = entry.entry_id
+                await unchanged_flow.async_step_simulation({"forecast_entity": "sensor.pohl_test_forecast", "soc_entity": "sensor.pohl_test_soc"})
+                no_details = await unchanged_flow.async_step_prices({"import_price_mode": "forecast", "export_price_mode": "forecast"})
+                assert no_details["step_id"] == "battery"
+                project_option = await flow.async_step_project({})
+                assert project_option["data"] == {"project_only": True}
             project_entry = ConfigEntry(
                 version=1, minor_version=1, domain=DOMAIN, title="Project CI",
                 data=project_created["data"], options={}, source="user", unique_id=None,
@@ -115,7 +127,9 @@ async def main() -> None:
                 assert await async_setup_entry(hass, project_entry)
                 try:
                     empty = await hass.services.async_call(DOMAIN, "project_status", {}, blocking=True, return_response=True)
-                    assert empty["has_project"] is False
+                    assert empty["has_project"] is True
+                    assert empty["summary"]["name"] == "Project CI"
+                    assert all(count == 0 for count in empty["summary"]["counts"].values())
                     fixture = {
                         "format": "pohl-energy-project", "schema_version": 1,
                         "id": "ci-project", "name": "CI project", "mode": "planning_only",
@@ -128,6 +142,8 @@ async def main() -> None:
                     assert imported["has_project"] is True and imported["planning_only"] is True
                     exported = await hass.services.async_call(DOMAIN, "export_project", {}, blocking=True, return_response=True)
                     assert json.loads(exported["project_json"]) == fixture
+                    await hass.data[DATA_PROJECT_STORE].async_ensure_project("Must not overwrite", "another_entry")
+                    assert hass.data[DATA_PROJECT_STORE].export() == exported
                     reloaded_store = ProjectStore(hass)
                     await reloaded_store.async_load()
                     assert reloaded_store.export() == exported

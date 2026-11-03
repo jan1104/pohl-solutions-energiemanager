@@ -18,6 +18,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if DATA_PROJECT_STORE not in hass.data:
         hass.data[DATA_PROJECT_STORE] = ProjectStore(hass)
     await hass.data[DATA_PROJECT_STORE].async_load()
+    if entry.options.get("project_only", entry.data.get("project_only", False)):
+        await hass.data[DATA_PROJECT_STORE].async_ensure_project(entry.title, entry.entry_id)
     coordinator = PohlEnergyCoordinator(hass, entry)
     await coordinator.async_config_entry_first_refresh()
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
