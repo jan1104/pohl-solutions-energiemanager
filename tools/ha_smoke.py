@@ -16,9 +16,10 @@ sys.path.insert(0, str(ROOT))
 async def main() -> None:
     from aiohttp import web
     from homeassistant.components.network import async_get_adapters
-    from homeassistant.config_entries import ConfigEntry, ConfigEntryState
+    from homeassistant.config_entries import ConfigEntries, ConfigEntry, ConfigEntryState
     from homeassistant.core import HomeAssistant
     from homeassistant.exceptions import ServiceValidationError
+    from homeassistant.helpers.storage import get_internal_store_manager
     from homeassistant.util.file import WriteError
 
     from custom_components.pohl_solutions_energiemanager import async_setup_entry, async_unload_entry
@@ -34,8 +35,13 @@ async def main() -> None:
 
     with tempfile.TemporaryDirectory() as folder:
         hass = HomeAssistant(folder)
-        # Normal HA bootstrap loads network before integrations use its shared
-        # HTTP session. This standalone harness must initialize it explicitly.
+        # HomeAssistant() alone has no ConfigEntries manager. Mirror the relevant
+        # HA bootstrap prerequisites before exercising integration lifecycle and
+        # persistence; retain real managers rather than a fake service container.
+        hass.config_entries = ConfigEntries(hass, {})
+        await get_internal_store_manager(hass).async_initialize()
+        await hass.config_entries.async_initialize()
+        # Normal HA bootstrap loads network before shared HTTP is used.
         await async_get_adapters(hass)
         coordinator = None
         extra_coordinators = []
