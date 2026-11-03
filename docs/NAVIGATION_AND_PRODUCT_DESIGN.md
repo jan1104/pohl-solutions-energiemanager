@@ -65,9 +65,11 @@ Pohl Solutions Energiemanager
     └── Version und Aktualisierungen
 ```
 
-Die Anlagenwahl filtert alle fachlichen Seiten. „Alle Anlagen“ zeigt Vergleiche und Summen, aber keine gemeinsame elektrische Bilanz über getrennte Netzanschlüsse. Änderungen gelten für eine ausdrücklich benannte Anlage bzw. Gerätegruppe. Gemeinsame Einstellungen und übergreifende Messgeräte kennzeichnen wir gesondert.
+Die Anlagen-/Bereichswahl filtert alle fachlichen Seiten. Mehrere Bereiche können einen Netzanschluss teilen; dann zeigt ein Bereich seinen Anteil, während der Plan zum gemeinsamen Anschluss gehört. „Alle Anlagen“ zeigt Vergleiche und Summen, aber keine gemeinsame elektrische Bilanz über getrennte Netzanschlüsse. Änderungen gelten für eine ausdrücklich benannte Anlage bzw. Gerätegruppe; bei gemeinsamem Anschluss ihre Auswirkungen auf die gemeinsame Planung anzeigen. Gemeinsame Einstellungen und übergreifende Messgeräte kennzeichnen wir gesondert.
 
 ## Fachliche Hierarchie
+
+Das folgende Beispiel zeigt getrennte Anschlüsse. Für mehrere Bereiche an einem gemeinsamen Anschluss gilt stattdessen die gemeinsame elektrische Optimierungsgrenze, siehe [Messstellen-/Zweigtopologie](METERING_TOPOLOGY.md). Anlagenname, Standort oder Bereich erzeugen keine eigene elektrische Grenze.
 
 ```text
 Projekt innerhalb der Installation

@@ -60,6 +60,8 @@ Abnahme: bekannte Gegenbeispiele funktionieren; keine Energiebilanzverletzung; w
 
 ### 2. Anlage, Messungen und Verträge
 
+- [ ] Netzanschluss als elektrische Optimierungsgrenze von benannten Bereichen trennen; mehrere Bereiche an einem Anschluss ebenso wie getrennte Anschlüsse unterstützen. METERING_TOPOLOGY.md als Bilanz-/Validierungsgrundlage verwenden.
+- [ ] Verschachtelte Nettozweigmessungen und gemeinsame Dreiphasenmessung mehrerer Verbraucher abbilden. Keine Einzel-Istleistungen aus einer Gesamtmessung erfinden; Messgruppe von einzelnen Stellgrößen trennen.
 - [ ] Projekt als oberste Einheit modellieren; alle Anlagen/Objekte über stabile IDs referenzieren. Vincents Struktur als anonymisierten durchgängigen Referenzfall und reales lokales Privatprojekt verwenden; zusätzlich abweichende Anlagen testen.
 - [ ] Herkunft jeder Bilanzgröße sichtbar machen: gemessen/berechnet/prognostiziert, Quelle, Zeit, Einheit und Formel. Hauptquelle festlegen, doppelte Nutzung und zirkuläre Ableitungen ablehnen.
 - [ ] Mehrere eigenständige Anlagen in einer HA-Installation mit stabiler Anlagen-ID, eigenem Netzanschluss, Tarifen, Geräten und Plan konfigurieren; gemeinsame Übersicht anbieten.

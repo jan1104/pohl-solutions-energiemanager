@@ -20,6 +20,8 @@ Projekt
 
 Ein gemeinsames Projekt verbindet getrennte Netzanschlüsse organisatorisch, nicht elektrisch. Kommunikationshierarchie, elektrische Topologie und Herkunft der Messwerte bleiben getrennte Beziehungen. Die letzte Chatklärung zur Herkunft ist als Grundlage umzusetzen: Hauptquelle je Bilanzgröße, Quellenvergleich statt Doppelzählung, Formel und Quellen für abgeleitete Größen anzeigen, Zirkelschlüsse ablehnen.
 
+Die obige Darstellung zeigt den Fall getrennter Anschlüsse. Zusätzlich mehrere benannte Anlagen/Bereiche unter einem gemeinsamen Netzanschluss unterstützen: Der Anschluss bildet die gemeinsame Optimierungs-/Tarifgrenze, Bereiche die organisatorische Untergliederung. Netzanschlüsse und elektrische Zweige deshalb mit eigenen IDs exportieren und Bereichszuordnungen davon unabhängig erhalten. Ein Bereich darf aus seinem Namen allein keinen neuen Netzanschluss erzeugen. Einzubeziehen sind verschachtelte Nettozweigmessungen und aggregierte Verbrauchermessungen; siehe METERING_TOPOLOGY.md.
+
 ## Referenz für die weitere Entwicklung
 
 Vincents Anlage dient als durchgängiger Fall vom Geräteanschluss bis zum Plan. Bestätigte Geräte/Verbindungen berücksichtigen: mehrere PV-WR, Speicher-WR mit zugehörigen Türmen, Janitza-Gateway mit 103-CBM-Untergeräten, Netz-/Haus-/Zweigmessung und bestehender Anlagenregler. Ungeklärte Modelle/Parameter bleiben unbekannt.
