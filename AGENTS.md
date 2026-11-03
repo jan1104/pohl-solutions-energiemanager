@@ -2,7 +2,7 @@
 
 - Product language is German. Brand: Pohl Solutions Energiemanager.
 - Keep pure planning, costing, forecasting and hardware transport separate.
-- Version 0.1 is planning-only. Never add live actuator writes as a side effect of setup, refresh, demo, or tests.
+- Current development versions are planning-only until the user explicitly authorizes live device control. Never add live actuator writes as a side effect of setup, refresh, demo, tests, or a scheduled development run.
 - Device control requires a documented adapter, explicit enablement, validated units/signs, fresh metering and a tested fallback. One writer per actuator and one Modbus RTU master per bus.
 - Never infer register addresses or write permissions from product branding alone.
 - All power in kW, energy in kWh, internal prices in EUR/kWh. AC battery power positive charging; grid power positive import. SOC is percent, efficiency is a fraction.

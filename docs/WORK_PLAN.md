@@ -23,13 +23,15 @@ Stand: 2026-11-03. Dieser Plan steuert die weitere Entwicklung in diesem Chat un
 
 ## Aktueller Schritt 0.2: Preisquellen
 
-- [ ] Bezug und Einspeisung getrennt auswählen: vorhandene Prognosepreise, HA-Sensor, JSON-URL, Festpreis oder SMARD.
-- [ ] Einheiten und Tariftransformationen ausdrücklich konfigurieren; keine Vermischung von EUR/MWh, ct/kWh und EUR/kWh.
-- [ ] Negative Preise, fehlende Folgetagspreise und Zeitumstellung korrekt behandeln.
-- [ ] Netzwerkabrufe begrenzen, Fehler sichtbar machen und keine Preise erfinden.
-- [ ] Bedienoberfläche mit URL-/Sensorauswahl und klarer Unterscheidung zwischen Vorschau und aktiver HA-Konfiguration.
-- [ ] Reale HA-Tests für Quellenwechsel und gültige/ungültige Daten ergänzen.
-- [ ] Dokumentation, Änderungsprotokoll und Versionsnummer aktualisieren; geprüften Stand committen/pushen.
+- [x] Bezug und Einspeisung getrennt auswählen: vorhandene Prognosepreise, HA-Sensor, JSON-URL, Festpreis oder SMARD.
+- [x] Einheiten und Tariftransformationen ausdrücklich konfigurieren; keine Vermischung von EUR/MWh, ct/kWh und EUR/kWh.
+- [x] Negative Preise, fehlende Folgetagspreise und Zeitumstellung korrekt behandeln.
+- [x] Netzwerkabrufe begrenzen, Fehler sichtbar machen und keine Preise erfinden.
+- [x] Bedienoberfläche mit URL-/Sensorauswahl und klarer Unterscheidung zwischen Vorschau und aktiver HA-Konfiguration.
+- [x] Reale HA-Tests für Quellenwechsel und gültige/ungültige Daten ergänzen.
+- [x] Dokumentation, Änderungsprotokoll und Versionsnummer aktualisieren; geprüften Stand committen/pushen.
+
+V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberflächenprüfungen getestet. Die erweiterte echte HA-Laufzeitprüfung läuft über GitHub Actions. Die lokale Vorschau ruft keine Preise ab; die aktive Integration kann konfigurierte Quellen lesen. Der SMARD-Nutzungsstatus ist in PRICE_SOURCES.md dokumentiert. Nächster inhaltlicher Schwerpunkt: Datenqualität und rückgetestete Lastprognosen.
 
 ## Danach, in dieser Reihenfolge
 
