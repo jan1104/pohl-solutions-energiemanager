@@ -119,6 +119,7 @@ Abnahme: Lastsprung und Preisänderung werden in Replay erkannt; kurze Schwankun
 
 - [ ] Eigene HA-unabhängige Adapter-/Geräteverwaltung entwerfen; HA bleibt erste Oberfläche, spätere eigenständige Auslieferung ermöglichen.
 - [ ] Modbus TCP, RTU/RS485, Solarman v5 über pysolarmanv5 und MQTT im ersten nutzbaren Umfang implementieren, zunächst mit Simulatoren und nachgewiesenen Profilen.
+- [ ] RTU über USB-RS485 und über TCP-zu-RTU-Gateway ausdrücklich abdecken; Gatewaymodus (Modbus TCP oder RTU-over-TCP), serielle Parameter, stabile USB-Zuordnung, Zieladressen und Wiederverbindung separat testen.
 - [ ] Gerätesuche im gewählten Netz, MQTT über eingetragenen Broker und manuelle Einrichtung anbieten; IP/Hostname soweit verfügbar, Erkennungsgrund und unklare Zuordnung anzeigen.
 - [ ] Geführte Bestätigung von Profil, Anlage und Messrollen; keine Registeradressen aus Hostnamen ableiten. Erkennung nur lesend, begrenzt und abbrechbar, ohne Gerätebefehle.
 - [ ] Transporttests für Timeout, Wiederverbindung, unvollständige Antworten und konkurrierende Zugriffe; MQTT-Topics/Payloads, Authentifizierung und Datenfrische explizit zuordnen.

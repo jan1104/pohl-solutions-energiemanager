@@ -103,6 +103,7 @@ Fehlende optionale Geräte verhindern nicht den Einstieg. Fehlende entscheidende
 ## Geräte und Suche
 
 - Modbus TCP, RTU/RS485, Solarman v5 und MQTT als getrennte Transportwege; gerätespezifische Profile für Werte und Befehle.
+- Verbindungsassistent: „Modbus TCP direkt“, „Modbus RTU über USB-RS485“, „Modbus RTU über Netzwerk-Gateway“, „MQTT“ und „Solarman“. Für Netzwerk-Gateways den tatsächlichen Betriebsmodus prüfen: natives Modbus TCP mit Zieladressierung oder roher RTU-over-TCP-Tunnel; nicht aus der Aufschrift TCP/RS485 ableiten. Bei USB stabile Gerätezuordnung und verfügbare Host-Schnittstelle prüfen, bei Gateway gemeinsame Busparameter und Zieladressen. Ein vorhandenes Geräteprofil unabhängig vom gewählten passenden Verbindungsweg nutzen.
 - Netzwerkbereich/Verbindung auswählen, begrenzt suchen, Funde mit verfügbaren IP-/Hostnamen und Erkennungsgrund anzeigen, anschließend geführt zuordnen.
 - MQTT über eingetragenen Broker; unbekannte Topics benötigen Mapping. Serielle Geräte über gewählten Port/Gateway und passende Parameter, nicht über eine IP-Suche erwarten.
 - Unklare Profile bleiben unklar; kein Raten von Registern oder Schreiben zur Erkennung. Manuelle Einrichtung bleibt verfügbar.
