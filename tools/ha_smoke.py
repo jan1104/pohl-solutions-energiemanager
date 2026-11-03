@@ -163,9 +163,11 @@ async def main() -> None:
             hass.states.async_set("sensor.pohl_test_prices", "unavailable")
             failed_price = await external_coordinator._async_update_data()
             assert not failed_price["valid"] and failed_price["slots"] == []
+            hass.states.async_set("sensor.pohl_test_forecast", "ready", {"slots": rows})
             hass.states.async_set("sensor.pohl_test_soc", "unavailable")
             invalid = await coordinator._async_update_data()
             assert not invalid["valid"] and invalid["slots"] == []
+            assert "SOC" in invalid["error"], invalid
             print("Real HA smoke passed: config flow, forecast migration, fixed/entity/HTTP prices, sensors, missing source/SOC; planning only.")
         finally:
             for extra in extra_coordinators:
