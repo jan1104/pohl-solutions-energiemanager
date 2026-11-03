@@ -1,0 +1,21 @@
+[project]
+name = "pohl-solutions-energiemanager"
+version = "0.1.0"
+description = "Lokale, nachvollziehbare Energieplanung für Home Assistant"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest>=8.3,<10", "ruff>=0.11,<1"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["custom_components/pohl_solutions_energiemanager"]
+addopts = "-ra"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
