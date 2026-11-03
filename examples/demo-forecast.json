@@ -1,0 +1,1556 @@
+{
+  "data_origin": "synthetic_demo_not_smard_not_site_measurements",
+  "battery": {
+    "capacity_kwh": 200.704,
+    "min_soc_pct": 10,
+    "max_soc_pct": 90,
+    "initial_soc_pct": 50,
+    "max_charge_kw": 50,
+    "max_discharge_kw": 50,
+    "charge_efficiency": 0.95,
+    "discharge_efficiency": 0.95,
+    "wear_cost_eur_per_kwh": 0.02,
+    "allow_grid_charge": false,
+    "allow_battery_export": false,
+    "terminal_soc_pct": 50,
+    "soc_step_kwh": 2
+  },
+  "slots": [
+    {
+      "start": "2026-11-04T00:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T00:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T00:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T00:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T01:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T01:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T01:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T01:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T02:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T02:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T02:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T02:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T03:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T03:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T03:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T03:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T04:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T04:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T04:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T04:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T05:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T05:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T05:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T05:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T06:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T06:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T06:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T06:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T07:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T07:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 11.769,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T07:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 23.465,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T07:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 35.017,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T08:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 46.353,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T08:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 57.403,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T08:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 68.099,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T08:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 78.375,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T09:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 88.168,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T09:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 97.417,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T09:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 106.066,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T09:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 114.061,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T10:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 121.353,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-04T10:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 127.896,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-04T10:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 133.651,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-04T10:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 138.582,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-04T11:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 142.658,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-04T11:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 145.855,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-04T11:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 148.153,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-04T11:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 149.538,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-04T12:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 150.0,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-04T12:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 149.538,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-04T12:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 148.153,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-04T12:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 145.855,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-04T13:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 142.658,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-04T13:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 138.582,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-04T13:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 133.651,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-04T13:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 127.896,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-04T14:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 121.353,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-04T14:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 114.061,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-04T14:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 106.066,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-04T14:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 97.417,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-04T15:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 88.168,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T15:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 78.375,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T15:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 68.099,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T15:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 57.403,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T16:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 46.353,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T16:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 35.017,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T16:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 23.465,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T16:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 11.769,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T17:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0.0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-04T17:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-04T17:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-04T17:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-04T18:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-04T18:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-04T18:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-04T18:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-04T19:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-04T19:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-04T19:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-04T19:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-04T20:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-04T20:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-04T20:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-04T20:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-04T21:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T21:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T21:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T21:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T22:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T22:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T22:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T22:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T23:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T23:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T23:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-04T23:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T00:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T00:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T00:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T00:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T01:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T01:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T01:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T01:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T02:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T02:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T02:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T02:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T03:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T03:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T03:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T03:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T04:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T04:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T04:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T04:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T05:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T05:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T05:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T05:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T06:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T06:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T06:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T06:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T07:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T07:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 11.769,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T07:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 23.465,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T07:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 35.017,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T08:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 46.353,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T08:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 57.403,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T08:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 68.099,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T08:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 78.375,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T09:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 88.168,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T09:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 97.417,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T09:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 106.066,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T09:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 114.061,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T10:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 121.353,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-05T10:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 127.896,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-05T10:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 133.651,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-05T10:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 138.582,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-05T11:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 142.658,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-05T11:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 145.855,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-05T11:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 148.153,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-05T11:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 149.538,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-05T12:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 150.0,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-05T12:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 149.538,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-05T12:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 148.153,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-05T12:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 145.855,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-05T13:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 142.658,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-05T13:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 138.582,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-05T13:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 133.651,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-05T13:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 127.896,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-05T14:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 121.353,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-05T14:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 114.061,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-05T14:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 106.066,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-05T14:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 97.417,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.17,
+      "export_price_eur_kwh": 0.04
+    },
+    {
+      "start": "2026-11-05T15:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 88.168,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T15:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 78.375,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T15:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 68.099,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T15:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 57.403,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T16:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 46.353,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T16:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 35.017,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T16:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 23.465,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T16:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 11.769,
+      "load_kw": 23,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T17:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0.0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-05T17:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-05T17:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-05T17:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-05T18:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-05T18:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-05T18:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-05T18:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-05T19:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-05T19:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-05T19:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-05T19:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-05T20:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-05T20:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-05T20:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-05T20:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.33,
+      "export_price_eur_kwh": 0.2
+    },
+    {
+      "start": "2026-11-05T21:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T21:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T21:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T21:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 34,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T22:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T22:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T22:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T22:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T23:00:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T23:15:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T23:30:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    },
+    {
+      "start": "2026-11-05T23:45:00+01:00",
+      "duration_hours": 0.25,
+      "pv_kw": 0,
+      "load_kw": 14,
+      "import_price_eur_kwh": 0.23,
+      "export_price_eur_kwh": 0.1
+    }
+  ]
+}
