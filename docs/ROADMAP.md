@@ -17,15 +17,16 @@ Auswählbare Bezugs-/Einspeisequellen, JSON-URL, HA-Sensor, Festpreis, beobachte
 - PV-/Wetterprognose anbinden; historische Lastmessungen importieren.
 - Prognosen mit rollierendem Rücktest messen, MAE/Bias dokumentieren, einfache Baseline schlagen.
 
-## 0.3 — vollständige HA-Bedienung
+## 0.3 / 0.4 — Projektverwaltung und erste native HA-Oberfläche
 
-- UI-Prototyp als echte HA-Oberfläche umsetzen, Kostenmodell dort integrieren.
+- Umgesetzt: HA-Seitenleisteneintrag „Energiemanager“, dauerhaft gespeichertes Projekt, Basisformulare für Netzanschlüsse, Bereiche, Verbindungen und Geräte; Import/Export und getrennte Strukturansichten.
+- Offen: durchgehend geführte Messquellen-Zuordnung, Kostenmodell und aktive Planung in dieser Oberfläche integrieren.
 - Geräteprofile mit Quellen, Firmware und nachgewiesenen Fähigkeiten.
 - Mehrere Speicher, getrennte Reserveziele und Anschlussleistungsgrenzen.
 - Sensitivitätsvergleich verschiedener Kapazitäten, SOC-Fenster und Kostenannahmen.
 - Automatisch geplante Restenergieziele und Szenarien bei Prognoseunsicherheit.
 
-## 0.4 — begrenzter Regelbetrieb
+## Später, erst nach gesonderter Freigabe — begrenzter Regelbetrieb
 
 - Ein getesteter Solis/BSE-Adapter oder dokumentierte Node-RED-Befehlsschnittstelle.
 - Vor Freigabe: Lesen, kleine Leistungsbefehle, Vorzeichen, Grenzen und Ausfallverhalten an der Testanlage nachweisen.
