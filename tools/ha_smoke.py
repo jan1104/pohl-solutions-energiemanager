@@ -153,6 +153,10 @@ async def main() -> None:
                 discovery_keys=MappingProxyType({}), subentries_data=(),
                 state=ConfigEntryState.SETUP_IN_PROGRESS,
             )
+            # Register the fixture with the real manager before creating legacy
+            # entity-registry rows; lifecycle calls remain explicit below.
+            with patch.object(hass.config_entries, "async_setup", new=AsyncMock(return_value=True)):
+                await hass.config_entries.async_add(project_entry)
             project_coordinator = PohlEnergyCoordinator(hass, project_entry)
             extra_coordinators.append(project_coordinator)
             project_result = await project_coordinator._async_update_data()
