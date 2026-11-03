@@ -17,7 +17,6 @@ async def main() -> None:
     from homeassistant.components.network import async_get_adapters
     from homeassistant.config_entries import ConfigEntry
     from homeassistant.core import HomeAssistant
-    from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
     from custom_components.pohl_solutions_energiemanager.config_flow import (
         PohlSolutionsConfigFlow,
@@ -168,7 +167,6 @@ async def main() -> None:
             invalid = await coordinator._async_update_data()
             assert not invalid["valid"] and invalid["slots"] == []
             assert "SOC" in invalid["error"], invalid
-            print("Real HA smoke passed: config flow, forecast migration, fixed/entity/HTTP prices, sensors, missing source/SOC; planning only.")
         finally:
             for extra in extra_coordinators:
                 await extra.async_shutdown()
@@ -176,8 +174,9 @@ async def main() -> None:
                 await coordinator.async_shutdown()
             if runner is not None:
                 await runner.cleanup()
-                await async_get_clientsession(hass).close()
+            # HA owns the shared HTTP session and closes it on its close event.
             await hass.async_stop()
+        print("Real HA smoke passed: config flow, forecast migration, fixed/entity/HTTP prices, sensors, missing source/SOC; planning only.")
 
 
 if __name__ == "__main__":
