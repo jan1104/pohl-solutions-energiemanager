@@ -106,6 +106,8 @@ Fehlende optionale Geräte verhindern nicht den Einstieg. Fehlende entscheidende
 - MQTT über eingetragenen Broker; unbekannte Topics benötigen Mapping. Serielle Geräte über gewählten Port/Gateway und passende Parameter, nicht über eine IP-Suche erwarten.
 - Unklare Profile bleiben unklar; kein Raten von Registern oder Schreiben zur Erkennung. Manuelle Einrichtung bleibt verfügbar.
 - Messung, Ein/Aus und stufenlose Regelung als separate Fähigkeiten. Bestehender Heizstab: HA-Freigabe, interne Regelung, Shelly-Messung. Diese drei Zuordnungen dürfen ein logisches Verbrauchergerät bilden, ohne fiktive Leistungsregelung anzubieten.
+- Jede Fähigkeit erhält eine eigene belegte Anbindung: Ein/Aus beispielsweise direkt über Modbus TCP/RTU, über Solarman bei unterstütztem Geräteprofil, über MQTT oder optional über HA. HA ist kein vorgeschriebener Schaltweg. Auch Messung und Leistungsvorgabe können unterschiedliche Verbindungen desselben logischen Geräts nutzen.
+- Befehlszuordnung enthält Ziel, Operation, Wert/Einheit und ggf. Antwort-/Statuszuordnung: etwa dokumentiertes Modbus-Coil/Register oder MQTT-Topic/Payload. MQTT-Veröffentlichung bzw. erfolgreiche Protokollantwort allein beweist noch keinen ausgeführten Schaltzustand; bestätigten Zustand oder fehlende Rückmeldung sichtbar machen. Keine universellen Register oder Payloads voraussetzen.
 - Erst belegte Modelle und Funktionen anbieten. Transportunterstützung ist keine universelle Geräteunterstützung.
 
 ## Planung und Betriebsregeln
