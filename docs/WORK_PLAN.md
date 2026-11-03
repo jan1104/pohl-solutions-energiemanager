@@ -55,6 +55,9 @@ Abnahme: bekannte Gegenbeispiele funktionieren; keine Energiebilanzverletzung; w
 
 ### 2. Anlage, Messungen und Verträge
 
+- [ ] Mehrere eigenständige Anlagen in einer HA-Installation mit stabiler Anlagen-ID, eigenem Netzanschluss, Tarifen, Geräten und Plan konfigurieren; gemeinsame Übersicht anbieten.
+- [ ] Änderungen, Datenfehler und Neuplanung auf die betroffene Anlage begrenzen; Netzbezug einer Halle nicht rechnerisch mit Einspeisung einer anderen Halle verrechnen.
+- [ ] HA-Messentitäten einschließlich Shelly als Haupt-, Zweig- oder Gerätemessung aufnehmen; enthaltene Unterzähler nicht zusätzlich zum Gesamtwert summieren.
 - [ ] Geräte-/Firmwareinventar und vorhandene HA-Entitäten/Node-RED-Flows aufnehmen; private Daten nur lokal.
 - [ ] Eastron als gemeinsame Netzbilanz und Janitza-Zweige zuordnen; Erzeugung, Verbraucher und Speicher nicht doppelt zählen.
 - [ ] Import-/Export-Vorzeichen und Messgleichzeitigkeit mit aufgezeichneten Fällen prüfen.
@@ -87,12 +90,21 @@ Abnahme: Lastsprung und Preisänderung werden in Replay erkannt; kurze Schwankun
 
 ### 5. Bedienung und Kostenrechnung
 
+- [ ] Anlagenübersicht und Anlagenwechsel vorsehen; im Einrichtungsassistenten Netzanschluss, Messstellen, Speicher und Verbraucher eindeutig einer Anlage zuordnen.
 - [ ] Echte HA-Oberfläche als erste Betriebsplattform aus dem lokalen Prototyp entwickeln; Anlage/Quellen/mehrere Speicher/Strategie mit wenigen Pflichtangaben geführt einrichten, Details optional für Experten.
 - [ ] Kaufpreis, nutzbare Kapazität, SOC-Fenster, belegte Zyklen-/Kalenderannahmen, Betriebskosten und Wirkungsgrade bearbeiten.
 - [ ] Investitionsumlage, marginalen Verschleiß, Verluste und entgangene Einspeiseerlöse verständlich getrennt darstellen.
 - [ ] Plan/Ist, SOC, Haus/PV/Netz und Preise mit Begründungen anzeigen; Datenlücken und Prognoseunsicherheit kenntlich machen.
 - [ ] Manueller Vorrang, Änderungen der Reserve und Vergleich von Strategien; Desktop/Mobilansicht und verständliche Fehlermeldungen prüfen.
 - [ ] Prognostizierte und tatsächlich ermittelte Einsparungen unterscheiden; Einstellungen exportieren/sichern, ohne Geheimnisse offenzulegen.
+
+### 5a. Flexible Verbraucher – Umfang noch abzustimmen
+
+- [ ] Heizstäbe und weitere flexible Lasten als eigene Geräte mit Messung und nachgewiesenen Fähigkeiten aufnehmen; Ein/Aus und Leistungsregelung unterscheiden.
+- [ ] Gewünschte Ziele, etwa PV-Überschussbetrieb oder Temperatur bis Termin, klären; Priorität gegenüber Speicherladung anhand des gewählten Ziels planen.
+- [ ] Verbraucher bereits in der gemessenen Hauslast erkennen; geplanten Mehrverbrauch und Grundlast ohne Doppelzählung prognostizieren.
+- [ ] Temperatur-/Energiebedarf, Mindestlaufzeiten, Leistungsgrenzen und lokale Geräteschutzfunktionen je unterstütztem Gerät definieren; keine Schaltfähigkeit allein aus einem vorhandenen Messwert ableiten.
+- [ ] Zuerst simulierte Entscheidungen und Messwertintegration; Live-Steuerung bleibt gesondert freizugeben.
 
 ### 6. Geräteintegration zunächst lesend und simuliert
 
@@ -113,7 +125,7 @@ Abnahme: Lastsprung und Preisänderung werden in Replay erkannt; kurze Schwankun
 - [ ] CI-Warnungen zu Actions-Versionen gesondert bereinigen; aktueller erfolgreicher Lauf bleibt Referenz.
 - [ ] Nachweisbare Reifegradgrenzen für Simulation, beobachtenden Parallelbetrieb und späteren Regelbetrieb festlegen.
 
-Nächster unabhängiger Entwicklungsschritt: Regression und Ressourcenvergleich für kleine Leistungen sowie Entwurf für gemeinsame Mehrspeicherplanung. Bestätigt: HA, Solis/Bluesun, mehrere Speicher-Wechselrichter, geführte Einrichtung und später direkte Gerätesteuerung durch den Energiemanager. Offen: Netzanschlusstopologie, Wunschprioritäten, Prognosedienst, genaue Reservepolitik und Vertragsformeln. Aktuelle Version bleibt Planung/Simulation.
+Nächster unabhängiger Entwicklungsschritt: Regression und Ressourcenvergleich für kleine Leistungen sowie Entwurf für gemeinsame Mehrspeicherplanung. Bestätigt: mehrere getrennte Anlagen in einer HA-Installation, je Anlage ein Netzanschluss und mehrere Speicher; Solis/Bluesun zuerst, geführte Einrichtung, später direkte Gerätesteuerung, Messgeräte/Shelly und ergänzbare flexible Verbraucher. Offen: erster Steuerungsumfang flexibler Verbraucher, Wunschprioritäten, konkreter Prognosedienst, genaue Reservepolitik und Vertragsformeln. Aktuelle Version bleibt Planung/Simulation.
 
 ## Pro wiederkehrendem Lauf
 

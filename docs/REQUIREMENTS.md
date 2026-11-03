@@ -8,8 +8,11 @@ Stand: 2026-11-03. Bestätigte Wünsche sind von Vorschlägen und noch offenen E
 - Allgemeines Produkt für unterschiedliche Anlagen und Geräte; Vincent ist nur eine Beispielanwendung. Dessen Kapazität, Tarife, Messstellen und Geräte dürfen keine fest eingebauten Betriebsannahmen werden.
 - Erste nutzbare Version: Home-Assistant-Integration mit eigener übersichtlicher Bedienoberfläche, zunächst Solis/Bluesun; weitere Geräte später.
 - Bereits die erste Version plant mehrere Speicher-Wechselrichter gemeinsam. Jeder besitzt eigene SOC-/Kapazitäts-/Leistungsgrenzen und angeschlossene Batterien; Zahl der Türme ist nicht mit Zahl unabhängiger Wechselrichter gleichzusetzen.
+- Eine HA-Installation muss mehrere getrennte Anlagen verwalten können, beispielsweise zwei Hallen mit jeweils eigenem Stromanschluss. Je Anlage zunächst ein gemeinsamer Netzanschluss; mehrere Speicher dahinter werden gemeinsam geplant. Netzbilanzen, Tarife, Reserven und Gerätezuordnungen bleiben je Anlage getrennt.
+- Messgeräte und Shelly-Messwerte müssen je Anlage hinzufügbar sein. Messrollen und enthaltene Unterzähler sind ausdrücklich zuzuordnen, damit Verbräuche nicht doppelt gezählt werden.
+- Flexible Verbraucher wie Heizstäbe für Heizungen sollen ergänzbar sein. Ob deren Steuerung bereits zum ersten nutzbaren Umfang gehört und welche Regelarten erforderlich sind, ist noch offen.
 - Geführte Einrichtung mit wenigen Pflichtangaben und optionalen Experteneinstellungen.
-- PV-Prognosen: vorhandene HA-Prognose bevorzugen; direkt eingebundenen Prognosedienst ebenfalls anbieten. Dienst und Einführungsreihenfolge noch zu klären.
+- PV-Prognosen: vorhandene HA-Prognose bevorzugen; direkt eingebundenen Prognosedienst ebenfalls anbieten. Möglichst kostenlos starten, kostenpflichtige Dienste optional. Konkreter Anbieter und dessen Grenzen noch zu prüfen.
 - Später führt der Energiemanager Gerätebefehle direkt aus; Node-RED darf Wünsche übergeben. Es erhält damit keine parallele unkoordinierte Schreibverantwortung.
 - Einspeisung wird beim Referenzfall über einen Direktvermarkter nach Viertelstundenpreisen vergütet. Die genaue Preisformel einschließlich Abzügen ist noch offen.
 - Netzladen ist erlaubt, sofern die Gesamtrechnung es rechtfertigt. Bei vorhandenem PV-Überschuss reduziert AC-Laden zunächst die Einspeisung; der Planer darf dieselbe Energie nicht zusätzlich als Netzbezug zählen.
@@ -46,11 +49,18 @@ Stand: 2026-11-03. Bestätigte Wünsche sind von Vorschlägen und noch offenen E
 - HA-Prognose bevorzugen, zusätzlich direkte Prognosedienste anbieten.
 - Energiemanager als späterer direkter Gerätecontroller, Node-RED als Wunschgeber.
 
-## Fragerunde 5 – Antwort ausstehend
+## Fragerunde 5 – beantwortet, Prioritäten weiterhin offen
 
-- Zunächst ein gemeinsamer Netzanschluss je Anlage oder auch mehrere getrennte Anschlüsse/Tarife?
-- Vorrang und Gültigkeitsdauer manueller Vorgaben/Node-RED-Wünsche?
-- Kostenlose/optionale kostenpflichtige PV-Dienste oder direkte Dienste erst später?
+- Ein gemeinsamer Netzanschluss je Anlage; mehrere eigenständige Anlagen in einer HA-Installation sind erforderlich.
+- Zusätzlich Messgeräte/Shelly und flexible Verbraucher wie Heizstäbe aufnehmen.
+- Prognosedienste möglichst kostenlos, kostenpflichtige Angebote optional.
+- Vorrang und Ablauf manueller/Node-RED-Wünsche wurden noch nicht festgelegt.
+
+## Fragerunde 6 – Antwort ausstehend
+
+- Flexible Verbraucher bereits in Version 1 steuerbar, nur Ein/Aus oder auch stufenlos, oder zunächst nur Messung?
+- Heizstabziele: Zieltemperatur/Fertigstellungszeit, ausschließlich PV-Überschuss oder beides auswählbar?
+- Zeitlich begrenzter manueller Vorrang, dauerhafter Handbetrieb oder Entscheidung später?
 
 Notstromreserve ist technisch eine Randbedingung, die auch bei wirtschaftlicher Planung oder bei Minimierung des Netzbezugs gelten kann. Die vorgeschlagene einfache Bedienung darf diese Kombination nicht verhindern.
 
@@ -65,6 +75,6 @@ Notstromreserve ist technisch eine Randbedingung, die auch bei wirtschaftlicher 
 - Zulässiges Verhalten bei fehlenden Preisen, Prognosen, Internet, Messwerten und HA-Neustart; manuelle Rücknahme und Erreichbarkeit.
 - Hardware für HA, akzeptable Berechnungsdauer und Zeitraum der Historie; daraus messbares Ressourcenbudget ableiten.
 - Kaufpreis, Förderungen/Restwert, laufende Kosten, Wirkungsgrade, belegte Lebensdauerbedingungen und gewünschte Wirtschaftlichkeitsanzeige.
-- Lokale Datenhaltung, Aufbewahrung und Sicherung; Verwaltung mehrerer Standorte in einer Installation oder getrennte Installationen je Standort?
+- Lokale Datenhaltung, Aufbewahrung und Sicherung; gemeinsame Übersicht und Berechtigungen für mehrere Anlagen?
 
 Offene Antworten werden nicht aus technischen Standardwerten als Kundenentscheidung abgeleitet. Weiterentwicklung kann unabhängige Prüfungen und Infrastruktur umsetzen, muss abhängige Betriebsentscheidungen offenlassen.
