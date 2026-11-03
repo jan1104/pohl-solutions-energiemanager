@@ -98,10 +98,11 @@ Abnahme: Lastsprung und Preisänderung werden in Replay erkannt; kurze Schwankun
 - [ ] Manueller Vorrang, Änderungen der Reserve und Vergleich von Strategien; Desktop/Mobilansicht und verständliche Fehlermeldungen prüfen.
 - [ ] Prognostizierte und tatsächlich ermittelte Einsparungen unterscheiden; Einstellungen exportieren/sichern, ohne Geheimnisse offenzulegen.
 
-### 5a. Flexible Verbraucher – Umfang noch abzustimmen
+### 5a. Flexible Verbraucher – Teil des ersten nutzbaren Umfangs
 
-- [ ] Heizstäbe und weitere flexible Lasten als eigene Geräte mit Messung und nachgewiesenen Fähigkeiten aufnehmen; Ein/Aus und Leistungsregelung unterscheiden.
-- [ ] Gewünschte Ziele, etwa PV-Überschussbetrieb oder Temperatur bis Termin, klären; Priorität gegenüber Speicherladung anhand des gewählten Ziels planen.
+- [ ] Heizstäbe und weitere flexible Lasten als eigene Geräte mit Messung und nachgewiesenen Fähigkeiten aufnehmen; stufenlose Leistungsregelung bereits in der ersten nutzbaren Version unterstützen.
+- [ ] Heizstäbe ausschließlich mit vorhandenem PV-Überschuss betreiben; keinen Netzbezug allein wegen niedriger Preise einplanen. Vorrang gegenüber Speicherladung und Zulässigkeit gespeicherter PV-Energie noch klären.
+- [ ] Bei Überschussregelung laufende Heizleistung berücksichtigen: nach dem Einschalten sinkende Einspeisung bedeutet nicht, dass der ursprüngliche Überschuss verschwunden ist. Zusammenspiel mit Speicherregler gegen Schwingen und gegenseitiges Nachregeln testen.
 - [ ] Verbraucher bereits in der gemessenen Hauslast erkennen; geplanten Mehrverbrauch und Grundlast ohne Doppelzählung prognostizieren.
 - [ ] Temperatur-/Energiebedarf, Mindestlaufzeiten, Leistungsgrenzen und lokale Geräteschutzfunktionen je unterstütztem Gerät definieren; keine Schaltfähigkeit allein aus einem vorhandenen Messwert ableiten.
 - [ ] Zuerst simulierte Entscheidungen und Messwertintegration; Live-Steuerung bleibt gesondert freizugeben.
@@ -125,7 +126,7 @@ Abnahme: Lastsprung und Preisänderung werden in Replay erkannt; kurze Schwankun
 - [ ] CI-Warnungen zu Actions-Versionen gesondert bereinigen; aktueller erfolgreicher Lauf bleibt Referenz.
 - [ ] Nachweisbare Reifegradgrenzen für Simulation, beobachtenden Parallelbetrieb und späteren Regelbetrieb festlegen.
 
-Nächster unabhängiger Entwicklungsschritt: Regression und Ressourcenvergleich für kleine Leistungen sowie Entwurf für gemeinsame Mehrspeicherplanung. Bestätigt: mehrere getrennte Anlagen in einer HA-Installation, je Anlage ein Netzanschluss und mehrere Speicher; Solis/Bluesun zuerst, geführte Einrichtung, später direkte Gerätesteuerung, Messgeräte/Shelly und ergänzbare flexible Verbraucher. Offen: erster Steuerungsumfang flexibler Verbraucher, Wunschprioritäten, konkreter Prognosedienst, genaue Reservepolitik und Vertragsformeln. Aktuelle Version bleibt Planung/Simulation.
+Nächster unabhängiger Entwicklungsschritt: Regression und Ressourcenvergleich für kleine Leistungen sowie Entwurf für gemeinsame Mehrspeicherplanung. Bestätigt: mehrere getrennte Anlagen in einer HA-Installation, je Anlage ein Netzanschluss und mehrere Speicher; Solis/Bluesun zuerst, geführte Einrichtung, später direkte Gerätesteuerung, Messgeräte/Shelly und stufenlose PV-Überschuss-Heizstäbe im ersten nutzbaren Umfang. Offen: Batterie-/Heizstabpriorität, gespeicherte PV für Wärme, konkrete Heizregler, Wunschprioritäten, Prognosedienst, Reservepolitik und Vertragsformeln. Aktuelle Version bleibt Planung/Simulation.
 
 ## Pro wiederkehrendem Lauf
 

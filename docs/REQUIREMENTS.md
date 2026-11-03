@@ -10,7 +10,7 @@ Stand: 2026-11-03. Bestätigte Wünsche sind von Vorschlägen und noch offenen E
 - Bereits die erste Version plant mehrere Speicher-Wechselrichter gemeinsam. Jeder besitzt eigene SOC-/Kapazitäts-/Leistungsgrenzen und angeschlossene Batterien; Zahl der Türme ist nicht mit Zahl unabhängiger Wechselrichter gleichzusetzen.
 - Eine HA-Installation muss mehrere getrennte Anlagen verwalten können, beispielsweise zwei Hallen mit jeweils eigenem Stromanschluss. Je Anlage zunächst ein gemeinsamer Netzanschluss; mehrere Speicher dahinter werden gemeinsam geplant. Netzbilanzen, Tarife, Reserven und Gerätezuordnungen bleiben je Anlage getrennt.
 - Messgeräte und Shelly-Messwerte müssen je Anlage hinzufügbar sein. Messrollen und enthaltene Unterzähler sind ausdrücklich zuzuordnen, damit Verbräuche nicht doppelt gezählt werden.
-- Flexible Verbraucher wie Heizstäbe für Heizungen sollen ergänzbar sein. Ob deren Steuerung bereits zum ersten nutzbaren Umfang gehört und welche Regelarten erforderlich sind, ist noch offen.
+- Flexible Verbraucher gehören zum ersten nutzbaren Umfang, einschließlich stufenlos regelbarer Heizstäbe. Heizstäbe sollen nur vorhandenen PV-Überschuss verwenden; günstiger Netzstrom allein ist keine Freigabe zum Heizen. Priorität gegenüber Speicherladung, Nutzung gespeicherter PV-Energie und konkrete Geräte sind noch zu klären.
 - Geführte Einrichtung mit wenigen Pflichtangaben und optionalen Experteneinstellungen.
 - PV-Prognosen: vorhandene HA-Prognose bevorzugen; direkt eingebundenen Prognosedienst ebenfalls anbieten. Möglichst kostenlos starten, kostenpflichtige Dienste optional. Konkreter Anbieter und dessen Grenzen noch zu prüfen.
 - Später führt der Energiemanager Gerätebefehle direkt aus; Node-RED darf Wünsche übergeben. Es erhält damit keine parallele unkoordinierte Schreibverantwortung.
@@ -56,11 +56,17 @@ Stand: 2026-11-03. Bestätigte Wünsche sind von Vorschlägen und noch offenen E
 - Prognosedienste möglichst kostenlos, kostenpflichtige Angebote optional.
 - Vorrang und Ablauf manueller/Node-RED-Wünsche wurden noch nicht festgelegt.
 
-## Fragerunde 6 – Antwort ausstehend
+## Fragerunde 6 – teilweise beantwortet
 
-- Flexible Verbraucher bereits in Version 1 steuerbar, nur Ein/Aus oder auch stufenlos, oder zunächst nur Messung?
-- Heizstabziele: Zieltemperatur/Fertigstellungszeit, ausschließlich PV-Überschuss oder beides auswählbar?
-- Zeitlich begrenzter manueller Vorrang, dauerhafter Handbetrieb oder Entscheidung später?
+- Stufenlos regelbare Heizstäbe bereits in der ersten nutzbaren Version.
+- Ausschließlich vorhandenen PV-Überschuss verwenden.
+- Frage zum manuellen Vorrang war nicht verständlich; keine Entscheidung getroffen. Später anhand eines konkreten Bedienbeispiels klären, nicht als Zustimmung zu einem Standard behandeln.
+
+## Fragerunde 7 – Antwort ausstehend
+
+- Vorrang für Batterie oder Heizstab bei knappem Überschuss oder je Anlage auswählbar?
+- Darf gespeicherte PV-Energie für den Heizstab verwendet werden oder ausschließlich aktuell sonst eingespeister Strom?
+- Bereits vorhandener Leistungsregler/Heizstab: Hersteller und Modell oder noch offen?
 
 Notstromreserve ist technisch eine Randbedingung, die auch bei wirtschaftlicher Planung oder bei Minimierung des Netzbezugs gelten kann. Die vorgeschlagene einfache Bedienung darf diese Kombination nicht verhindern.
 
