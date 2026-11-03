@@ -5,6 +5,8 @@ Stand: 2026-11-03. Bestätigte Wünsche sind von Vorschlägen und noch offenen E
 ## Bestätigt
 
 - Marke: Pohl Solutions Energiemanager; verständliche deutsche Bedienung in Home Assistant, Zusammenarbeit mit Node-RED.
+- Oberste fachliche Einheit ist ein Projekt, darunter alle Anlagen samt Geräten, Verbindungen, Messzuordnungen und Betriebsregeln. Ganzes Projekt exportieren und wieder importieren können. Details/Entwurfsentscheidungen in PROJECT_FORMAT.md; noch nicht implementiert.
+- Vincents Anlage als durchgängiges Entwicklungs-/Prüfbeispiel verwenden, ohne deren Werte fest einzubauen. Reale private Konfiguration lokal halten; Referenzstruktur für Git anonymisieren.
 - Allgemeines Produkt für unterschiedliche Anlagen und Geräte; Vincent ist nur eine Beispielanwendung. Dessen Kapazität, Tarife, Messstellen und Geräte dürfen keine fest eingebauten Betriebsannahmen werden.
 - Erste nutzbare Version: Home-Assistant-Integration mit eigener übersichtlicher Bedienoberfläche, zunächst Solis/Bluesun; weitere Geräte später.
 - Bereits die erste Version plant mehrere Speicher-Wechselrichter gemeinsam. Jeder besitzt eigene SOC-/Kapazitäts-/Leistungsgrenzen und angeschlossene Batterien; Zahl der Türme ist nicht mit Zahl unabhängiger Wechselrichter gleichzusetzen.

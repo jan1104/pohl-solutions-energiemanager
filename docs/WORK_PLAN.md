@@ -60,6 +60,8 @@ Abnahme: bekannte Gegenbeispiele funktionieren; keine Energiebilanzverletzung; w
 
 ### 2. Anlage, Messungen und Verträge
 
+- [ ] Projekt als oberste Einheit modellieren; alle Anlagen/Objekte über stabile IDs referenzieren. Vincents Struktur als anonymisierten durchgängigen Referenzfall und reales lokales Privatprojekt verwenden; zusätzlich abweichende Anlagen testen.
+- [ ] Herkunft jeder Bilanzgröße sichtbar machen: gemessen/berechnet/prognostiziert, Quelle, Zeit, Einheit und Formel. Hauptquelle festlegen, doppelte Nutzung und zirkuläre Ableitungen ablehnen.
 - [ ] Mehrere eigenständige Anlagen in einer HA-Installation mit stabiler Anlagen-ID, eigenem Netzanschluss, Tarifen, Geräten und Plan konfigurieren; gemeinsame Übersicht anbieten.
 - [ ] Änderungen, Datenfehler und Neuplanung auf die betroffene Anlage begrenzen; Netzbezug einer Halle nicht rechnerisch mit Einspeisung einer anderen Halle verrechnen.
 - [ ] HA-Messentitäten einschließlich Shelly als Haupt-, Zweig- oder Gerätemessung aufnehmen; enthaltene Unterzähler nicht zusätzlich zum Gesamtwert summieren.
@@ -139,6 +141,8 @@ Abnahme: Lastsprung und Preisänderung werden in Replay erkannt; kurze Schwankun
 
 ### 7. Auslieferungsqualität
 
+- [ ] Vollständigen versionierten Projekt-Konfigurationsexport und -import gemäß PROJECT_FORMAT.md implementieren; Vorschau, Migration, Referenzprüfung und atomare Übernahme testen.
+- [ ] Export-/Import-Rundlauf für Gatewaygeräte, mehrere Speicher und getrennte Anlagen; keine privaten Zugangsdaten im Standardexport, keine automatischen Aktorbefehle beim Import.
 - [ ] Installation/Update/Neustart und Konfigurationsmigration in echter HA-Testumgebung prüfen.
 - [ ] Durchgängige Replaytests vom Messwert bis zum simulierten Sollwert; 23-/25-Stunden-Tage und unvollständigen Folgetag einschließen.
 - [ ] Versions-/Änderungsprotokoll und bekannte Grenzen pflegen; kompatible HA-Versionen dokumentieren.

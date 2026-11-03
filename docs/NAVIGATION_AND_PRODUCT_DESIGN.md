@@ -6,6 +6,8 @@ Stand: 03.11.2026. Überarbeiteter Entwurf auf Grundlage der bestätigten Anford
 
 Oben immer sichtbar: Anlagenwahl „Alle Anlagen / Halle 1 / Halle 2“, Betriebsstatus, Hinweise. Einrichtungsassistent bei leerer Installation. Sieben Hauptpunkte; Detailseiten als Reiter statt dauernd aufgeklapptem Menü.
 
+Oberhalb der Anlagenwahl steht das aktuelle Projekt. Projektmenü: Projektangaben, gesamtes Projekt exportieren, Projekt importieren. Ein Projekt enthält alle Anlagen und ihre gemeinsamen Geräte-/Verbindungsobjekte; keine zusätzliche elektrische Verrechnung durch diese Gruppierung. Import-/Exportentwurf siehe PROJECT_FORMAT.md.
+
 ```text
 Pohl Solutions Energiemanager
 ├── Übersicht
@@ -68,7 +70,7 @@ Die Anlagenwahl filtert alle fachlichen Seiten. „Alle Anlagen“ zeigt Verglei
 ## Fachliche Hierarchie
 
 ```text
-Installation
+Projekt innerhalb der Installation
 ├── Anlage A: eigener Netzanschluss, Tarif, Bilanz und Plan
 │   ├── Netz- und Hausmessung (dreiphasige Gesamtbilanz)
 │   ├── PV-Felder → Prognose, ohne doppelte Erzeugungszählung
