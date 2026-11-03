@@ -2,6 +2,7 @@
 
 ## 0.3.0 — 2026-11-03
 
+- HACS-Releasepaket mit passendem Assetnamen, wiederholbarem Build und Prüfung von ZIP-Struktur/Versionen. HACS erfordert ein öffentliches Repository; Sichtbarkeit bleibt bis ausdrücklicher Freigabe privat.
 - Ausführbares Projektformat mit getrennten Netzanschlüssen, Bereichen, elektrischen Zweigen, Verbindungen, Geräten, Batterien und Messzuordnungen.
 - Validierter JSON-Import/-Export, stabile Beziehungen, Kreis-/Doppelzählungs-/Quellnetzprüfung und anonyme Referenz-/Startvorlagen.
 - Lokale Projektoberfläche mit drei Strukturansichten, Namenbearbeitung, Bereichsfilter, Importvorschau, Editor und expliziter Browser-Speicherung.
