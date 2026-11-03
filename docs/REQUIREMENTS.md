@@ -10,7 +10,9 @@ Stand: 2026-11-03. Bestätigte Wünsche sind von Vorschlägen und noch offenen E
 - Bereits die erste Version plant mehrere Speicher-Wechselrichter gemeinsam. Jeder besitzt eigene SOC-/Kapazitäts-/Leistungsgrenzen und angeschlossene Batterien; Zahl der Türme ist nicht mit Zahl unabhängiger Wechselrichter gleichzusetzen.
 - Eine HA-Installation muss mehrere getrennte Anlagen verwalten können, beispielsweise zwei Hallen mit jeweils eigenem Stromanschluss. Je Anlage zunächst ein gemeinsamer Netzanschluss; mehrere Speicher dahinter werden gemeinsam geplant. Netzbilanzen, Tarife, Reserven und Gerätezuordnungen bleiben je Anlage getrennt.
 - Messgeräte und Shelly-Messwerte müssen je Anlage hinzufügbar sein. Messrollen und enthaltene Unterzähler sind ausdrücklich zuzuordnen, damit Verbräuche nicht doppelt gezählt werden.
-- Flexible Verbraucher gehören zum ersten nutzbaren Umfang, einschließlich stufenlos regelbarer Heizstäbe. Heizstäbe sollen nur vorhandenen PV-Überschuss verwenden; günstiger Netzstrom allein ist keine Freigabe zum Heizen. Priorität gegenüber Speicherladung, Nutzung gespeicherter PV-Energie und konkrete Geräte sind noch zu klären.
+- Flexible Verbraucher gehören zum ersten nutzbaren Umfang, einschließlich Ein/Aus-Verbrauchern und unterstützten stufenlos regelbaren Heizstäben. Prioritäten und erlaubte Energiequellen sind je Gerät konfigurierbar; die frühere Vorgabe „nur PV-Überschuss“ beschreibt eine wählbare Betriebsart, keine feste Produktgrenze.
+- Vorhandene Heizstäbe werden über HA ein-/ausgeschaltet und intern geregelt; Shelly misst deren Verbrauch. Ein konkretes Modell oder eine externe stufenlose Schnittstelle ist nicht nachgewiesen. Freigabe, Messung und Leistungsregelung sind getrennte Gerätefähigkeiten.
+- Konfiguration muss je Gerät festlegen können, ob aktueller PV-Überschuss, Batterieenergie oder Netzbezug zulässig ist. Nur gespeicherte PV-Energie gegenüber netzgeladener Energie zu unterscheiden erfordert eine belegte Herkunftsrechnung; ein SOC-Wert allein genügt dafür nicht.
 - Geführte Einrichtung mit wenigen Pflichtangaben und optionalen Experteneinstellungen.
 - PV-Prognosen: vorhandene HA-Prognose bevorzugen; direkt eingebundenen Prognosedienst ebenfalls anbieten. Möglichst kostenlos starten, kostenpflichtige Dienste optional. Konkreter Anbieter und dessen Grenzen noch zu prüfen.
 - Später führt der Energiemanager Gerätebefehle direkt aus; Node-RED darf Wünsche übergeben. Es erhält damit keine parallele unkoordinierte Schreibverantwortung.
@@ -59,14 +61,20 @@ Stand: 2026-11-03. Bestätigte Wünsche sind von Vorschlägen und noch offenen E
 ## Fragerunde 6 – teilweise beantwortet
 
 - Stufenlos regelbare Heizstäbe bereits in der ersten nutzbaren Version.
-- Ausschließlich vorhandenen PV-Überschuss verwenden.
+- Zunächst ausschließlich PV-Überschuss gewünscht; durch Fragerunde 7 als konfigurierbare Betriebsart präzisiert.
 - Frage zum manuellen Vorrang war nicht verständlich; keine Entscheidung getroffen. Später anhand eines konkreten Bedienbeispiels klären, nicht als Zustimmung zu einem Standard behandeln.
 
-## Fragerunde 7 – Antwort ausstehend
+## Fragerunde 7 – beantwortet
 
-- Vorrang für Batterie oder Heizstab bei knappem Überschuss oder je Anlage auswählbar?
-- Darf gespeicherte PV-Energie für den Heizstab verwendet werden oder ausschließlich aktuell sonst eingespeister Strom?
-- Bereits vorhandener Leistungsregler/Heizstab: Hersteller und Modell oder noch offen?
+- Reihenfolge und Prioritäten individuell nach Geräten einstellbar.
+- Erlaubte Energiequellen ebenfalls konfigurierbar, keine allgemein verbotene Batterieentladung für Heizstäbe beschlossen.
+- Bestehende Umsetzung: HA Ein/Aus, interne Heizstabregelung, Shelly-Messung. Modelle bleiben offen.
+
+## Fragerunde 8 – Antwort ausstehend
+
+- Einfache anpassbare Vorlagen oder ausschließlich eigene Regeln?
+- Geräteabhängigen Rückfall bei fehlenden benötigten Messwerten grundsätzlich vorsehen oder später konkret entscheiden?
+- Verwendete HA-Hardware zur Bemessung des Rechenbudgets?
 
 Notstromreserve ist technisch eine Randbedingung, die auch bei wirtschaftlicher Planung oder bei Minimierung des Netzbezugs gelten kann. Die vorgeschlagene einfache Bedienung darf diese Kombination nicht verhindern.
 

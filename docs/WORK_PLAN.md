@@ -101,7 +101,9 @@ Abnahme: Lastsprung und Preisänderung werden in Replay erkannt; kurze Schwankun
 ### 5a. Flexible Verbraucher – Teil des ersten nutzbaren Umfangs
 
 - [ ] Heizstäbe und weitere flexible Lasten als eigene Geräte mit Messung und nachgewiesenen Fähigkeiten aufnehmen; stufenlose Leistungsregelung bereits in der ersten nutzbaren Version unterstützen.
-- [ ] Heizstäbe ausschließlich mit vorhandenem PV-Überschuss betreiben; keinen Netzbezug allein wegen niedriger Preise einplanen. Vorrang gegenüber Speicherladung und Zulässigkeit gespeicherter PV-Energie noch klären.
+- [ ] Prioritäten und erlaubte Energiequellen je Verbraucher konfigurieren; „nur aktueller PV-Überschuss“ als Betriebsart anbieten, Batterie-/Netznutzung nur entsprechend gewählter Freigaben.
+- [ ] Bestehenden Fall HA-Ein/Aus plus interne Regelung und Shelly-Messung abbilden. Nur für nachgewiesene Leistungsregler stufenlose Sollwerte anbieten; Messentität ist keine Stellgröße.
+- [ ] Bei Beschränkung auf gespeicherte PV Herkunftsbilanz über Netzladen, Entladen und Verluste definieren; unbekannte Herkunft nicht aus SOC ableiten.
 - [ ] Bei Überschussregelung laufende Heizleistung berücksichtigen: nach dem Einschalten sinkende Einspeisung bedeutet nicht, dass der ursprüngliche Überschuss verschwunden ist. Zusammenspiel mit Speicherregler gegen Schwingen und gegenseitiges Nachregeln testen.
 - [ ] Verbraucher bereits in der gemessenen Hauslast erkennen; geplanten Mehrverbrauch und Grundlast ohne Doppelzählung prognostizieren.
 - [ ] Temperatur-/Energiebedarf, Mindestlaufzeiten, Leistungsgrenzen und lokale Geräteschutzfunktionen je unterstütztem Gerät definieren; keine Schaltfähigkeit allein aus einem vorhandenen Messwert ableiten.
@@ -126,7 +128,7 @@ Abnahme: Lastsprung und Preisänderung werden in Replay erkannt; kurze Schwankun
 - [ ] CI-Warnungen zu Actions-Versionen gesondert bereinigen; aktueller erfolgreicher Lauf bleibt Referenz.
 - [ ] Nachweisbare Reifegradgrenzen für Simulation, beobachtenden Parallelbetrieb und späteren Regelbetrieb festlegen.
 
-Nächster unabhängiger Entwicklungsschritt: Regression und Ressourcenvergleich für kleine Leistungen sowie Entwurf für gemeinsame Mehrspeicherplanung. Bestätigt: mehrere getrennte Anlagen in einer HA-Installation, je Anlage ein Netzanschluss und mehrere Speicher; Solis/Bluesun zuerst, geführte Einrichtung, später direkte Gerätesteuerung, Messgeräte/Shelly und stufenlose PV-Überschuss-Heizstäbe im ersten nutzbaren Umfang. Offen: Batterie-/Heizstabpriorität, gespeicherte PV für Wärme, konkrete Heizregler, Wunschprioritäten, Prognosedienst, Reservepolitik und Vertragsformeln. Aktuelle Version bleibt Planung/Simulation.
+Nächster unabhängiger Entwicklungsschritt: Regression und Ressourcenvergleich für kleine Leistungen sowie Entwurf für gemeinsame Mehrspeicherplanung. Bestätigt: mehrere getrennte Anlagen in einer HA-Installation, je Anlage ein Netzanschluss und mehrere Speicher; Solis/Bluesun zuerst, geführte Einrichtung, später direkte Gerätesteuerung, Messgeräte/Shelly und flexible Verbraucher im ersten nutzbaren Umfang. Prioritäten und Energiequellen sind je Gerät einstellbar. Vorhandene Heizstäbe bieten HA-Ein/Aus und Shelly-Messung, keine nachgewiesene externe Leistungsregelung. Offen: Vorlagen, konkrete Geräte, Rückfall-/Wunschprioritäten, HA-Hardware, Prognosedienst, Reservepolitik und Vertragsformeln. Aktuelle Version bleibt Planung/Simulation.
 
 ## Pro wiederkehrendem Lauf
 
