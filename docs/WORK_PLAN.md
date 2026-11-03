@@ -37,6 +37,8 @@ V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberf
 
 0.3.1: Einstieg auf frei benannten Energiemanager ohne HA-Sensorpflicht umgestellt; bestehende Simulation separat in Optionen. Neue Projekte leer anlegen, bestehende Importe erhalten. Standort/Netzanschluss/Bereich/Gerätegruppe künftig sauber trennen, siehe PROJECT_HIERARCHY.md. Eigene Standortverwaltung und direkter Geräteassistent noch offen.
 
+Unveröffentlichter Entwicklungsschritt am 03.11.2026: lesender nativer Modbus-TCP-Client und UMG-103-CBM-Wirkleistungsprofil implementiert, ohne HA-/Setup-Anbindung. 47 neue Loopback-/Dekodierprüfungen erfolgreich, einschließlich zweier Zieladressen über einen gemeinsam genutzten Client. Keine Anlage verbunden, kein Scan, kein Aktor und kein HACS-Release. Details/Quellen/Grenzen: protocols/READ_ONLY_MODBUS.md. Standortassistent und erste explizite lesende Anbindung bleiben offen.
+
 ### Implementierter Zwischenstand 0.3: erste testbare Projektverwaltung
 
 - [x] HA-unabhängiges Projektmodell mit getrennter elektrischer Topologie, Kommunikation und Messzuordnung; inklusive Gateway-Untergeräten und Batterie-WR-Beziehungen.
@@ -147,6 +149,7 @@ Abnahme: Lastsprung und Preisänderung werden in Replay erkannt; kurze Schwankun
 - [ ] Maschinenlesbarkeit aktiver Direktvermarkter-/Netzbetreibervorgaben separat belegen. UI-Diagnose und Messregister nicht mit einer Sollwertschnittstelle gleichsetzen; unbekannte Vorgabe nicht als unbegrenzt behandeln.
 - [x] Dokumentennachweis: Janitza 604-PRO als Gateway zu 103-CBM; Plexlog ThirdPartyClient mit lesbaren Vorgaberückmeldungen. Details unter docs/protocols/. Keine technische Prüfung an Geräten erfolgt.
 - [ ] Janitza-Gateway mit gemeinsamen Verbindungsressourcen und einzelnen Zieladressen modellieren. Nutzer bestätigt 103er am 604-PRO; aktive Parameter später lesend erfassen, nicht pauschal umstellen.
+- [x] Lesende TCP-Transportbasis und dokumentiertes 103-CBM-Leistungsprofil mit gemeinsamem Client/Unit-ID im Simulator testen. UMG-604-Eigenprofil, echte Endpunkte, Geräteverwaltung und Polling noch nicht implementiert.
 - [ ] Externe Wirk-/Blindleistungsvorgaben mit Bezugsgröße, Herkunft, Gültigkeit und Regelzuständigkeit in Planung/Anzeige integrieren; bestehende Anlagenregelung nicht überschreiben und Wirkleistungsreserven bei Blindleistung gerätespezifisch berücksichtigen.
 - [ ] Modell-/Firmwareabhängige Solis/BSE-Schnittstelle belegen; Register nicht aus Umlabelung ableiten.
 - [ ] Simulierten Node-RED-Vertrag mit Einheiten, Gültigkeit, Quittierung, Planversion und Wiederholungsverhalten festlegen.
@@ -164,7 +167,7 @@ Abnahme: Lastsprung und Preisänderung werden in Replay erkannt; kurze Schwankun
 - [ ] CI-Warnungen zu Actions-Versionen gesondert bereinigen; aktueller erfolgreicher Lauf bleibt Referenz.
 - [ ] Nachweisbare Reifegradgrenzen für Simulation, beobachtenden Parallelbetrieb und späteren Regelbetrieb festlegen.
 
-Nächster unabhängiger Entwicklungsschritt: Regression und Ressourcenvergleich für kleine Leistungen sowie Entwurf für gemeinsame Mehrspeicherplanung. Bestätigt: mehrere getrennte Anlagen in einer HA-Installation, je Anlage ein Netzanschluss und mehrere Speicher; Solis/Bluesun zuerst, geführte Einrichtung, später direkte Gerätesteuerung, Messgeräte/Shelly und flexible Verbraucher im ersten nutzbaren Umfang. Prioritäten und Energiequellen sind je Gerät einstellbar. Vorhandene Heizstäbe bieten HA-Ein/Aus und Shelly-Messung, keine nachgewiesene externe Leistungsregelung. Offen: Vorlagen, konkrete Geräte, Rückfall-/Wunschprioritäten, HA-Hardware, Prognosedienst, Reservepolitik und Vertragsformeln. Aktuelle Version bleibt Planung/Simulation.
+Nächste unabhängige Schritte: geführte Standort-/Gerätezuordnung nach PROJECT_HIERARCHY.md, explizite lesende Einbindung der geprüften Transportbasis (ohne Setup-Seiteneffekt) sowie Regression/Ressourcenvergleich für kleine Speicherleistungen. Ein Projekt kann getrennte Anschlüsse und mehrere Bereiche an einem gemeinsamen Anschluss enthalten. Zielhardware Raspberry Pi 5 ist bestätigt; RAM und Last sind offen. Konkrete Geräteparameter, Rückfall-/Wunschprioritäten, Prognosedienst, Reservepolitik und Vertragsformeln bleiben offen. Aktuelle Version bleibt Planung/Simulation.
 
 ## Pro wiederkehrendem Lauf
 
@@ -172,7 +175,7 @@ Nächster unabhängiger Entwicklungsschritt: Regression und Ressourcenvergleich 
 2. Annahmen und Datenverträge vor Änderungen klären; bei Bedarf Subagenten für unabhängige Aufgaben nutzen.
 3. Implementieren und relevante Regressionstests ausführen.
 4. Bei Oberflächenänderung Desktop und Mobilansicht prüfen.
-5. Dokumentieren, Commit erstellen, privates Remote aktualisieren und relevante CI-Ergebnisse prüfen.
+5. Dokumentieren, Commit erstellen, autorisiertes Remote aktualisieren und relevante CI-Ergebnisse prüfen. Automatische Läufe erstellen keine neuen Releases ohne entsprechende Freigabe.
 6. Diesen Plan um den tatsächlichen Stand und den nächsten konkreten Schritt ergänzen.
 
 Nicht belegte Prognosegüte, fehlende Gerätezugänge oder externe Entscheidungen werden als offen dokumentiert. Sie rechtfertigen keine erfundenen Ergebnisse und keine wiederholten kosmetischen Änderungen.

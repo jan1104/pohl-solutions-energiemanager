@@ -1,5 +1,11 @@
 # Änderungen
 
+## Noch nicht veröffentlicht
+
+- HA-unabhängige, ausschließlich lesende Modbus-TCP-Basis mit expliziten Zieladressen für TCP-zu-RTU-Gateways. Gemeinsamer Zugriff pro Client wird serialisiert; Rahmenprüfung, begrenzte Wartezeit und Wiederverbindung nach Fehler/Abbruch.
+- Erstes UMG-103-CBM-Leseprofil für Wirk-/Phasenleistungen mit dokumentierter Float-Dekodierung und W→kW-Umrechnung.
+- Loopback-Simulatorprüfungen für mehrere Gatewayziele, ungültige Antworten, Gerätefehler, Timeout und Abbruch. Noch nicht an HA-Einrichtung oder automatische Geräteabfrage angeschlossen; kein neuer HACS-Release und keine Live-Geräte getestet.
+
 ## 0.3.1 — 2026-11-03
 
 - Ersteinrichtung fragt nur den Namen des Energiemanagers ab; keine Prognose-/SOC-/Leistungssensoren und kein Projektmodus-Schalter mehr im Einstieg.
