@@ -31,16 +31,82 @@ Stand: 2026-11-03. Dieser Plan steuert die weitere Entwicklung in diesem Chat un
 - [x] Reale HA-Tests für Quellenwechsel und gültige/ungültige Daten ergänzen.
 - [x] Dokumentation, Änderungsprotokoll und Versionsnummer aktualisieren; geprüften Stand committen/pushen.
 
-V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberflächenprüfungen getestet. Die erweiterte echte HA-Laufzeitprüfung läuft über GitHub Actions. Die lokale Vorschau ruft keine Preise ab; die aktive Integration kann konfigurierte Quellen lesen. Der SMARD-Nutzungsstatus ist in PRICE_SOURCES.md dokumentiert. Nächster inhaltlicher Schwerpunkt: Datenqualität und rückgetestete Lastprognosen.
+V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberflächenprüfungen getestet. Die erweiterte echte HA-Laufzeitprüfung ist im GitHub-Lauf 41618373561 auf Commit e02b711 erfolgreich. Die lokale Vorschau ruft keine Preise ab; die aktive Integration kann konfigurierte Quellen lesen. Der SMARD-Nutzungsstatus ist in PRICE_SOURCES.md dokumentiert.
 
-## Danach, in dieser Reihenfolge
+## Überarbeitete Arbeitsliste nach Logikprüfung
 
-1. **Datenqualität und Rücktests:** Vorhandene historische Messdaten über ein ausdrücklich beschriebenes Importformat einlesen. Keine privaten CSVs im Repository. Lastprognose gegen einfache Baselines in rollierenden Zeitfenstern prüfen, MAE/Bias dokumentieren.
-2. **PV-Prognoseadapter:** Vorhandene HA-Prognose auswählen, Quellenalter und Leistungsgrenzen ausweisen, mit tatsächlicher Erzeugung rücktesten. Keine erfundene Wetterprognose.
-3. **Anlagenprofile und Messstellen:** Eastron als gemeinsame Netzbilanz, Janitza als getrennte Messstellen, vier Sungrows und ein Solis als konfigurierbares Referenzprofil. Doppelzählung und Vorzeichen mit Tests verhindern.
-4. **HA-Bedienung:** Funktionen des lokalen Prototyps schrittweise in eine tatsächliche HA-Oberfläche übernehmen. Kostenmodell, Preisquellen und Annahmen sollen an einem nachvollziehbaren Ort bearbeitet werden können.
-5. **Planungsverbesserung:** Unterschiedliche Reserven, Endenergieziele, BMS-Prognosegrenzen, Szenarien bei unsicherer PV/Last. Verbesserungen gegen bekannte Fälle und Baselines messen.
-6. **Node-RED-Schnittstelle:** Dokumentierter simulierter Sollwertvertrag mit Frische, Einheiten, Rückmeldung und Rückfall. Kein Aktoraufruf ohne spätere ausdrückliche Freigabe.
+Grundlagen: [bestätigte Anforderungen und Fragen](REQUIREMENTS.md), [nachgewiesene Logikbefunde](LOGIC_REVIEW_2026-11-03.md). Zunächst Rechenfehler und Datenmodell bearbeiten. Offene Betriebsentscheidungen nicht stillschweigend durch Standardwerte ersetzen.
+
+### 1. Rechenkern und wirtschaftliche Ziele
+
+- [ ] Kleine Lasten/Ladeleistungen korrekt berücksichtigen; nachgewiesenen 1-kW-Fall als Regression aufnehmen.
+- [ ] Laufzeit und Speicherbedarf des bisherigen Verfahrens messen; Kandidat gegen kontinuierliche Referenz und analytische Fälle vergleichen.
+- [ ] Rollierendes Endenergie-/Reservekonzept entwerfen; keine pauschale Gleichsetzung von aktuellem und End-SOC.
+- [ ] Nachtentladung, billiges Netzladen vor teurem Bezug, bevorstehenden PV-Überschuss und negative Einspeisepreise prüfen.
+- [ ] Wirtschaftlichkeitsziel und Autarkiewunsch als getrennte Betriebsarten definieren; Batterieverkauf erst nach Antwort konfigurieren.
+- [ ] Betrieb unter Wunschreserve und oberhalb Wunschziel sauber von physischen BMS-Grenzen unterscheiden.
+- [ ] Restenergie in Vergleichen fair bewerten; keine garantierten Einsparungen aus einem Prognoseplan ableiten.
+
+Abnahme: bekannte Gegenbeispiele funktionieren; keine Energiebilanzverletzung; wiederholte Neuplanung leert/blockiert den Speicher nicht künstlich; Ressourcenbedarf ist dokumentiert.
+
+### 2. Anlage, Messungen und Verträge
+
+- [ ] Geräte-/Firmwareinventar und vorhandene HA-Entitäten/Node-RED-Flows aufnehmen; private Daten nur lokal.
+- [ ] Eastron als gemeinsame Netzbilanz und Janitza-Zweige zuordnen; Erzeugung, Verbraucher und Speicher nicht doppelt zählen.
+- [ ] Import-/Export-Vorzeichen und Messgleichzeitigkeit mit aufgezeichneten Fällen prüfen.
+- [ ] Vollständige Bezugskosten und Direktvermarktungserlöse einschließlich Abzügen modellieren; Viertelstunden, Einheiten und Steuerbasis ausdrücklich festlegen.
+- [ ] Produktiven Preisanbieter und verzögerte Veröffentlichung behandeln; Tarifwechsel und Quellenfehler testen.
+- [ ] Beide Batterietürme, Kapazität, SOC, BMS-Leistungsgrenzen, Spannung und Anschlussgrenzen abbilden.
+
+Abnahme: eine nachvollziehbare Bilanz je Messintervall; Preise stimmen mit Vertragsbeispielen überein; jede Grenze hat eine Quelle.
+
+### 3. Prognosen mit überprüfter Qualität
+
+- [ ] Historische Messdaten über dokumentiertes Format importieren; Lücken/Ausreißer/Nettozweigmessungen erkennen.
+- [ ] Lastprognose an HA-Datenfluss anschließen; Tages-/Wochenprofile, aktuelle Abweichungen und bekannte Sonderlasten berücksichtigen.
+- [ ] PV-Prognosedienst/HA-Quelle auswählen; Anlagenorientierung und Leistungsgrenzen berücksichtigen.
+- [ ] Rollierende Rücktests ohne Zukunftswissen; MAE, Bias und wirtschaftliches Ergebnis gegen einfache Baselines ausweisen.
+- [ ] Prognoseunsicherheit zunächst über transparente Szenarien behandeln; keine unbelegten Wahrscheinlichkeiten.
+
+Abnahme: Bericht mit Zeitraum, Datenabdeckung, Baselines und Fehlern; fehlende Daten sind sichtbar und werden nicht als Nullverbrauch ausgegeben.
+
+### 4. Dynamische Planung mit geringem Aufwand
+
+- [ ] Zwei Zeitebenen entwerfen: wirtschaftliche Planung und davon getrennte schnelle Sollwertbegrenzung.
+- [ ] Neuplanung bei neuen Preisen/Prognosen, relevanten anhaltenden Last-/PV-/SOC-Abweichungen und Konfigurationsänderung.
+- [ ] Schwellen/Hysterese, Mindestabstand, gebündelte Ereignisse und Cache auf Zielhardware messen statt willkürlich versprechen.
+- [ ] Gleichzeitige Berechnungen vermeiden; überholte Ergebnisse verwerfen; laufende HA-Oberfläche nicht blockieren.
+- [ ] Gemessene Laufzeit, Datenalter, Planversion und Anlass der Neuplanung anzeigen.
+
+Abnahme: Lastsprung und Preisänderung werden in Replay erkannt; kurze Schwankungen lösen keine Rechenflut aus; konkrete Zeit-/RAM-Grenzen nach Hardwareklärung festlegen.
+
+### 5. Bedienung und Kostenrechnung
+
+- [ ] Echte HA-Oberfläche aus dem lokalen Prototyp entwickeln; Anlage/Quellen/Batterie/Strategie geführt einrichten.
+- [ ] Kaufpreis, nutzbare Kapazität, SOC-Fenster, belegte Zyklen-/Kalenderannahmen, Betriebskosten und Wirkungsgrade bearbeiten.
+- [ ] Investitionsumlage, marginalen Verschleiß, Verluste und entgangene Einspeiseerlöse verständlich getrennt darstellen.
+- [ ] Plan/Ist, SOC, Haus/PV/Netz und Preise mit Begründungen anzeigen; Datenlücken und Prognoseunsicherheit kenntlich machen.
+- [ ] Manueller Vorrang, Änderungen der Reserve und Vergleich von Strategien; Desktop/Mobilansicht und verständliche Fehlermeldungen prüfen.
+- [ ] Prognostizierte und tatsächlich ermittelte Einsparungen unterscheiden; Einstellungen exportieren/sichern, ohne Geheimnisse offenzulegen.
+
+### 6. Geräteintegration zunächst lesend und simuliert
+
+- [ ] Rolle Plexlog/Node-RED/Solis klären; ein Sollwertgeber je Aktor, ein Master je RTU-Bus.
+- [ ] Modell-/Firmwareabhängige Solis/BSE-Schnittstelle belegen; Register nicht aus Umlabelung ableiten.
+- [ ] Simulierten Node-RED-Vertrag mit Einheiten, Gültigkeit, Quittierung, Planversion und Wiederholungsverhalten festlegen.
+- [ ] Frische Netzbilanz/BMS-Grenzen erzwingen, Rampen und Abweichung Soll/Ist prüfen.
+- [ ] Fehlerfallmatrix für Messausfall, Preisfehler, Internetverlust, HA-Neustart und konkurrierende Steuerung testen.
+- [ ] Erst nach gesonderter Freigabe kontrollierte Gerätetests und danach automatische Aktorfreigabe.
+
+### 7. Auslieferungsqualität
+
+- [ ] Installation/Update/Neustart und Konfigurationsmigration in echter HA-Testumgebung prüfen.
+- [ ] Durchgängige Replaytests vom Messwert bis zum simulierten Sollwert; 23-/25-Stunden-Tage und unvollständigen Folgetag einschließen.
+- [ ] Versions-/Änderungsprotokoll und bekannte Grenzen pflegen; kompatible HA-Versionen dokumentieren.
+- [ ] CI-Warnungen zu Actions-Versionen gesondert bereinigen; aktueller erfolgreicher Lauf bleibt Referenz.
+- [ ] Nachweisbare Reifegradgrenzen für Simulation, beobachtenden Parallelbetrieb und späteren Regelbetrieb festlegen.
+
+Nächster unabhängiger Entwicklungsschritt: Regression und Ressourcenvergleich für kleine Leistungen; gleichzeitig Antworten zu Batterieverkauf, Reserve und Tarifformeln einarbeiten. Endenergie-/Reservepolitik erst nach den erforderlichen Antworten implementieren.
 
 ## Pro wiederkehrendem Lauf
 
