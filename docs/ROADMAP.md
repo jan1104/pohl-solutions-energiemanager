@@ -4,11 +4,15 @@
 
 Rechenkern, Szenariodaten, Kostenmodell, historische Lastprofilhilfe, HA-Einrichtung und UI-Prototyp. Lokale Kern-/Eingabetests und Browserlogik werden ausgeführt. Vollständiger HA-Start und Verhalten in einer echten Testinstanz sind zusätzlich zu prüfen; unter dem lokalen Windows-System konnte HA wegen plattformabhängiger Abhängigkeiten nicht vollständig gestartet werden.
 
-## 0.2 — echte Datengrundlage
+## 0.2 — Preisquellen und Konfiguration
+
+Auswählbare Bezugs-/Einspeisequellen, JSON-URL, HA-Sensor, Festpreis, beobachteter SMARD-Adapter und klare Tarifumrechnung. Erweiterte Datenvalidierung und getrennte lokale Konfigurationsvorschau. Details und Quellenstatus siehe [PRICE_SOURCES.md](PRICE_SOURCES.md). Arbeitsfortschritt siehe [WORK_PLAN.md](WORK_PLAN.md).
+
+## Danach — echte Datengrundlage
 
 - Vorhandene HA-Entitäten und Node-RED-Flows inventarisieren, ohne Zugangsdaten ins Repository zu übernehmen.
 - Vorzeichen/Einheiten und Messstellenbilanz Eastron/Janitza abgleichen.
-- SMARD-Adapter mit Zeitstempeln, Herkunft, vollständigen 92/96/100-Viertelstundentagen und Wiederholungsabrufen bei verzögerter Veröffentlichung.
+- Verfügbarkeit der Preisquellen einschließlich Zeitumstellung und verzögerter Folgetagsveröffentlichung weiter überwachen und einen geeigneten produktiven Datenanbieter festlegen.
 - Separate tatsächliche Bezugs- und Einspeiseverträge abbilden.
 - PV-/Wetterprognose anbinden; historische Lastmessungen importieren.
 - Prognosen mit rollierendem Rücktest messen, MAE/Bias dokumentieren, einfache Baseline schlagen.

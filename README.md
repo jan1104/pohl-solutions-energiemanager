@@ -2,11 +2,12 @@
 
 Lokale, nachvollziehbare Energieplanung für Home Assistant und Node-RED.
 
-**Version 0.1.0 ist eine Entwicklungsversion für Planung und Simulation. Sie schreibt keine Befehle an Wechselrichter, Speicher oder andere Geräte.** Der Browserprototyp ist eine getrennte Vorschau, noch kein eingebautes Home-Assistant-Dashboard.
+**Version 0.2.0 ist eine Entwicklungsversion für Planung und Simulation. Sie schreibt keine Befehle an Wechselrichter, Speicher oder andere Geräte.** Der Browserprototyp ist eine getrennte Vorschau, noch kein eingebautes Home-Assistant-Dashboard.
 
 ## Was bereits funktioniert
 
 - Viertelstundenplanung aus expliziten PV-/Lastprognosen und getrennten Bezugs-/Einspeisepreisen.
+- Preisquellen für Bezug und Einspeisung getrennt wählen: vorhandene Prognosepreise, HA-Sensor, JSON-URL, Festpreis oder experimenteller SMARD-Adapter; explizite Einheit, Preisfaktor und Aufschlag. Siehe [Preisquellen](docs/PRICE_SOURCES.md), einschließlich des aktuellen SMARD-Nutzungsstatus.
 - Batteriemodell mit Kapazität, SOC-Grenzen, AC-Lade-/Entladeleistung und Wirkungsgraden.
 - Optionale Netzladung und Batterieeinspeisung, beide standardmäßig aus.
 - Wirtschaftliche Planung mit separat angesetztem marginalem Verschleiß; keine doppelte Investitionsverrechnung.
@@ -46,13 +47,13 @@ docs/                   Architektur, Datenvertrag, Annahmen und nächste Schritt
 
 ## Home Assistant
 
-Der Integrationseintrag benötigt einen SOC-Sensor sowie einen Sensor mit einer vollständigen Prognosereihe im Attribut `slots`. Die Daten können zunächst von Node-RED bereitgestellt werden. Siehe [Datenvertrag](docs/DATA_CONTRACT.md).
+Der Integrationseintrag benötigt einen SOC-Sensor sowie einen Sensor mit einer vollständigen PV-/Lastprognosereihe im Attribut `slots`. Die Daten können zunächst von Node-RED bereitgestellt werden. Die Preise können in dieser Reihe stehen oder getrennt ausgewählt werden. Siehe [Datenvertrag](docs/DATA_CONTRACT.md) und [Preisquellen](docs/PRICE_SOURCES.md).
 
 Zur Entwicklung den Ordner `custom_components/pohl_solutions_energiemanager` in das entsprechende `custom_components`-Verzeichnis einer **Testinstanz** kopieren, HA neu starten und unter Geräte & Dienste hinzufügen. Alternativ das private GitHub-Repository in HACS als benutzerdefiniertes Integrationsrepository hinzufügen, wenn der eigene HACS-Zugriff private Repositories unterstützt. Keine Aufnahme in einen öffentlichen Katalog behauptet.
 
 Zielbasis: Home Assistant 2026.1 oder neuer. Der reine Rechenkern läuft mit Python 3.12+. Home Assistant selbst hat eigene Python-/Betriebssystemanforderungen.
 
-**Noch nicht im Umfang:** automatischer SMARD-Abruf, Tarifanbieter, automatische Wetter-/PV-Prognose, automatische Historienabfrage, vollständiges HA-Dashboard, direktes Lesen/Schreiben von Solis/Sungrow/Janitza und produktiver Regelbetrieb. Ein vorhandener Sensor-/Treibername ist kein Nachweis einer Schreibfreigabe.
+**Noch nicht im Umfang:** dedizierte Tarifanbieter-Logins, automatische Wetter-/PV-Prognose, automatische Historienabfrage, vollständiges HA-Dashboard, direktes Lesen/Schreiben von Solis/Sungrow/Janitza und produktiver Regelbetrieb. Ein vorhandener Sensor-/Treibername ist kein Nachweis einer Schreibfreigabe. Der Browserprototyp speichert Preisquellen lokal und exportiert deren Konfiguration, ruft aber selbst keine Live-Preise ab.
 
 ## Annahmen und Grenzen
 
@@ -73,6 +74,8 @@ node --test preview/test-preview.cjs
 ```
 
 Auf Linux/macOS `.venv/bin/python` verwenden. Änderungen in kleinen Commits halten, Verhalten in `CHANGELOG.md` dokumentieren. `main` enthält den geprüften Entwicklungsstand; es gibt noch keine als produktionsreif bezeichnete Veröffentlichung.
+
+Der Arbeitsplan steht in [docs/WORK_PLAN.md](docs/WORK_PLAN.md). Für dieses Repository ist eine wiederkehrende Weiterentwicklung alle sechs Stunden in der Codex-App eingerichtet. Sie ist keine HA-Automation und kein Bestandteil des ausgelieferten Integrationscodes.
 
 Originale Standortunterlagen, Verträge, Seriennummern und HA-Zugangsdaten gehören in `private/` oder außerhalb dieses Repositories. Sie werden nicht mit versioniert.
 

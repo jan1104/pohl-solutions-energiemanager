@@ -1,6 +1,6 @@
 [project]
 name = "pohl-solutions-energiemanager"
-version = "0.1.0"
+version = "0.2.0"
 description = "Lokale, nachvollziehbare Energieplanung für Home Assistant"
 requires-python = ">=3.12"
 dependencies = []

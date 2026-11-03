@@ -1,10 +1,12 @@
-# Datenvertrag Version 0.1
+# Datenvertrag Version 0.2
 
 ## Lokaler Rechner
 
 `tools/plan.py` liest ein JSON-Objekt mit `battery` und `slots`. `examples/demo-forecast.json` zeigt einen vollständigen synthetischen Zweitagesfall. Der Rechner kennt keinen Live-Modus und speichert nur auf ausdrückliche Ausgabeangabe.
 
 ## Home-Assistant-Eingang
+
+Wenn für Bezug beziehungsweise Einspeisung eine externe Preisquelle oder ein Festpreis ausgewählt ist, darf das entsprechende Preisfeld in den Prognoseintervallen fehlen. PV-/Lastdaten und Zeitstruktur bleiben erforderlich. Im Modus „Prognose enthält Preise“ muss das jeweilige Feld vorhanden sein und bereits den tatsächlichen Vertragspreis in EUR/kWh enthalten. Siehe [Preisquellen](PRICE_SOURCES.md).
 
 Der ausgewählte Prognosesensor besitzt im Attribut `slots` eine Liste:
 
