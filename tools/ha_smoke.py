@@ -175,7 +175,7 @@ async def main() -> None:
             if runner is not None:
                 await runner.cleanup()
             # HA owns the shared HTTP session and closes it on its close event.
-            await hass.async_stop()
+            await hass.async_stop(force=True)
         print("Real HA smoke passed: config flow, forecast migration, fixed/entity/HTTP prices, sensors, missing source/SOC; planning only.")
 
 
