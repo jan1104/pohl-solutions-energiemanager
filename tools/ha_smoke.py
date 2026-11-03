@@ -2,11 +2,12 @@
 
 import asyncio
 from datetime import datetime, timedelta, timezone
+import json
 from pathlib import Path
 import sys
 import tempfile
 from types import MappingProxyType
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -15,9 +16,12 @@ sys.path.insert(0, str(ROOT))
 async def main() -> None:
     from aiohttp import web
     from homeassistant.components.network import async_get_adapters
-    from homeassistant.config_entries import ConfigEntry
+    from homeassistant.config_entries import ConfigEntry, ConfigEntryState
     from homeassistant.core import HomeAssistant
+    from homeassistant.exceptions import ServiceValidationError
+    from homeassistant.util.file import WriteError
 
+    from custom_components.pohl_solutions_energiemanager import async_setup_entry, async_unload_entry
     from custom_components.pohl_solutions_energiemanager.config_flow import (
         PohlSolutionsConfigFlow,
         PohlSolutionsOptionsFlow,
@@ -25,6 +29,7 @@ async def main() -> None:
     from custom_components.pohl_solutions_energiemanager.const import BATTERY_DEFAULTS, DOMAIN
     from custom_components.pohl_solutions_energiemanager.coordinator import PohlEnergyCoordinator
     from custom_components.pohl_solutions_energiemanager.price_sources import PriceSourceLoader
+    from custom_components.pohl_solutions_energiemanager.project_store import DATA_PROJECT_STORE, ProjectStore
     from custom_components.pohl_solutions_energiemanager.sensor import DESCRIPTIONS, PohlEnergySensor
 
     with tempfile.TemporaryDirectory() as folder:
@@ -77,6 +82,88 @@ async def main() -> None:
             no_details = await unchanged_flow.async_step_prices({"import_price_mode": "forecast", "export_price_mode": "forecast"})
             assert no_details["step_id"] == "battery"
             assert issubclass(PohlSolutionsOptionsFlow, object)
+            # Project management is useful before forecasts, SOC or devices exist.
+            project_flow = PohlSolutionsConfigFlow()
+            project_flow.hass = hass
+            missing_sources = await project_flow.async_step_user({"name": "Missing sources"})
+            assert missing_sources["errors"] == {"forecast_entity": "required_source", "soc_entity": "required_source"}
+            project_created = await project_flow.async_step_user({"name": "Project CI", "project_only": True})
+            assert project_created["type"] == "create_entry"
+            project_entry = ConfigEntry(
+                version=1, minor_version=1, domain=DOMAIN, title="Project CI",
+                data=project_created["data"], options={}, source="user", unique_id=None,
+                discovery_keys=MappingProxyType({}), subentries_data=(),
+                state=ConfigEntryState.SETUP_IN_PROGRESS,
+            )
+            project_coordinator = PohlEnergyCoordinator(hass, project_entry)
+            extra_coordinators.append(project_coordinator)
+            project_result = await project_coordinator._async_update_data()
+            assert project_result["status"] == "project_only" and not project_result["valid"]
+            project_coordinator.async_set_updated_data(project_result)
+            assert PohlEnergySensor(project_coordinator, project_entry, DESCRIPTIONS[0]).native_value == "project_only"
+
+            # Run integration service lifecycle, isolating only HA platform forwarding.
+            with patch.object(hass.config_entries, "async_forward_entry_setups", new=AsyncMock()), patch.object(
+                hass.config_entries, "async_unload_platforms", new=AsyncMock(return_value=True),
+            ):
+                assert await async_setup_entry(hass, project_entry)
+                try:
+                    empty = await hass.services.async_call(DOMAIN, "project_status", {}, blocking=True, return_response=True)
+                    assert empty["has_project"] is False
+                    fixture = {
+                        "format": "pohl-energy-project", "schema_version": 1,
+                        "id": "ci-project", "name": "CI project", "mode": "planning_only",
+                        "grids": [], "areas": [], "nodes": [], "connections": [],
+                        "devices": [], "channels": [], "measurements": [], "settings": {},
+                    }
+                    imported = await hass.services.async_call(
+                        DOMAIN, "import_project", {"project_json": json.dumps(fixture)}, blocking=True, return_response=True,
+                    )
+                    assert imported["has_project"] is True and imported["planning_only"] is True
+                    exported = await hass.services.async_call(DOMAIN, "export_project", {}, blocking=True, return_response=True)
+                    assert json.loads(exported["project_json"]) == fixture
+                    reloaded_store = ProjectStore(hass)
+                    await reloaded_store.async_load()
+                    assert reloaded_store.export() == exported
+                    try:
+                        await hass.services.async_call(
+                            DOMAIN, "import_project", {"project_json": '{"invalid":true}'}, blocking=True,
+                        )
+                    except ServiceValidationError:
+                        pass
+                    else:
+                        raise AssertionError("Invalid import was accepted")
+                    assert hass.data[DATA_PROJECT_STORE].export() == exported
+                    altered = {**fixture, "name": "Must not become active"}
+                    # HA Store itself suppresses WriteError. The integration's
+                    # on-disk confirmation must still reject this candidate.
+                    with patch.object(hass.data[DATA_PROJECT_STORE]._store, "_async_write_data", new=AsyncMock(side_effect=WriteError("CI simulated suppressed write failure"))):
+                        try:
+                            await hass.data[DATA_PROJECT_STORE].async_import(json.dumps(altered))
+                        except OSError:
+                            pass
+                        else:
+                            raise AssertionError("Suppressed Store write failure activated the project")
+                    assert hass.data[DATA_PROJECT_STORE].export() == exported
+                    disk_check = ProjectStore(hass)
+                    await disk_check.async_load()
+                    assert disk_check.export() == exported
+                    # Saving must succeed before replacing active in-memory data.
+                    with patch.object(hass.data[DATA_PROJECT_STORE]._store, "async_save", new=AsyncMock(side_effect=OSError("CI simulated disk failure"))):
+                        try:
+                            await hass.data[DATA_PROJECT_STORE].async_import(json.dumps(altered))
+                        except OSError:
+                            pass
+                        else:
+                            raise AssertionError("Disk failure was ignored")
+                    assert hass.data[DATA_PROJECT_STORE].export() == exported
+                finally:
+                    assert await async_unload_entry(hass, project_entry)
+                assert DATA_PROJECT_STORE not in hass.data
+                assert not hass.services.has_service(DOMAIN, "import_project")
+                assert not hass.services.has_service(DOMAIN, "export_project")
+                assert not hass.services.has_service(DOMAIN, "project_status")
+                assert not hass.services.has_service(DOMAIN, "replan")
             coordinator = PohlEnergyCoordinator(hass, entry)
             result = await coordinator._async_update_data()
             assert result["valid"], result
@@ -176,7 +263,7 @@ async def main() -> None:
                 await runner.cleanup()
             # HA owns the shared HTTP session and closes it on its close event.
             await hass.async_stop(force=True)
-        print("Real HA smoke passed: config flow, forecast migration, fixed/entity/HTTP prices, sensors, missing source/SOC; planning only.")
+        print("Real HA smoke passed: project-only setup, atomic project persistence/services/unload, config flow, forecast migration, fixed/entity/HTTP prices, sensors, missing source/SOC; planning only.")
 
 
 if __name__ == "__main__":

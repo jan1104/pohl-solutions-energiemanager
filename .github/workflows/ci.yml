@@ -29,6 +29,9 @@ jobs:
           node-version: '22'
       - run: node --check preview/app.js
       - run: node --test preview/test-preview.cjs
+      - run: node --check preview/project-model.js
+      - run: node --check preview/project-ui.js
+      - run: node --test preview/test-project.cjs
   home-assistant:
     runs-on: ubuntu-latest
     timeout-minutes: 15

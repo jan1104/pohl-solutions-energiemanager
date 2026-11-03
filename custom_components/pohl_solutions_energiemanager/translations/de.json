@@ -4,14 +4,15 @@
     "step": {
       "user": {
         "title": "Datenquellen",
-        "description": "Diese Version plant und simuliert; sie sendet keine Gerätebefehle. Der Prognose-Sensor liefert PV und Verbrauch als Viertelstunden. Bezugs- und Einspeisepreise können anschließend unabhängig gewählt werden. Optionale Leistungssensoren dienen nur der Zuordnung.",
+        "description": "Diese Version plant und simuliert; sie sendet keine Gerätebefehle. Der Prognose-Sensor liefert PV und Verbrauch als Viertelstunden. Bezugs- und Einspeisepreise können anschließend unabhängig gewählt werden. Optionale Leistungssensoren dienen nur der Zuordnung. Projektverwaltung benötigt keine Sensoren und öffnet keine Geräteverbindungen. Für die bisherige Simulation sind Prognose und SOC erforderlich.",
         "data": {
           "name": "Name der Anlage",
           "forecast_entity": "Viertelstunden-Prognose (Sensor mit slots-Attribut)",
           "soc_entity": "Aktueller Batterie-Ladezustand (%)",
           "grid_entity": "Netzleistung (optional, nur Zuordnung)",
           "pv_entity": "PV-Leistung (optional, nur Zuordnung)",
-          "load_entity": "Verbrauchsleistung (optional, nur Zuordnung)"
+          "load_entity": "Verbrauchsleistung (optional, nur Zuordnung)",
+          "project_only": "Nur Projektverwaltung (ohne Prognose und SOC)"
         }
       },
       "battery": {
@@ -60,20 +61,22 @@
     },
     "error": {
       "invalid_battery": "Bitte SOC-Grenzen, Leistungen, Wirkungsgrade und Rechenschritt prüfen.",
-      "invalid_prices": "Preisquelle, Einheit, Adresse und Zahlen prüfen."
+      "invalid_prices": "Preisquelle, Einheit, Adresse und Zahlen prüfen.",
+      "required_source": "Für die Simulation erforderlich; alternativ nur Projektverwaltung wählen."
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "Datenquellen",
-        "description": "Diese Version plant und simuliert; sie sendet keine Gerätebefehle. Der Prognose-Sensor liefert PV und Verbrauch als Viertelstunden. Bezugs- und Einspeisepreise können anschließend unabhängig gewählt werden. Optionale Leistungssensoren dienen nur der Zuordnung.",
+        "description": "Diese Version plant und simuliert; sie sendet keine Gerätebefehle. Der Prognose-Sensor liefert PV und Verbrauch als Viertelstunden. Bezugs- und Einspeisepreise können anschließend unabhängig gewählt werden. Optionale Leistungssensoren dienen nur der Zuordnung. Projektverwaltung benötigt keine Sensoren und öffnet keine Geräteverbindungen. Für die bisherige Simulation sind Prognose und SOC erforderlich.",
         "data": {
           "forecast_entity": "Viertelstunden-Prognose (Sensor mit slots-Attribut)",
           "soc_entity": "Aktueller Batterie-Ladezustand (%)",
           "grid_entity": "Netzleistung (optional, nur Zuordnung)",
           "pv_entity": "PV-Leistung (optional, nur Zuordnung)",
-          "load_entity": "Verbrauchsleistung (optional, nur Zuordnung)"
+          "load_entity": "Verbrauchsleistung (optional, nur Zuordnung)",
+          "project_only": "Nur Projektverwaltung (ohne Prognose und SOC)"
         }
       },
       "battery": {
@@ -122,7 +125,8 @@
     },
     "error": {
       "invalid_battery": "Bitte Speicherparameter prüfen.",
-      "invalid_prices": "Preisquelle, Einheit, Adresse und Zahlen prüfen."
+      "invalid_prices": "Preisquelle, Einheit, Adresse und Zahlen prüfen.",
+      "required_source": "Für die Simulation erforderlich; alternativ nur Projektverwaltung wählen."
     }
   },
   "entity": {
@@ -145,7 +149,8 @@
           "ready": "Plan berechnet",
           "missing_forecast": "Prognose fehlt",
           "invalid_input": "Eingaben prüfen",
-          "planning_error": "Berechnung fehlgeschlagen"
+          "planning_error": "Berechnung fehlgeschlagen",
+          "project_only": "Projektverwaltung – keine laufende Planung"
         }
       }
     }
@@ -160,6 +165,24 @@
           "description": "Zu berechnende Integrationsinstanz."
         }
       }
+    },
+    "import_project": {
+      "name": "Projekt importieren",
+      "description": "Prüft und speichert ein Projekt. Keine Geräteverbindung oder Steuerung. Ersetzt das bisherige Projekt nur bei gültigen Daten.",
+      "fields": {
+        "project_json": {
+          "name": "Projekt als JSON",
+          "description": "Exportiertes Projektformat Version 1, ohne Zugangsdaten."
+        }
+      }
+    },
+    "export_project": {
+      "name": "Projekt exportieren",
+      "description": "Gibt die gespeicherte Projektkonfiguration als JSON zurück; null falls leer. Keine Gerätebefehle."
+    },
+    "project_status": {
+      "name": "Projektstatus lesen",
+      "description": "Zeigt Projektzusammenfassung und Konfigurationshinweise, keine Livewerte."
     }
   },
   "selector": {

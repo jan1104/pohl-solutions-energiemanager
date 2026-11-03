@@ -35,6 +35,17 @@ V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberf
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
 
+### Implementierter Zwischenstand 0.3: erste testbare Projektverwaltung
+
+- [x] HA-unabhängiges Projektmodell mit getrennter elektrischer Topologie, Kommunikation und Messzuordnung; inklusive Gateway-Untergeräten und Batterie-WR-Beziehungen.
+- [x] Strikter JSON-Import/-Export, Primärquellen-/Netz-/Teilbaumprüfung, Geheimnisfeld-/Steuerfreigabeprüfung, atomarer CLI-Roundtrip.
+- [x] Offline-Projektansicht mit Vorlagen, drei Strukturansichten, Namenbearbeitung, Vorschau/Übernahme, Export und expliziter Browser-Speicherung.
+- [x] HA-Projektmodus ohne Prognose/SOC und persistente Import-/Export-/Statusaktionen. Browserseite weiterhin separat; kein integriertes HA-Panel.
+- [x] Anonymisiertes Referenzbeispiel und einfache Vorlage; tatsächliche Beispielnamen nur privat/lokales persönliches Testpaket.
+- [x] Lokal 132 Python-Tests plus 18 Untertests, JavaScript-Tests sowie Desktop-/Mobilprüfung erfolgreich. Echte HA-Laufzeitprüfung wird für diesen Stand über GitHub Actions ausgeführt.
+
+Testablauf: TESTING_0_3.md. Mehrgeräte-Konfiguration ist noch nicht an Optimierung angeschlossen. Treiber, Gerätesuche, vollständiger grafischer Assistent und Live-Steuerung sind nicht implementiert. Checklisten unten beschreiben auch darüber hinausgehende Abnahmekriterien.
+
 Grundlagen: [bestätigte Anforderungen und Fragen](REQUIREMENTS.md), [nachgewiesene Logikbefunde](LOGIC_REVIEW_2026-11-03.md). Zunächst Rechenfehler und Datenmodell bearbeiten. Offene Betriebsentscheidungen nicht stillschweigend durch Standardwerte ersetzen.
 
 Überarbeiteter Gesamtentwurf: [Navigation, Gerätehierarchie und Funktionsprüfung](NAVIGATION_AND_PRODUCT_DESIGN.md). Enthält Messkanal-/Phasenzuordnung, Batterien unter dem jeweiligen WR und sieben Hauptbereiche mit eindeutigen Einstellungsorten. Zielentwurf, kein Implementierungsnachweis.

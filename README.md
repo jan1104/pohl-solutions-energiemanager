@@ -19,6 +19,8 @@ Lokale, nachvollziehbare Energieplanung für Home Assistant und Node-RED.
 
 ## Schnell ansehen
 
+**Neu in 0.3:** `preview/project.html` öffnen, um ganze Projekte mit Geräten und Messzuordnungen zu prüfen, umzubenennen sowie zu exportieren/importieren. Referenzprojekt, Startvorlage und ein HA-Projektmodus ohne erforderliche Live-Sensoren sind implementiert. [Anleitung für den ersten Test](docs/TESTING_0_3.md). Noch keine Geräteanbindung oder gemeinsame Mehrspeicheroptimierung.
+
 `preview/index.html` im Browser öffnen. Die Vorschau benötigt keine Installation und keine Verbindung ins Internet. Sichtbare Demo-Zeitreihen sind synthetisch und keine echten SMARD-/Anlagendaten. Der Beispielrechner speichert keine Gerätebefehle.
 
 Einen tatsächlichen Szenarioplan erzeugen und anschließend in der Vorschau importieren:
@@ -47,7 +49,7 @@ docs/                   Architektur, Datenvertrag, Annahmen und nächste Schritt
 
 ## Home Assistant
 
-Der Integrationseintrag benötigt einen SOC-Sensor sowie einen Sensor mit einer vollständigen PV-/Lastprognosereihe im Attribut `slots`. Die Daten können zunächst von Node-RED bereitgestellt werden. Die Preise können in dieser Reihe stehen oder getrennt ausgewählt werden. Siehe [Datenvertrag](docs/DATA_CONTRACT.md) und [Preisquellen](docs/PRICE_SOURCES.md).
+Für reine Projektverwaltung beim Einrichten den Projektmodus wählen; Prognose/SOC sind dann nicht erforderlich. Import/Export erfolgen über HA-Aktionen und das Projektformat. Der bisherige Simulationsmodus benötigt einen SOC-Sensor sowie einen Sensor mit vollständiger PV-/Lastprognosereihe im Attribut `slots`. Die Daten können zunächst von Node-RED bereitgestellt werden. Die Preise können in dieser Reihe stehen oder getrennt ausgewählt werden. Siehe [Testanleitung](docs/TESTING_0_3.md), [Datenvertrag](docs/DATA_CONTRACT.md) und [Preisquellen](docs/PRICE_SOURCES.md).
 
 Zur Entwicklung den Ordner `custom_components/pohl_solutions_energiemanager` in das entsprechende `custom_components`-Verzeichnis einer **Testinstanz** kopieren, HA neu starten und unter Geräte & Dienste hinzufügen. Alternativ das private GitHub-Repository in HACS als benutzerdefiniertes Integrationsrepository hinzufügen, wenn der eigene HACS-Zugriff private Repositories unterstützt. Keine Aufnahme in einen öffentlichen Katalog behauptet.
 

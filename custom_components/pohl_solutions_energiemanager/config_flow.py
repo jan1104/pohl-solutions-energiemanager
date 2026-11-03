@@ -17,10 +17,10 @@ def _source_schema(values: dict[str, Any], include_name: bool = False) -> vol.Sc
     fields: dict[Any, Any] = {}
     if include_name:
         fields[vol.Required(CONF_NAME, default=values.get(CONF_NAME, NAME))] = str
+    fields[vol.Optional("project_only", default=values.get("project_only", False))] = selector.BooleanSelector()
     for key in SOURCE_KEYS:
-        marker = vol.Required if key in ("forecast_entity", "soc_entity") else vol.Optional
         args = {"default": values[key]} if values.get(key) else {}
-        fields[marker(key, **args)] = selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor"))
+        fields[vol.Optional(key, **args)] = selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor"))
     return vol.Schema(fields)
 
 
@@ -86,10 +86,17 @@ class PohlSolutionsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None):
         """Choose the explicit forecast and live state sources."""
+        errors = {}
         if user_input is not None:
-            self._sources = user_input
-            return await self.async_step_prices()
-        return self.async_show_form(step_id="user", data_schema=_source_schema({}, True))
+            if user_input.get("project_only", False):
+                return self.async_create_entry(title=user_input[CONF_NAME], data={CONF_NAME: user_input[CONF_NAME], "project_only": True})
+            for key in ("forecast_entity", "soc_entity"):
+                if not user_input.get(key):
+                    errors[key] = "required_source"
+            if not errors:
+                self._sources = {**user_input, "project_only": False}
+                return await self.async_step_prices()
+        return self.async_show_form(step_id="user", data_schema=_source_schema(user_input or {}, True), errors=errors)
 
     async def async_step_prices(self, user_input: dict[str, Any] | None = None):
         if user_input is not None:
@@ -138,11 +145,19 @@ class PohlSolutionsOptionsFlow(config_entries.OptionsFlowWithReload):
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None):
         values = {**self.config_entry.data, **self.config_entry.options}
+        errors = {}
         if user_input is not None:
+            if user_input.get("project_only", False):
+                return self.async_create_entry(title="", data={"project_only": True})
+            for key in ("forecast_entity", "soc_entity"):
+                if not user_input.get(key):
+                    errors[key] = "required_source"
             # Empty optional selections intentionally remove earlier selections.
-            self._sources = {key: user_input.get(key) for key in SOURCE_KEYS}
-            return await self.async_step_prices()
-        return self.async_show_form(step_id="init", data_schema=_source_schema(values))
+            if not errors:
+                self._sources = {key: user_input.get(key) for key in SOURCE_KEYS}
+                self._sources["project_only"] = False
+                return await self.async_step_prices()
+        return self.async_show_form(step_id="init", data_schema=_source_schema(user_input if user_input is not None else values), errors=errors)
 
     async def async_step_prices(self, user_input: dict[str, Any] | None = None):
         values = {**self.config_entry.data, **self.config_entry.options}

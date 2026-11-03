@@ -28,6 +28,11 @@ class PohlEnergyCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def _async_update_data(self) -> dict[str, Any]:
         values = {**self.entry.data, **self.entry.options}
+        if values.get("project_only", False):
+            return {
+                "status": "project_only", "valid": False, "planning_only": True,
+                "error": None, "slots": [],
+            }
         source = self.hass.states.get(values["forecast_entity"])
         if source is None or source.state in ("unknown", "unavailable"):
             return self._invalid("missing_forecast", "Forecast source is missing or unavailable")

@@ -1,4 +1,6 @@
-# Lokale Oberfläche · v0.2.0
+# Lokale Oberfläche · v0.3.0
+
+Neu: `project.html` ist eine ausführbare lokale Projektverwaltung mit elektrischer Topologie, Kommunikationswegen und Messquellen sowie Importvorschau/-Export und Namensbearbeitung. Start-/Referenzbeispiel können ohne Server geladen werden. Noch kein grafischer Geräteassistent und keine Geräteanbindung. Details: [Erster Test 0.3](../docs/TESTING_0_3.md).
 
 `index.html` direkt in einem aktuellen Browser öffnen. Keine Installation und kein Netzwerkzugang erforderlich.
 

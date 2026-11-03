@@ -4,14 +4,15 @@
     "step": {
       "user": {
         "title": "Data sources",
-        "description": "This version plans and simulates; it sends no device commands. The forecast sensor supplies quarter-hour PV and load. Import and export prices can be selected independently next. Optional power sensors are mappings only.",
+        "description": "This version plans and simulates; it sends no device commands. The forecast sensor supplies quarter-hour PV and load. Import and export prices can be selected independently next. Optional power sensors are mappings only. Project management requires no sensors and opens no device connections. Forecast and SOC are required for the existing simulation.",
         "data": {
           "name": "System name",
           "forecast_entity": "Quarter-hour forecast (sensor with slots attribute)",
           "soc_entity": "Current battery state of charge (%)",
           "grid_entity": "Grid power (optional, mapping only)",
           "pv_entity": "PV power (optional, mapping only)",
-          "load_entity": "Load power (optional, mapping only)"
+          "load_entity": "Load power (optional, mapping only)",
+          "project_only": "Project management only (without forecast or SOC)"
         }
       },
       "battery": {
@@ -60,20 +61,22 @@
     },
     "error": {
       "invalid_battery": "Check SOC limits, power, efficiencies and calculation step.",
-      "invalid_prices": "Check price source, unit, address and numbers."
+      "invalid_prices": "Check price source, unit, address and numbers.",
+      "required_source": "Required for simulation; alternatively select project management only."
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "Data sources",
-        "description": "This version plans and simulates; it sends no device commands. The forecast sensor supplies quarter-hour PV and load. Import and export prices can be selected independently next. Optional power sensors are mappings only.",
+        "description": "This version plans and simulates; it sends no device commands. The forecast sensor supplies quarter-hour PV and load. Import and export prices can be selected independently next. Optional power sensors are mappings only. Project management requires no sensors and opens no device connections. Forecast and SOC are required for the existing simulation.",
         "data": {
           "forecast_entity": "Quarter-hour forecast (sensor with slots attribute)",
           "soc_entity": "Current battery state of charge (%)",
           "grid_entity": "Grid power (optional, mapping only)",
           "pv_entity": "PV power (optional, mapping only)",
-          "load_entity": "Load power (optional, mapping only)"
+          "load_entity": "Load power (optional, mapping only)",
+          "project_only": "Project management only (without forecast or SOC)"
         }
       },
       "battery": {
@@ -122,7 +125,8 @@
     },
     "error": {
       "invalid_battery": "Check battery parameters.",
-      "invalid_prices": "Check price source, unit, address and numbers."
+      "invalid_prices": "Check price source, unit, address and numbers.",
+      "required_source": "Required for simulation; alternatively select project management only."
     }
   },
   "entity": {
@@ -145,7 +149,8 @@
           "ready": "Plan ready",
           "missing_forecast": "Forecast missing",
           "invalid_input": "Check inputs",
-          "planning_error": "Planning failed"
+          "planning_error": "Planning failed",
+          "project_only": "Project management – no running plan"
         }
       }
     }
@@ -160,6 +165,24 @@
           "description": "Integration instance to calculate."
         }
       }
+    },
+    "import_project": {
+      "name": "Import project",
+      "description": "Validate and save a project without device connections or control. Replace the active project only after validation.",
+      "fields": {
+        "project_json": {
+          "name": "Project JSON",
+          "description": "Exported project format version 1, without credentials."
+        }
+      }
+    },
+    "export_project": {
+      "name": "Export project",
+      "description": "Return the stored project as JSON, or null when empty. No device commands."
+    },
+    "project_status": {
+      "name": "Read project status",
+      "description": "Return the project summary and configuration warnings, not live measurements."
     }
   },
   "selector": {

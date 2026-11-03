@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.3.0 — 2026-11-03
+
+- Ausführbares Projektformat mit getrennten Netzanschlüssen, Bereichen, elektrischen Zweigen, Verbindungen, Geräten, Batterien und Messzuordnungen.
+- Validierter JSON-Import/-Export, stabile Beziehungen, Kreis-/Doppelzählungs-/Quellnetzprüfung und anonyme Referenz-/Startvorlagen.
+- Lokale Projektoberfläche mit drei Strukturansichten, Namenbearbeitung, Bereichsfilter, Importvorschau, Editor und expliziter Browser-Speicherung.
+- HA-Projektmodus ohne Prognose-/SOC-Zwang, persistentes Projekt sowie Import-/Export-/Statusaktionen; keine Geräteverbindungen oder Aktorbefehle.
+- Python-/Browser-Vertragsprüfungen, atomarer CLI-Roundtrip und erweiterter echter HA-Test für Speicherung und Fehlerfälle.
+- Projektkonfiguration noch nicht an Mehrspeicheroptimierung oder einen vollständigen grafischen Geräteassistenten angeschlossen. Testablauf: docs/TESTING_0_3.md.
+
 ## 0.2.0 — 2026-11-03
 
 - Unabhängige Preisquellen für Bezug und Einspeisung: Prognose, HA-Sensor, JSON-URL, Festpreis und experimenteller SMARD-Adapter.

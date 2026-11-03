@@ -15,7 +15,7 @@ from .const import DOMAIN, NAME, VERSION
 from .coordinator import PohlEnergyCoordinator
 
 DESCRIPTIONS = (
-    SensorEntityDescription(key="status", translation_key="status", device_class=SensorDeviceClass.ENUM, options=["ready", "missing_forecast", "invalid_input", "planning_error"]),
+    SensorEntityDescription(key="status", translation_key="status", device_class=SensorDeviceClass.ENUM, options=["ready", "project_only", "missing_forecast", "invalid_input", "planning_error"]),
     SensorEntityDescription(key="schedule", translation_key="schedule", icon="mdi:calendar-clock"),
     SensorEntityDescription(key="current_power", translation_key="current_power", device_class=SensorDeviceClass.POWER, native_unit_of_measurement=UnitOfPower.KILO_WATT),
     SensorEntityDescription(key="next_power", translation_key="next_power", device_class=SensorDeviceClass.POWER, native_unit_of_measurement=UnitOfPower.KILO_WATT),

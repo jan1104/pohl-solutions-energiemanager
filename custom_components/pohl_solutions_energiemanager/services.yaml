@@ -6,3 +6,12 @@ replan:
       selector:
         config_entry:
           integration: pohl_solutions_energiemanager
+import_project:
+  fields:
+    project_json:
+      required: true
+      selector:
+        text:
+          multiline: true
+export_project: {}
+project_status: {}

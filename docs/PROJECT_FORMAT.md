@@ -1,6 +1,6 @@
 # Projekte und vollständiger Konfigurationstransfer
 
-Stand: 03.11.2026. Bestätigte Anforderung mit technischem Entwurf; Export/Import ist noch nicht implementiert.
+Stand: 03.11.2026. Export/Import für Projektformat 1 ist mit Version 0.3 implementiert; siehe PROJECT_SCHEMA_V1.md und TESTING_0_3.md. Weitergehende Funktionen dieses Entwurfs (z.B. Migration zukünftiger Versionen, verschlüsselte Vollsicherung, Konfliktzusammenführung) sind noch offen. Der erste Stand ersetzt nach Prüfung ein Projekt; keine automatischen Gerätezugriffe.
 
 ## Umfang
 
