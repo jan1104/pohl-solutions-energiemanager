@@ -13,6 +13,8 @@ from .const import BATTERY_DEFAULTS, EVENT_PLAN_UPDATED, NAME
 from .core.models import BatteryConfig, ForecastSlot
 from .core.optimizer import optimize
 from .input_validation import finite_number, parse_forecast_rows, validate_battery_settings
+from .price_sources import PriceSourceLoader, price_config_from_values
+from .pricing import apply_price_sources
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,7 +37,32 @@ class PohlEnergyCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             updated = getattr(source, "last_reported", source.last_updated).astimezone(timezone.utc)
             if now - updated > timedelta(hours=24):
                 raise ValueError("Forecast source has not been updated within 24 hours")
-            rows = parse_forecast_rows(source.attributes.get("slots"), now)
+            import_config = price_config_from_values(values, "import")
+            export_config = price_config_from_values(values, "export")
+            raw_rows = source.attributes.get("slots")
+            if not isinstance(raw_rows, list):
+                raise ValueError("Forecast must provide a slots list")
+            structural_rows = []
+            for raw_row in raw_rows:
+                if not isinstance(raw_row, dict):
+                    raise ValueError("Forecast slots must be objects")
+                row = dict(raw_row)
+                # These placeholders validate only shape/timing. They are always
+                # replaced before optimization; missing forecast-mode prices fail.
+                if import_config["mode"] != "forecast":
+                    row["import_price_eur_kwh"] = 0.0
+                if export_config["mode"] != "forecast":
+                    row["export_price_eur_kwh"] = 0.0
+                structural_rows.append(row)
+            rows = parse_forecast_rows(structural_rows, now)
+            loader = PriceSourceLoader(self.hass)
+            import_periods = await loader.periods(import_config, rows, now)
+            export_periods = await loader.periods(export_config, rows, now)
+            # HTTP may cross a quarter-hour boundary. Align the remaining horizon
+            # with a fresh SOC snapshot after fetching, never with the old clock.
+            now = datetime.now(timezone.utc)
+            rows = parse_forecast_rows(structural_rows, now)
+            rows = apply_price_sources(rows, import_periods, export_periods, import_config, export_config)
             soc_state = self.hass.states.get(values["soc_entity"])
             if soc_state is None or soc_state.state in ("unknown", "unavailable"):
                 raise ValueError("Battery SOC source is missing or unavailable")
@@ -66,8 +93,14 @@ class PohlEnergyCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "total_cost_eur": plan.total_cost_eur, "baseline_cost_eur": plan.baseline_cost_eur,
             "savings_eur": plan.savings_eur, "assumptions": plan.assumptions,
             "slots": serialized, "error": None,
+            "price_sources": {
+                side: {key: cfg.get(key) for key in ("mode", "unit", "multiplier", "adder_eur_kwh")}
+                for side, cfg in (("import", import_config), ("export", export_config))
+            },
             "source_entities": {key: values.get(key) for key in ("forecast_entity", "soc_entity", "grid_entity", "pv_entity", "load_entity")},
         }
+        if "smard" in (import_config["mode"], export_config["mode"]):
+            result["price_attribution"] = "Bundesnetzagentur | SMARD.de (experimental data adapter)"
         self.hass.bus.async_fire(EVENT_PLAN_UPDATED, {"entry_id": self.entry.entry_id, "planning_only": True, "generated_at": result["generated_at"]})
         return result
 

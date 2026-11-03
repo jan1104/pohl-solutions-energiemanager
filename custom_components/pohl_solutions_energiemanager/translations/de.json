@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "Datenquellen",
-        "description": "Diese Version berechnet ausschließlich Vorschläge und sendet keine Gerätebefehle. Der Prognose-Sensor muss zukünftige Viertelstunden für PV, Verbrauch sowie Bezugs- und Einspeisepreise liefern. Optionale Leistungssensoren dienen nur der dokumentierten Zuordnung und verändern den Plan noch nicht.",
+        "description": "Diese Version plant und simuliert; sie sendet keine Gerätebefehle. Der Prognose-Sensor liefert PV und Verbrauch als Viertelstunden. Bezugs- und Einspeisepreise können anschließend unabhängig gewählt werden. Optionale Leistungssensoren dienen nur der Zuordnung.",
         "data": {
           "name": "Name der Anlage",
           "forecast_entity": "Viertelstunden-Prognose (Sensor mit slots-Attribut)",
@@ -30,17 +30,44 @@
           "allow_battery_export": "Batterieeinspeisung in der Simulation erlauben",
           "soc_step_kwh": "Rechenschritt des Ladezustands (kWh)"
         }
+      },
+      "prices": {
+        "title": "Preisquellen auswählen",
+        "description": "Bezug und Einspeisung sind getrennte Tarife. Vorhandene Prognosepreise bleiben der Standard. SMARD: experimenteller DE/LU-Datenadapter, kein fertiger Endkundentarif; Verfügbarkeit und Nutzungsbedingungen prüfen.",
+        "data": {
+          "import_price_mode": "Bezug: Preisquelle",
+          "export_price_mode": "Einspeisung: Preisquelle"
+        }
+      },
+      "price_details": {
+        "title": "Preise und Vertragsbestandteile",
+        "description": "Endpreis = umgerechneter Quellpreis × Faktor + Aufschlag in EUR/kWh. Bereits vollständige Preise: Faktor 1, Aufschlag 0. Beispiele: 100 EUR/MWh = 0,10 EUR/kWh; 10 ct/kWh = 0,10 EUR/kWh. URL und Sensor benötigen prices-Einträge mit start, duration_hours oder end und value; keine HTML-Seiten oder Zugangsdaten. Fehlende Werte werden nicht ersetzt.",
+        "data": {
+          "import_price_entity": "Bezug: Sensor mit prices-Attribut",
+          "import_price_url": "Bezug: JSON-API-Adresse (keine Webseite)",
+          "import_price_unit": "Bezug: Einheit der Quelldaten",
+          "import_fixed_price": "Bezug: Fester Preis in gewählter Einheit",
+          "import_price_multiplier": "Bezug: Preisfaktor",
+          "import_price_adder_eur_kwh": "Bezug: Aufschlag/Abzug in EUR/kWh",
+          "export_price_entity": "Einspeisung: Sensor mit prices-Attribut",
+          "export_price_url": "Einspeisung: JSON-API-Adresse (keine Webseite)",
+          "export_price_unit": "Einspeisung: Einheit der Quelldaten",
+          "export_fixed_price": "Einspeisung: Fester Preis in gewählter Einheit",
+          "export_price_multiplier": "Einspeisung: Preisfaktor",
+          "export_price_adder_eur_kwh": "Einspeisung: Aufschlag/Abzug in EUR/kWh"
+        }
       }
     },
     "error": {
-      "invalid_battery": "Bitte SOC-Grenzen, Leistungen, Wirkungsgrade und Rechenschritt prüfen."
+      "invalid_battery": "Bitte SOC-Grenzen, Leistungen, Wirkungsgrade und Rechenschritt prüfen.",
+      "invalid_prices": "Preisquelle, Einheit, Adresse und Zahlen prüfen."
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "Datenquellen",
-        "description": "Diese Version berechnet ausschließlich Vorschläge und sendet keine Gerätebefehle. Der Prognose-Sensor muss zukünftige Viertelstunden für PV, Verbrauch sowie Bezugs- und Einspeisepreise liefern. Optionale Leistungssensoren dienen nur der dokumentierten Zuordnung und verändern den Plan noch nicht.",
+        "description": "Diese Version plant und simuliert; sie sendet keine Gerätebefehle. Der Prognose-Sensor liefert PV und Verbrauch als Viertelstunden. Bezugs- und Einspeisepreise können anschließend unabhängig gewählt werden. Optionale Leistungssensoren dienen nur der Zuordnung.",
         "data": {
           "forecast_entity": "Viertelstunden-Prognose (Sensor mit slots-Attribut)",
           "soc_entity": "Aktueller Batterie-Ladezustand (%)",
@@ -65,10 +92,37 @@
           "allow_battery_export": "Batterieeinspeisung in der Simulation erlauben",
           "soc_step_kwh": "Rechenschritt des Ladezustands (kWh)"
         }
+      },
+      "prices": {
+        "title": "Preisquellen auswählen",
+        "description": "Bezug und Einspeisung sind getrennte Tarife. Vorhandene Prognosepreise bleiben der Standard. SMARD: experimenteller DE/LU-Datenadapter, kein fertiger Endkundentarif; Verfügbarkeit und Nutzungsbedingungen prüfen.",
+        "data": {
+          "import_price_mode": "Bezug: Preisquelle",
+          "export_price_mode": "Einspeisung: Preisquelle"
+        }
+      },
+      "price_details": {
+        "title": "Preise und Vertragsbestandteile",
+        "description": "Endpreis = umgerechneter Quellpreis × Faktor + Aufschlag in EUR/kWh. Bereits vollständige Preise: Faktor 1, Aufschlag 0. Beispiele: 100 EUR/MWh = 0,10 EUR/kWh; 10 ct/kWh = 0,10 EUR/kWh. URL und Sensor benötigen prices-Einträge mit start, duration_hours oder end und value; keine HTML-Seiten oder Zugangsdaten. Fehlende Werte werden nicht ersetzt.",
+        "data": {
+          "import_price_entity": "Bezug: Sensor mit prices-Attribut",
+          "import_price_url": "Bezug: JSON-API-Adresse (keine Webseite)",
+          "import_price_unit": "Bezug: Einheit der Quelldaten",
+          "import_fixed_price": "Bezug: Fester Preis in gewählter Einheit",
+          "import_price_multiplier": "Bezug: Preisfaktor",
+          "import_price_adder_eur_kwh": "Bezug: Aufschlag/Abzug in EUR/kWh",
+          "export_price_entity": "Einspeisung: Sensor mit prices-Attribut",
+          "export_price_url": "Einspeisung: JSON-API-Adresse (keine Webseite)",
+          "export_price_unit": "Einspeisung: Einheit der Quelldaten",
+          "export_fixed_price": "Einspeisung: Fester Preis in gewählter Einheit",
+          "export_price_multiplier": "Einspeisung: Preisfaktor",
+          "export_price_adder_eur_kwh": "Einspeisung: Aufschlag/Abzug in EUR/kWh"
+        }
       }
     },
     "error": {
-      "invalid_battery": "Bitte Speicherparameter prüfen."
+      "invalid_battery": "Bitte Speicherparameter prüfen.",
+      "invalid_prices": "Preisquelle, Einheit, Adresse und Zahlen prüfen."
     }
   },
   "entity": {
@@ -105,6 +159,24 @@
           "name": "Anlage",
           "description": "Zu berechnende Integrationsinstanz."
         }
+      }
+    }
+  },
+  "selector": {
+    "price_mode": {
+      "options": {
+        "forecast": "Aus Prognose-Sensor",
+        "entity": "Home-Assistant-Sensor",
+        "url": "Eigene JSON-API-Adresse",
+        "fixed": "Fester Preis",
+        "smard": "SMARD DE/LU (experimentell)"
+      }
+    },
+    "price_unit": {
+      "options": {
+        "eur_kwh": "EUR/kWh",
+        "ct_kwh": "ct/kWh",
+        "eur_mwh": "EUR/MWh"
       }
     }
   }

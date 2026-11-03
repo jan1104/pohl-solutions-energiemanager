@@ -70,5 +70,5 @@ class PohlEnergySensor(CoordinatorEntity[PohlEnergyCoordinator], SensorEntity):
         if self.entity_description.key == "status":
             return {"planning_only": True, "valid": data.get("valid", False), "error": data.get("error"), "source_entities": data.get("source_entities", {})}
         if self.entity_description.key == "schedule":
-            return {key: data.get(key) for key in ("planning_only", "generated_at", "total_cost_eur", "baseline_cost_eur", "assumptions", "slots")}
+            return {key: data.get(key) for key in ("planning_only", "generated_at", "total_cost_eur", "baseline_cost_eur", "assumptions", "slots", "price_sources", "price_attribution")}
         return {"planning_only": True}

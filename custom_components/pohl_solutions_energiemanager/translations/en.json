@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "Data sources",
-        "description": "This version calculates proposals only and sends no device commands. The forecast sensor must provide future quarter-hour PV, load, import and export prices. Optional power sensors are documented mappings only; they do not change the plan yet.",
+        "description": "This version plans and simulates; it sends no device commands. The forecast sensor supplies quarter-hour PV and load. Import and export prices can be selected independently next. Optional power sensors are mappings only.",
         "data": {
           "name": "System name",
           "forecast_entity": "Quarter-hour forecast (sensor with slots attribute)",
@@ -30,17 +30,44 @@
           "allow_battery_export": "Allow battery export in the simulation",
           "soc_step_kwh": "SOC calculation step (kWh)"
         }
+      },
+      "prices": {
+        "title": "Select price sources",
+        "description": "Import and export are separate tariffs. Existing forecast prices remain the default. SMARD is an experimental DE/LU data adapter, not a complete retail tariff; check availability and terms of use.",
+        "data": {
+          "import_price_mode": "Import: price source",
+          "export_price_mode": "Export: price source"
+        }
+      },
+      "price_details": {
+        "title": "Prices and tariff components",
+        "description": "Final price = converted source price × multiplier + adder in EUR/kWh. For complete prices use multiplier 1 and adder 0. Examples: 100 EUR/MWh = 0.10 EUR/kWh; 10 ct/kWh = 0.10 EUR/kWh. URL and entity sources need prices rows with start, duration_hours or end, and value; no HTML pages or credentials. Missing values are not filled.",
+        "data": {
+          "import_price_entity": "Import: sensor with prices attribute",
+          "import_price_url": "Import: JSON API URL (not a web page)",
+          "import_price_unit": "Import: source unit",
+          "import_fixed_price": "Import: fixed price in selected unit",
+          "import_price_multiplier": "Import: price multiplier",
+          "import_price_adder_eur_kwh": "Import: adder/deduction in EUR/kWh",
+          "export_price_entity": "Export: sensor with prices attribute",
+          "export_price_url": "Export: JSON API URL (not a web page)",
+          "export_price_unit": "Export: source unit",
+          "export_fixed_price": "Export: fixed price in selected unit",
+          "export_price_multiplier": "Export: price multiplier",
+          "export_price_adder_eur_kwh": "Export: adder/deduction in EUR/kWh"
+        }
       }
     },
     "error": {
-      "invalid_battery": "Check SOC limits, power, efficiencies and calculation step."
+      "invalid_battery": "Check SOC limits, power, efficiencies and calculation step.",
+      "invalid_prices": "Check price source, unit, address and numbers."
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "Data sources",
-        "description": "This version calculates proposals only and sends no device commands. The forecast sensor must provide future quarter-hour PV, load, import and export prices. Optional power sensors are documented mappings only; they do not change the plan yet.",
+        "description": "This version plans and simulates; it sends no device commands. The forecast sensor supplies quarter-hour PV and load. Import and export prices can be selected independently next. Optional power sensors are mappings only.",
         "data": {
           "forecast_entity": "Quarter-hour forecast (sensor with slots attribute)",
           "soc_entity": "Current battery state of charge (%)",
@@ -65,10 +92,37 @@
           "allow_battery_export": "Allow battery export in the simulation",
           "soc_step_kwh": "SOC calculation step (kWh)"
         }
+      },
+      "prices": {
+        "title": "Select price sources",
+        "description": "Import and export are separate tariffs. Existing forecast prices remain the default. SMARD is an experimental DE/LU data adapter, not a complete retail tariff; check availability and terms of use.",
+        "data": {
+          "import_price_mode": "Import: price source",
+          "export_price_mode": "Export: price source"
+        }
+      },
+      "price_details": {
+        "title": "Prices and tariff components",
+        "description": "Final price = converted source price × multiplier + adder in EUR/kWh. For complete prices use multiplier 1 and adder 0. Examples: 100 EUR/MWh = 0.10 EUR/kWh; 10 ct/kWh = 0.10 EUR/kWh. URL and entity sources need prices rows with start, duration_hours or end, and value; no HTML pages or credentials. Missing values are not filled.",
+        "data": {
+          "import_price_entity": "Import: sensor with prices attribute",
+          "import_price_url": "Import: JSON API URL (not a web page)",
+          "import_price_unit": "Import: source unit",
+          "import_fixed_price": "Import: fixed price in selected unit",
+          "import_price_multiplier": "Import: price multiplier",
+          "import_price_adder_eur_kwh": "Import: adder/deduction in EUR/kWh",
+          "export_price_entity": "Export: sensor with prices attribute",
+          "export_price_url": "Export: JSON API URL (not a web page)",
+          "export_price_unit": "Export: source unit",
+          "export_fixed_price": "Export: fixed price in selected unit",
+          "export_price_multiplier": "Export: price multiplier",
+          "export_price_adder_eur_kwh": "Export: adder/deduction in EUR/kWh"
+        }
       }
     },
     "error": {
-      "invalid_battery": "Check battery parameters."
+      "invalid_battery": "Check battery parameters.",
+      "invalid_prices": "Check price source, unit, address and numbers."
     }
   },
   "entity": {
@@ -105,6 +159,24 @@
           "name": "System",
           "description": "Integration instance to calculate."
         }
+      }
+    }
+  },
+  "selector": {
+    "price_mode": {
+      "options": {
+        "forecast": "From forecast sensor",
+        "entity": "Home Assistant sensor",
+        "url": "Custom JSON API URL",
+        "fixed": "Fixed price",
+        "smard": "SMARD DE/LU (experimental)"
+      }
+    },
+    "price_unit": {
+      "options": {
+        "eur_kwh": "EUR/kWh",
+        "ct_kwh": "ct/kWh",
+        "eur_mwh": "EUR/MWh"
       }
     }
   }

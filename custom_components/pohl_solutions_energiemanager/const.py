@@ -2,7 +2,7 @@
 
 DOMAIN = "pohl_solutions_energiemanager"
 NAME = "Pohl Solutions Energiemanager"
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 EVENT_PLAN_UPDATED = f"{DOMAIN}_plan_updated"
 SERVICE_REPLAN = "replan"
 CONF_FORECAST_ENTITY = "forecast_entity"
@@ -11,6 +11,8 @@ CONF_GRID_ENTITY = "grid_entity"
 CONF_PV_ENTITY = "pv_entity"
 CONF_LOAD_ENTITY = "load_entity"
 SOURCE_KEYS = (CONF_FORECAST_ENTITY, CONF_SOC_ENTITY, CONF_GRID_ENTITY, CONF_PV_ENTITY, CONF_LOAD_ENTITY)
+PRICE_MODES = ("forecast", "entity", "url", "fixed", "smard")
+PRICE_UNITS = ("eur_kwh", "ct_kwh", "eur_mwh")
 BATTERY_DEFAULTS = {
     "capacity_kwh": 200.704,
     "min_soc_pct": 10.0,
