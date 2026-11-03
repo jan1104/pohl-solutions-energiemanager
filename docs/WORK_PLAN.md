@@ -39,6 +39,8 @@ Grundlagen: [bestätigte Anforderungen und Fragen](REQUIREMENTS.md), [nachgewies
 
 Überarbeiteter Gesamtentwurf: [Navigation, Gerätehierarchie und Funktionsprüfung](NAVIGATION_AND_PRODUCT_DESIGN.md). Enthält Messkanal-/Phasenzuordnung, Batterien unter dem jeweiligen WR und sieben Hauptbereiche mit eindeutigen Einstellungsorten. Zielentwurf, kein Implementierungsnachweis.
 
+Ergebnis der angeforderten parallelen Protokollprüfung: [Geräte-/Transportberichte und nächste Adapterschritte](protocols/README.md). Janitza-Gatewayfunktion und Plexlog-Vorgaberückmeldungen dokumentiert; installierte Parameter/Firmware und Regelzuständigkeiten bleiben zu erfassen. Keine Gerätekonfiguration geändert.
+
 ### 1. Rechenkern und wirtschaftliche Ziele
 
 - [ ] Mehrere Solis/Bluesun-Speicher-Wechselrichter bereits im ersten nutzbaren Umfang gemeinsam optimieren: eigene SOCs, Wirkungsgrade, Reserven und Grenzen; gemeinsame Bilanz ohne Doppelzählung.
@@ -125,6 +127,8 @@ Abnahme: Lastsprung und Preisänderung werden in Replay erkannt; kurze Schwankun
 - [ ] Rolle Plexlog/Node-RED/Solis klären; ein Sollwertgeber je Aktor, ein Master je RTU-Bus.
 - [ ] Plexlog-Adapter zunächst lesend: OpenGateway-Version, Firmware, Gerätezuordnung und dokumentierte Messwerte prüfen; Vorzeichen normalisieren und doppelte Gateway-/Direktmessungen vermeiden.
 - [ ] Maschinenlesbarkeit aktiver Direktvermarkter-/Netzbetreibervorgaben separat belegen. UI-Diagnose und Messregister nicht mit einer Sollwertschnittstelle gleichsetzen; unbekannte Vorgabe nicht als unbegrenzt behandeln.
+- [x] Dokumentennachweis: Janitza 604-PRO als Gateway zu 103-CBM; Plexlog ThirdPartyClient mit lesbaren Vorgaberückmeldungen. Details unter docs/protocols/. Keine technische Prüfung an Geräten erfolgt.
+- [ ] Janitza-Gateway mit gemeinsamen Verbindungsressourcen und einzelnen Zieladressen modellieren. Nutzer bestätigt 103er am 604-PRO; aktive Parameter später lesend erfassen, nicht pauschal umstellen.
 - [ ] Externe Wirk-/Blindleistungsvorgaben mit Bezugsgröße, Herkunft, Gültigkeit und Regelzuständigkeit in Planung/Anzeige integrieren; bestehende Anlagenregelung nicht überschreiben und Wirkleistungsreserven bei Blindleistung gerätespezifisch berücksichtigen.
 - [ ] Modell-/Firmwareabhängige Solis/BSE-Schnittstelle belegen; Register nicht aus Umlabelung ableiten.
 - [ ] Simulierten Node-RED-Vertrag mit Einheiten, Gültigkeit, Quittierung, Planversion und Wiederholungsverhalten festlegen.
