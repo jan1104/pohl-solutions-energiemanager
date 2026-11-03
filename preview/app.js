@@ -9,6 +9,53 @@ const PohlPreview = (() => {
   const time = (value) => new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
   const date = (value) => new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value));
   const euro = (value) => new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(value);
+  const PRICE_MODES = Object.freeze({ forecast: "Im Prognosedatensatz enthalten", entity: "Home-Assistant-Entität", url: "JSON-API-URL", fixed: "Fester Tarif", smard: "SMARD · Deutschland/Luxemburg" });
+  const PRICE_UNITS = Object.freeze({ eur_kwh: "EUR/kWh", ct_kwh: "ct/kWh", eur_mwh: "EUR/MWh" });
+  const PRICE_DEFAULTS = Object.freeze(Object.fromEntries(["import", "export"].flatMap((p) => [
+    [`${p}_price_mode`, "forecast"], [`${p}_price_entity`, ""], [`${p}_price_url`, ""], [`${p}_price_unit`, "eur_kwh"],
+    [`${p}_fixed_price`, 0], [`${p}_price_multiplier`, 1], [`${p}_price_adder_eur_kwh`, 0]
+  ])));
+
+  function validatePriceConfig(input) {
+    if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("Ungültige Preisquellen-Konfiguration.");
+    const result = {};
+    for (const prefix of ["import", "export"]) {
+      const label = prefix === "import" ? "Bezug" : "Einspeisung";
+      const key = (name) => `${prefix}_${name}`;
+      const mode = input[key("price_mode")];
+      if (!Object.hasOwn(PRICE_MODES, mode)) throw new Error(`${label}: Bitte eine gültige Preisquelle wählen.`);
+      const rawUnit = input[key("price_unit")];
+      if (!Object.hasOwn(PRICE_UNITS, rawUnit)) throw new Error(`${label}: Bitte eine gültige Quellen-Einheit wählen.`);
+      result[key("price_mode")] = mode;
+      result[key("price_unit")] = mode === "smard" ? "eur_mwh" : mode === "forecast" ? "eur_kwh" : rawUnit;
+      const entity = typeof input[key("price_entity")] === "string" ? input[key("price_entity")].trim() : "";
+      const url = typeof input[key("price_url")] === "string" ? input[key("price_url")].trim() : "";
+      if (mode === "entity" && !/^[a-z_][a-z0-9_]*\.[a-z0-9_]+$/.test(entity)) throw new Error(`${label}: Eine gültige HA-Entität angeben, zum Beispiel sensor.strompreis_prognose.`);
+      if (mode === "url") {
+        let parsed;
+        try { parsed = new URL(url); } catch { throw new Error(`${label}: Eine vollständige JSON-API-URL mit http:// oder https:// angeben.`); }
+        if (!["http:", "https:"].includes(parsed.protocol) || !parsed.hostname || parsed.username || parsed.password) throw new Error(`${label}: Erlaubt sind HTTP-/HTTPS-URLs ohne eingebettete Zugangsdaten.`);
+      }
+      result[key("price_entity")] = mode === "entity" ? entity : "";
+      result[key("price_url")] = mode === "url" ? url : "";
+      for (const suffix of ["fixed_price", "price_multiplier", "price_adder_eur_kwh"]) {
+        const raw = input[key(suffix)];
+        if (raw === "" || typeof raw === "string" && raw.trim() === "" || raw === null || typeof raw === "boolean" || !["string", "number"].includes(typeof raw) || !Number.isFinite(Number(raw))) throw new Error(`${label}: Tarif, Faktor und Zuschlag müssen endliche Zahlen sein.`);
+        result[key(suffix)] = Number(raw);
+      }
+      if (result[key("price_multiplier")] < 0) throw new Error(`${label}: Der Preisfaktor darf nicht negativ sein.`);
+      if (mode === "fixed") transformPrice(result[key("fixed_price")], result[key("price_unit")], result[key("price_multiplier")], result[key("price_adder_eur_kwh")]);
+    }
+    return result;
+  }
+
+  function transformPrice(value, unit, multiplier = 1, adderEurKwh = 0) {
+    if (![value, multiplier, adderEurKwh].every((v) => typeof v === "number" && Number.isFinite(v)) || !Object.hasOwn(PRICE_UNITS, unit) || multiplier < 0) throw new Error("Ungültige Preisumrechnung.");
+    const factors = { eur_kwh: 1, ct_kwh: 0.01, eur_mwh: 0.001 };
+    const price = value * factors[unit] * multiplier + adderEurKwh;
+    if (!Number.isFinite(price)) throw new Error("Preisumrechnung außerhalb des gültigen Zahlenbereichs.");
+    return price;
+  }
 
   function lifecycleCost(raw) {
     const p = {};
@@ -109,7 +156,7 @@ const PohlPreview = (() => {
   function init() {
     const $ = (id) => document.getElementById(id);
     let plan = createDemo(), imported = false;
-    const titleMap = { overview: "Übersicht", plan: "Energieplan", devices: "Geräte & Messung", costs: "Kostenmodell", settings: "Einstellungen" };
+    const titleMap = { overview: "Übersicht", plan: "Energieplan", devices: "Geräte & Messung", costs: "Kostenmodell", prices: "Preisquellen", settings: "Einstellungen" };
     const showError = (message) => { $("global-error").textContent = message; $("global-error").hidden = !message; };
     const set = (id, content) => { $(id).textContent = content; };
     function navigate() {
@@ -154,6 +201,70 @@ const PohlPreview = (() => {
       ];
       $("device-list").replaceChildren(...devices.map(([icon, kind, name, description, meta]) => { const article = document.createElement("article"); article.className = "panel device-card"; for (const [tag, text, cls] of [["span", icon, "stat-icon teal"], ["p", kind, "device-kind"], ["h2", name, ""], ["p", description, ""], ["span", "Nicht verbunden", "not-connected"], ["div", meta, "device-meta"]]) { const el = document.createElement(tag); el.textContent = text; el.className = cls; article.appendChild(el); } return article; }));
     }
+    function setupPriceSources() {
+      const container = $("price-source-cards"), priceForm = $("price-form");
+      const fieldNames = ["price_mode", "price_entity", "price_url", "price_unit", "fixed_price", "price_multiplier", "price_adder_eur_kwh"];
+      for (const prefix of ["import", "export"]) {
+        const card = document.createElement("article"); card.className = "panel form-panel price-source-card";
+        const title = prefix === "import" ? "Strombezug" : "Einspeiseerlös";
+        // Only fixed application strings are inserted as HTML; imported/user data uses values or textContent.
+        card.innerHTML = `<div class="price-card-title"><span class="stat-icon ${prefix === "import" ? "blue" : "teal"}">${prefix === "import" ? "↙" : "↗"}</span><div><p class="eyebrow">${prefix === "import" ? "IMPORT" : "EXPORT"}</p><h2>${title}</h2></div></div><div class="form-grid">
+          <label class="full-width">Preisquelle<select name="${prefix}_price_mode">${Object.entries(PRICE_MODES).map(([value, label]) => `<option value="${value}">${label}</option>`).join("")}</select></label>
+          <label class="full-width" data-field="entity" hidden>HA-Entität mit Preiszeitreihe<input name="${prefix}_price_entity" type="text" placeholder="sensor.strompreis_prognose" autocomplete="off" spellcheck="false"><small>Entitäts-ID aus Ihrer Home-Assistant-Instanz. Hier findet keine Verbindung statt.</small></label>
+          <label class="full-width" data-field="url" hidden>JSON-API-URL (kein Webseitenlink)<input name="${prefix}_price_url" type="url" placeholder="https://anbieter.example/api/preise" autocomplete="off" spellcheck="false"><small>Die HA-Integration benötigt maschinenlesbare Zeitintervalle; eine normale Tarif-Webseite genügt nicht. Diese Vorschau lädt die URL nicht.</small></label>
+          <label data-field="fixed" hidden>Fester Quellenpreis<input name="${prefix}_fixed_price" type="number" step="any" value="0"><small>In der gewählten Quellen-Einheit.</small></label>
+          <label>Quellen-Einheit<select name="${prefix}_price_unit">${Object.entries(PRICE_UNITS).map(([value, label]) => `<option value="${value}">${label}</option>`).join("")}</select></label>
+          <label>Vertragsfaktor<input name="${prefix}_price_multiplier" type="number" min="0" step="any" value="1"><small>1 = unverändert · 1,19 = × 1,19</small></label>
+          <label>Zuschlag / Abschlag (€/kWh)<input name="${prefix}_price_adder_eur_kwh" type="number" step="any" value="0"><small>Zum Beispiel 0,02 = +2 ct/kWh.</small></label>
+        </div><p class="price-source-help"></p><div class="price-source-summary"></div>`;
+        container.appendChild(card);
+      }
+      const control = (prefix, suffix) => priceForm.elements.namedItem(`${prefix}_${suffix}`);
+      function collect() { return Object.fromEntries(["import", "export"].flatMap((p) => fieldNames.map((s) => [`${p}_${s}`, control(p, s).value]))); }
+      function showModes() {
+        for (const [i, prefix] of ["import", "export"].entries()) {
+          const card = container.children[i], mode = control(prefix, "price_mode").value;
+          for (const field of ["url", "entity", "fixed"]) {
+            card.querySelector(`[data-field="${field}"]`).hidden = mode !== field;
+            const input = control(prefix, field === "fixed" ? "fixed_price" : `price_${field}`);
+            input.required = mode === field;
+          }
+          const unit = control(prefix, "price_unit");
+          if (mode === "smard") unit.value = "eur_mwh";
+          if (mode === "forecast") unit.value = "eur_kwh";
+          unit.disabled = mode === "smard" || mode === "forecast";
+          const explanations = { forecast: "Die Preiswerte kommen aus den bereits vorhandenen Prognoseintervallen in €/kWh. Vertragsfaktor und Zuschlag können zusätzlich angewendet werden.", entity: "Die HA-Integration liest eine passende Preiszeitreihe aus der gewählten Entität. Ein einzelner aktueller Preis ersetzt keine vollständige Tagesprognose.", url: "Die HA-Integration ruft die JSON-API ab und verarbeitet deren Preiszeitreihe. Die Quellen-Einheit muss zu den tatsächlich gelieferten Werten passen.", fixed: "Ein konstanter Tarif wird für die vorhandenen Planungsintervalle verwendet. Auch negative Preise sind als ausdrückliche Annahme möglich.", smard: "SMARD liefert Viertelstunden-Großhandelspreise für Deutschland/Luxemburg in €/MWh. Die HA-Integration übernimmt den Abruf; Aufschläge und Vermarktungskonditionen ergänzen Sie hier." };
+          card.querySelector(".price-source-help").textContent = explanations[mode] || "Bitte eine Quelle wählen.";
+          let summary = "Konfiguration prüfen.";
+          try {
+            const source = Number(control(prefix, "fixed_price").value), multiplier = Number(control(prefix, "price_multiplier").value), adder = Number(control(prefix, "price_adder_eur_kwh").value);
+            if (mode === "fixed") summary = `Resultierender Tarif: ${number(transformPrice(source, unit.value, multiplier, adder) * 100, 3)} ct/kWh.`;
+            else if (Number.isFinite(multiplier) && Number.isFinite(adder)) summary = `Nach Einheitenumrechnung: Quellenpreis × ${number(multiplier, 3)} ${adder < 0 ? "−" : "+"} ${number(Math.abs(adder) * 100, 3)} ct/kWh.`;
+          } catch { /* Keep neutral summary until validation. */ }
+          card.querySelector(".price-source-summary").textContent = summary;
+        }
+      }
+      function showPriceError(message) { $("price-error").textContent = message; $("price-error").hidden = !message; }
+      function changed() { showModes(); set("price-status", "Änderungen noch nicht gespeichert. Ein importierter Plan bleibt unverändert."); }
+      let initial = { ...PRICE_DEFAULTS };
+      try { const saved = JSON.parse(localStorage.getItem("pohl-energy-preview-prices-v1") || "null"); if (saved) { initial = validatePriceConfig(saved); set("price-status", "Lokale Quellenkonfiguration geladen. Keine Preise abgerufen."); } } catch { showPriceError("Gespeicherte Preisquellen waren ungültig. Die Standardauswahl wird angezeigt."); }
+      for (const [key, value] of Object.entries(initial)) priceForm.elements.namedItem(key).value = value;
+      showModes();
+      priceForm.addEventListener("change", changed); priceForm.addEventListener("input", changed);
+      priceForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        try { const config = validatePriceConfig(collect()); localStorage.setItem("pohl-energy-preview-prices-v1", JSON.stringify(config)); showPriceError(""); set("price-status", "Lokal gespeichert. Keine HA-Verbindung, kein Preisabruf und keine Planänderung."); }
+        catch (error) { showPriceError(error.message); }
+      });
+      $("export-prices").addEventListener("click", () => {
+        try {
+          const config = validatePriceConfig(collect());
+          const url = URL.createObjectURL(new Blob([JSON.stringify(config, null, 2) + "\n"], { type: "application/json" }));
+          const a = document.createElement("a"); a.href = url; a.download = "pohl-preisquellen-ha-einstellungen.json"; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+          showPriceError(""); set("price-status", "HA-Einstellungswerte exportiert. Übernahme in HA separat vornehmen; bestehender Plan unverändert.");
+        } catch (error) { showPriceError(error.message); }
+      });
+    }
     const form = $("cost-form");
     function applySettings(settings) { for (const [key, value] of Object.entries(settings)) if (form.elements.namedItem(key)) form.elements.namedItem(key).value = value; }
     function updateCosts() {
@@ -194,9 +305,9 @@ const PohlPreview = (() => {
       const a = document.createElement("a"); a.href = url; a.download = imported ? "pohl-energieplan.csv" : "pohl-demodaten-nicht-optimiert.csv"; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
     });
     window.addEventListener("hashchange", navigate);
-    renderPlan(); renderDevices(); navigate();
+    renderPlan(); renderDevices(); setupPriceSources(); navigate();
   }
-  return { DEFAULTS, lifecycleCost, validatePlan, createDemo, chartSvg, init };
+  return { DEFAULTS, PRICE_DEFAULTS, PRICE_MODES, PRICE_UNITS, lifecycleCost, validatePlan, validatePriceConfig, transformPrice, createDemo, chartSvg, init };
 })();
 
 if (typeof module !== "undefined" && module.exports) module.exports = PohlPreview;
