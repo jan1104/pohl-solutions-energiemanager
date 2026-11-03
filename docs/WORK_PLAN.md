@@ -43,7 +43,8 @@ Grundlagen: [bestätigte Anforderungen und Fragen](REQUIREMENTS.md), [nachgewies
 - [ ] Laufzeit und Speicherbedarf des bisherigen Verfahrens messen; Kandidat gegen kontinuierliche Referenz und analytische Fälle vergleichen.
 - [ ] Rollierendes Endenergie-/Reservekonzept entwerfen; keine pauschale Gleichsetzung von aktuellem und End-SOC.
 - [ ] Nachtentladung, billiges Netzladen vor teurem Bezug, bevorstehenden PV-Überschuss und negative Einspeisepreise prüfen.
-- [ ] Wirtschaftlichkeitsziel und Autarkiewunsch als getrennte Betriebsarten definieren; Batterieverkauf erst nach Antwort konfigurieren.
+- [ ] Wirtschaftlichkeitsziel und Autarkiewunsch als getrennte Betriebsarten definieren; optionaler Batterieverkauf einschließlich netzgeladener Energie nur mit ausdrücklicher anlagenspezifischer Freigabe.
+- [ ] Allgemeine Anlagenkonfiguration statt fest eingebauter Vincent-Werte; Mindestreserve und optionale Notstromreserve einfach einstellbar, ohne unbegründeten festen Standardwert.
 - [ ] Betrieb unter Wunschreserve und oberhalb Wunschziel sauber von physischen BMS-Grenzen unterscheiden.
 - [ ] Restenergie in Vergleichen fair bewerten; keine garantierten Einsparungen aus einem Prognoseplan ableiten.
 
@@ -55,6 +56,7 @@ Abnahme: bekannte Gegenbeispiele funktionieren; keine Energiebilanzverletzung; w
 - [ ] Eastron als gemeinsame Netzbilanz und Janitza-Zweige zuordnen; Erzeugung, Verbraucher und Speicher nicht doppelt zählen.
 - [ ] Import-/Export-Vorzeichen und Messgleichzeitigkeit mit aufgezeichneten Fällen prüfen.
 - [ ] Vollständige Bezugskosten und Direktvermarktungserlöse einschließlich Abzügen modellieren; Viertelstunden, Einheiten und Steuerbasis ausdrücklich festlegen.
+- [ ] Bei bislang allein verfügbaren Börsenpreisen die Rechnung als unvollständiges Tarifszenario kennzeichnen; fehlende Aufschläge nicht als verifiziert null behandeln.
 - [ ] Produktiven Preisanbieter und verzögerte Veröffentlichung behandeln; Tarifwechsel und Quellenfehler testen.
 - [ ] Beide Batterietürme, Kapazität, SOC, BMS-Leistungsgrenzen, Spannung und Anschlussgrenzen abbilden.
 
@@ -106,7 +108,7 @@ Abnahme: Lastsprung und Preisänderung werden in Replay erkannt; kurze Schwankun
 - [ ] CI-Warnungen zu Actions-Versionen gesondert bereinigen; aktueller erfolgreicher Lauf bleibt Referenz.
 - [ ] Nachweisbare Reifegradgrenzen für Simulation, beobachtenden Parallelbetrieb und späteren Regelbetrieb festlegen.
 
-Nächster unabhängiger Entwicklungsschritt: Regression und Ressourcenvergleich für kleine Leistungen; gleichzeitig Antworten zu Batterieverkauf, Reserve und Tarifformeln einarbeiten. Endenergie-/Reservepolitik erst nach den erforderlichen Antworten implementieren.
+Nächster unabhängiger Entwicklungsschritt: Regression und Ressourcenvergleich für kleine Leistungen. Batterieverkauf ist als optionale Fähigkeit bestätigt, Reserve bleibt konfigurierbar und Vertragsformeln fehlen. Fragen zu Betriebsplattform, erstem Geräteumfang und Einrichtungsablauf sind offen. Endenergie-/Reservepolitik erst nach den erforderlichen Antworten implementieren.
 
 ## Pro wiederkehrendem Lauf
 

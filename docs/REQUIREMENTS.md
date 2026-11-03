@@ -5,6 +5,7 @@ Stand: 2026-11-03. Bestätigte Wünsche sind von Vorschlägen und noch offenen E
 ## Bestätigt
 
 - Marke: Pohl Solutions Energiemanager; verständliche deutsche Bedienung in Home Assistant, Zusammenarbeit mit Node-RED.
+- Allgemeines Produkt für unterschiedliche Anlagen und Geräte; Vincent ist nur eine Beispielanwendung. Dessen Kapazität, Tarife, Messstellen und Geräte dürfen keine fest eingebauten Betriebsannahmen werden. Endgültiger Umfang der ersten Version ist noch offen.
 - Einspeisung wird beim Referenzfall über einen Direktvermarkter nach Viertelstundenpreisen vergütet. Die genaue Preisformel einschließlich Abzügen ist noch offen.
 - Netzladen ist erlaubt, sofern die Gesamtrechnung es rechtfertigt. Bei vorhandenem PV-Überschuss reduziert AC-Laden zunächst die Einspeisung; der Planer darf dieselbe Energie nicht zusätzlich als Netzbezug zählen.
 - Bestehende PV-Wechselrichter speisen weiter ein. Überschuss oberhalb der möglichen Speicherladung darf ins Netz gehen; keine zugesagte Nulleinspeisung der gesamten Anlage.
@@ -12,6 +13,9 @@ Stand: 2026-11-03. Bestätigte Wünsche sind von Vorschlägen und noch offenen E
 - Wahl zwischen wirtschaftlicher Planung und möglichst vermiedenem Netzbezug. Kostenminimum und geringster Energiebezug sind unterschiedliche Ziele und müssen in der Oberfläche getrennt erklärt werden.
 - Prognosen und Plan passen sich an geänderten Verbrauch, PV und Preise an. Begrenzter Rechenbedarf ist eine ausdrückliche Anforderung.
 - SOC-Fenster/Entladetiefe werden im Energiemanager vorgegeben; Lebensdauerannahmen müssen dazu passen.
+- Mindestreserve und optionale Notstromreserve sind je Anlage einfach einstellbar. Kein fester Reservewert wurde beschlossen. Eine Reserve allein garantiert keine Notstromversorgung; diese erfordert passende Anlagenfähigkeiten.
+- Gezielter Batterieverkauf soll einschließlich netzgeladener Energie unterstützt werden, sofern der jeweilige Vertrag dies erlaubt. Je Anlage sind Netzladen und Batterieexport getrennte Freigaben; diese Produktanforderung aktiviert keinen Export in bestehenden Konfigurationen.
+- Aktuell liegen nur Börsenpreise vor. Bezugsaufschläge und Einspeiseabzüge müssen noch geklärt werden. Berechnungen ohne vollständige Tarifangaben sind als Szenario mit unvollständigen Vertragsdaten zu kennzeichnen, nicht als tatsächlicher Gewinn.
 - Konfigurierbare Preisquellen und Kostenannahmen, professionelle übersichtliche Oberfläche, Git-Versionierung und Entwicklung alle sechs Stunden.
 - Gegenwärtige Software bleibt Planung/Simulation. Diese Anforderungen erteilen keine Freigabe für Live-Schreibzugriffe.
 
@@ -24,11 +28,19 @@ Stand: 2026-11-03. Bestätigte Wünsche sind von Vorschlägen und noch offenen E
 5. Später ein separater schneller Regler: aktuellen Sollwert anhand der frischen Netzbilanz und BMS-Grenzen begrenzen. Der Viertelstundenplan ersetzt keine laufende Leistungsmessung.
 6. Gründe, Datenalter, Unsicherheit, tatsächliche Ergebnisse und manuellen Vorrang anzeigen.
 
-## Fragerunde 2 – Antwort ausstehend
+## Fragerunde 2 – beantwortet
 
-- Darf Batterieenergie gezielt verkauft werden? Nur Eigenverbrauch, zusätzlich gespeicherte PV oder auch netzgeladene Energie? Vertragliche Zulässigkeit nicht voraussetzen.
-- Welche Mindest-/Notstromreserve ist gewünscht und darf darüber eine dynamische Reserve geplant werden?
-- Sind vollständige Vertragsformeln oder HA-Sensoren für Bezug und Einspeisung verfügbar?
+- Batterieverkauf: auch netzgeladener Strom, sofern vertraglich erlaubt.
+- Reserve: konfigurierbar, optionaler Notstrom; einfache Bedienung und allgemeine Anlagenverwendbarkeit sind entscheidend. Dynamische Reservepolitik und konkrete Werte noch offen.
+- Preise: nur Börsenpreise verfügbar; vollständige Aufschläge/Abzüge fehlen.
+
+## Fragerunde 3 – Antwort ausstehend
+
+- Erste nutzbare Version in HA, eigenständig oder beides?
+- Zunächst ein Speicher je Anlage oder von Beginn an mehrere gemeinsam planen? Bevorzugter Geräteumfang?
+- Geführte Einrichtung mit Expertenoptionen, direkte Detaileinstellungen oder zu bestätigende automatische Vorschläge?
+
+Notstromreserve ist technisch eine Randbedingung, die auch bei wirtschaftlicher Planung oder bei Minimierung des Netzbezugs gelten kann. Die vorgeschlagene einfache Bedienung darf diese Kombination nicht verhindern.
 
 ## Weitere Fragen, in kleinen Runden zu klären
 
@@ -41,6 +53,6 @@ Stand: 2026-11-03. Bestätigte Wünsche sind von Vorschlägen und noch offenen E
 - Zulässiges Verhalten bei fehlenden Preisen, Prognosen, Internet, Messwerten und HA-Neustart; manuelle Rücknahme und Erreichbarkeit.
 - Hardware für HA, akzeptable Berechnungsdauer und Zeitraum der Historie; daraus messbares Ressourcenbudget ableiten.
 - Kaufpreis, Förderungen/Restwert, laufende Kosten, Wirkungsgrade, belegte Lebensdauerbedingungen und gewünschte Wirtschaftlichkeitsanzeige.
-- Erster Einsatz nur Vincent oder mehrere Anlagen? Lokale Datenhaltung, Aufbewahrung und Sicherung; zunächst HA-Oberfläche oder eigenständige Anwendung?
+- Lokale Datenhaltung, Aufbewahrung und Sicherung; Verwaltung mehrerer Standorte in einer Installation oder getrennte Installationen je Standort?
 
 Offene Antworten werden nicht aus technischen Standardwerten als Kundenentscheidung abgeleitet. Weiterentwicklung kann unabhängige Prüfungen und Infrastruktur umsetzen, muss abhängige Betriebsentscheidungen offenlassen.
