@@ -14,6 +14,7 @@ sys.path.insert(0, str(ROOT))
 
 async def main() -> None:
     from aiohttp import web
+    from homeassistant.components.network import async_get_adapters
     from homeassistant.config_entries import ConfigEntry
     from homeassistant.core import HomeAssistant
     from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -29,6 +30,9 @@ async def main() -> None:
 
     with tempfile.TemporaryDirectory() as folder:
         hass = HomeAssistant(folder)
+        # Normal HA bootstrap loads network before integrations use its shared
+        # HTTP session. This standalone harness must initialize it explicitly.
+        await async_get_adapters(hass)
         coordinator = None
         extra_coordinators = []
         runner = None
