@@ -15,7 +15,11 @@ Stand: 2026-11-03. Bestätigte Wünsche sind von Vorschlägen und noch offenen E
 - Konfiguration muss je Gerät festlegen können, ob aktueller PV-Überschuss, Batterieenergie oder Netzbezug zulässig ist. Nur gespeicherte PV-Energie gegenüber netzgeladener Energie zu unterscheiden erfordert eine belegte Herkunftsrechnung; ein SOC-Wert allein genügt dafür nicht.
 - Geführte Einrichtung mit wenigen Pflichtangaben und optionalen Experteneinstellungen.
 - Einfache Startvorlage mit einem Wechselrichter und einem Speicher. Weitere Speicher, Messgeräte, Heizstäbe und E-Ladestationen können individuell ergänzt werden; die einfache Vorlage begrenzt nicht die bestätigte Mehrspeicher-/Mehranlagenfähigkeit.
-- Hausverbrauch ist eine wesentliche Eingangsgröße. Ob eine direkte Verbrauchsentität erforderlich ist oder eine validierte Berechnung aus vollständigen Messwerten angeboten wird, ist noch zu klären.
+- Hausverbrauch direkt über vorhandenen Sensor auswählen oder aus vollständigen Netz-/PV-/Batteriemessungen ableiten; geführte Zuordnung und Bilanzprüfung anbieten.
+- Eigene direkte Geräteanbindung unabhängig von verfügbaren HA-/Node-RED-Integrationen ist erforderlich. HA ist zunächst Oberfläche und Einbettung; Rechenkern, Geräteverwaltung und Adapter so trennen, dass später eigenständiger Betrieb möglich ist. Eine eigenständige Auslieferung ist noch kein zugesagter Umfang der ersten Version.
+- Modbus TCP, Modbus RTU über RS485, Solarman v5 über pysolarmanv5 und MQTT gehören zur ersten nutzbaren Version. Transportunterstützung bedeutet nicht Unterstützung beliebiger Gerätemodelle/Register oder Schreibfunktionen.
+- Gerätereiter mit Suche im ausgewählten lokalen Netzwerk, MQTT über konfigurierten Broker und manueller Verbindungseingabe. Funde mit IP/Hostname soweit verfügbar und Erkennungsnachweisen anzeigen; anschließend geführt Gerät, Profil, Messrollen und Anlage zuordnen. Keine ungeprüfte automatische Einrichtung.
+- Planung und spätere Steuerung gemeinsam durch die Einrichtung führen; Leseprüfung, Planvorschau und ausdrückliche spätere Steuerfreigabe bleiben unterscheidbare Schritte.
 - Zielhardware der Referenzinstallation ist ein Raspberry Pi 5. Laufzeit und Speicherbedarf daran messen; vorhandene RAM-Ausstattung und weitere HA-Last sind noch unbekannt. Keine belegte Performancezusage vorhanden.
 - PV-Prognosen: vorhandene HA-Prognose bevorzugen; direkt eingebundenen Prognosedienst ebenfalls anbieten. Möglichst kostenlos starten, kostenpflichtige Dienste optional. Konkreter Anbieter und dessen Grenzen noch zu prüfen.
 - Später führt der Energiemanager Gerätebefehle direkt aus; Node-RED darf Wünsche übergeben. Es erhält damit keine parallele unkoordinierte Schreibverantwortung.
@@ -79,11 +83,14 @@ Stand: 2026-11-03. Bestätigte Wünsche sind von Vorschlägen und noch offenen E
 - Ausfallverhalten später anhand konkreter Geräte entscheiden; kein pauschaler Abschaltmodus beschlossen.
 - HA läuft auf Raspberry Pi 5.
 
-## Fragerunde 9 – Antwort ausstehend
+## Fragerunden 9 und 10 – beantwortet
 
-- Hauslast direkt auswählen oder zusätzlich aus einer validierten vollständigen Bilanz ableiten?
-- Zusätzliche Geräte zuerst über vorhandene HA-Entitäten oder direkte Verbindungen anbinden?
-- Geführter Start zunächst mit Planprüfung oder Planung und spätere Steuerung in einer gemeinsamen Einrichtung?
+- Hauslast direkt oder aus validierter vollständiger Bilanz, mit Zuordnungshilfe.
+- Direkte eigene Geräteanbindungen erforderlich; HA/Node-RED sind keine zwingenden Gerätetreiber. Spätere eigenständige Software architektonisch ermöglichen.
+- Planung und spätere Steuerung gemeinsam einrichten.
+- Bestätigte Bibliothek: https://github.com/jmccrohan/pysolarmanv5.
+- Alle vier Transportwege im ersten nutzbaren Umfang: TCP, RS485, Solarman und MQTT.
+- Suche mit anschließend geführter Zuordnung sowie manueller Eingabe.
 
 Notstromreserve ist technisch eine Randbedingung, die auch bei wirtschaftlicher Planung oder bei Minimierung des Netzbezugs gelten kann. Die vorgeschlagene einfache Bedienung darf diese Kombination nicht verhindern.
 

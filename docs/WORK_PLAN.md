@@ -113,6 +113,11 @@ Abnahme: Lastsprung und Preisänderung werden in Replay erkannt; kurze Schwankun
 
 ### 6. Geräteintegration zunächst lesend und simuliert
 
+- [ ] Eigene HA-unabhängige Adapter-/Geräteverwaltung entwerfen; HA bleibt erste Oberfläche, spätere eigenständige Auslieferung ermöglichen.
+- [ ] Modbus TCP, RTU/RS485, Solarman v5 über pysolarmanv5 und MQTT im ersten nutzbaren Umfang implementieren, zunächst mit Simulatoren und nachgewiesenen Profilen.
+- [ ] Gerätesuche im gewählten Netz, MQTT über eingetragenen Broker und manuelle Einrichtung anbieten; IP/Hostname soweit verfügbar, Erkennungsgrund und unklare Zuordnung anzeigen.
+- [ ] Geführte Bestätigung von Profil, Anlage und Messrollen; keine Registeradressen aus Hostnamen ableiten. Erkennung nur lesend, begrenzt und abbrechbar, ohne Gerätebefehle.
+- [ ] Transporttests für Timeout, Wiederverbindung, unvollständige Antworten und konkurrierende Zugriffe; MQTT-Topics/Payloads, Authentifizierung und Datenfrische explizit zuordnen.
 - [ ] Zunächst Solis/Bluesun unterstützen; Energiemanager als späteren direkten Gerätecontroller auslegen, Node-RED übergibt Wünsche über dokumentierte Schnittstelle.
 - [ ] Wünsche mit Quelle, Priorität, Gültigkeit und Konfliktbehandlung definieren; Geräte-/Reservegrenzen bleiben von der gewählten Bedienpriorität getrennt.
 - [ ] Rolle Plexlog/Node-RED/Solis klären; ein Sollwertgeber je Aktor, ein Master je RTU-Bus.
