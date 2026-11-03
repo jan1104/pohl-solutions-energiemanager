@@ -42,13 +42,13 @@ class ProjectStore:
 
     async def async_ensure_project(self, name: str, project_id: str) -> None:
         """Create an empty named project once, never overwrite an existing import."""
-        candidate = validate_project({
-            "format": "pohl-energy-project", "schema_version": 1,
-            "id": project_id, "name": name, "mode": "planning_only",
-            **{key: [] for key in COLLECTIONS}, "settings": {},
-        })
         async with self._lock:
             if self._project is None:
+                candidate = validate_project({
+                    "format": "pohl-energy-project", "schema_version": 1,
+                    "id": project_id, "name": name, "mode": "planning_only",
+                    **{key: [] for key in COLLECTIONS}, "settings": {},
+                })
                 await self._async_commit(candidate)
 
     async def _async_commit(self, candidate: dict[str, Any]) -> None:
