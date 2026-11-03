@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a2930">
+  <title>Pohl Solutions · Energiemanager</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="#overview" aria-label="Pohl Solutions Energiemanager Startseite"><span class="brandmark">P<span>·</span></span><span>POHL SOLUTIONS<small>Energiemanager</small></span></a>
+    <div class="site-selector"><span class="site-icon">⌂</span><span>Referenzanlage<small>PV & Batteriespeicher</small></span><span class="site-dot"></span></div>
+    <p class="nav-label">ARBEITSBEREICH</p>
+    <nav aria-label="Hauptnavigation">
+      <a href="#overview" data-page="overview"><span>▦</span>Übersicht</a>
+      <a href="#plan" data-page="plan"><span>◷</span>Energieplan</a>
+      <a href="#devices" data-page="devices"><span>▤</span>Geräte & Messung</a>
+      <a href="#costs" data-page="costs"><span>€</span>Kostenmodell</a>
+      <a href="#settings" data-page="settings"><span>⚙</span>Einstellungen</a>
+    </nav>
+    <div class="sidebar-bottom"><span class="state-dot"></span> Lokaler Prototyp<small>v0.1 · Planung & Simulation</small><div class="sidebar-rule"></div><p>Eine klare Entscheidung.<br>Für jede Viertelstunde.</p></div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar"><div><span class="breadcrumb">Referenzanlage</span><span class="breadcrumb-sep">/</span><span id="breadcrumb-page">Übersicht</span></div><div class="topbar-right"><span class="safe-badge">◉ Planung · keine Gerätesteuerung</span><span class="avatar">PS</span></div></header>
+    <main>
+      <div id="global-error" class="alert error" role="alert" hidden></div>
+      <section class="page" id="page-overview" aria-labelledby="overview-heading">
+        <div class="page-heading"><div><p class="eyebrow">ENERGIE IM ÜBERBLICK</p><h1 id="overview-heading">Ihre Energie. Klar geplant.</h1><p class="subheading">Erzeugung, Speicher und Netzanschluss an einem Ort.</p></div><div class="heading-actions"><span class="source-badge" id="source-badge">DEMODATEN</span><button class="button secondary" data-action="import">↥ Plan laden</button></div></div>
+        <div class="notice"><span class="notice-icon">i</span><p id="data-notice"><strong>Ansicht mit Beispieldaten.</strong> Die Kurven veranschaulichen die Bedienung; sie sind keine Preisprognose und kein optimierter Fahrplan.</p></div>
+        <div class="stat-grid">
+          <article class="stat-card"><div class="stat-top"><span>PV-Erzeugung</span><span class="stat-icon teal">☀</span></div><p class="stat-value"><span id="stat-pv">—</span><small>kW</small></p><div class="stat-footer"><span class="tiny-dot teal-dot"></span><span>220 kW installierte AC-Nennleistung</span></div></article>
+          <article class="stat-card"><div class="stat-top"><span>Batteriespeicher</span><span class="stat-icon blue">▥</span></div><p class="stat-value"><span id="stat-soc">—</span><small>%</small></p><div class="soc-track"><span id="soc-fill"></span></div><div class="stat-footer"><span id="stat-capacity">200,7 kWh</span><span>2 Batterietürme</span></div></article>
+          <article class="stat-card"><div class="stat-top"><span>Netzanschluss</span><span class="stat-icon navy">⇄</span></div><p class="stat-value"><span id="stat-grid">—</span><small>kW</small></p><div class="stat-footer"><span class="tiny-dot navy-dot"></span><span id="stat-grid-direction">Eastron · Beispielmessung</span></div></article>
+          <article class="stat-card accent-stat"><div class="stat-top"><span id="savings-title">Planvergleich</span><span class="stat-icon light">↗</span></div><p class="stat-value"><span id="stat-savings">—</span><small>€</small></p><div class="stat-footer"><span id="savings-caption">Erst nach Import eines berechneten Plans</span></div></article>
+        </div>
+        <div class="overview-layout">
+          <article class="panel chart-panel"><div class="panel-heading"><div><p class="eyebrow">VIERTELSTUNDENANSICHT</p><h2>Energieverlauf</h2></div><span class="chart-date" id="chart-date"></span></div><div class="chart-legend"><span><i class="legend-line pv-line"></i>PV</span><span><i class="legend-line load-line"></i>Verbrauch</span><span><i class="legend-line battery-line"></i>Batterie (+ Laden)</span><span><i class="legend-line price-line"></i>Bezugspreis</span></div><div id="energy-chart" class="chart-container"></div><p class="chart-note">Links: Leistung in kW · rechts: Bezugspreis in ct/kWh. Negative Batterieleistung bedeutet Entladen.</p></article>
+          <article class="panel decision-panel"><div class="panel-heading"><div><p class="eyebrow">NACHVOLLZIEHBAR PLANEN</p><h2>Entscheidung im Fokus</h2></div><span class="small-icon">↗</span></div><div class="decision-symbol">⇄</div><span class="decision-tag" id="decision-tag">ILLUSTRATION</span><h3 id="decision-title">Überschuss gezielt speichern</h3><p id="decision-text">Der spätere Planer wägt Einspeiseerlös, vermiedenen Netzbezug, Verluste und Verschleiß gegeneinander ab.</p><div class="decision-details"><div><span>Planquelle</span><strong id="decision-source">Beispielverlauf</strong></div><div><span>Gerätesteuerung</span><strong>Ausgeschaltet</strong></div><div><span>Planungsraster</span><strong>15 Minuten</strong></div></div><a href="#plan" class="text-link">Energieplan ansehen <span>→</span></a></article>
+        </div>
+        <article class="panel flow-panel"><div><p class="eyebrow">SYSTEMVERSTÄNDNIS</p><h2>Ein gemeinsamer Netzanschluss.</h2><p>Die Sungrows erzeugen am AC-Netz. Der Solis lädt über GRID. Der Eastron erfasst die Gesamtbilanz.</p></div><div class="flow-chain"><span>☀<b>Sungrow PV</b><small>125 + 50 + 20 + 25 kW</small></span><i>→</i><span>⇄<b>AC-Verteilung</b><small>Haus & Netzanschluss</small></span><i>⇄</i><span>▥<b>Solis / BSE</b><small>50 kW · 200,7 kWh</small></span></div></article>
+      </section>
+      <section class="page" id="page-plan" aria-labelledby="plan-heading" hidden>
+        <div class="page-heading"><div><p class="eyebrow">FAHRPLAN & BEGRÜNDUNGEN</p><h1 id="plan-heading">Energieplan</h1><p class="subheading">Jede Viertelstunde mit Leistung, Ladezustand und Entscheidung.</p></div><div class="heading-actions"><button class="button secondary" data-action="demo">Demodaten</button><button class="button primary" data-action="import">↥ Berechneten Plan laden</button><button class="button secondary" id="export-csv">CSV exportieren</button></div></div>
+        <div class="notice"><span class="notice-icon">i</span><p id="plan-notice">Der Beispielverlauf ist nicht optimiert. Importieren Sie eine JSON-Datei aus dem Python-Planer für einen berechneten Fahrplan.</p></div>
+        <article class="panel assumptions-panel"><h2>Annahmen & Grenzen</h2><ul id="plan-assumptions"></ul></article>
+        <article class="panel table-panel"><div class="table-scroll"><table><caption class="sr-only">Energieplan je Zeitintervall</caption><thead><tr><th>Zeit</th><th>PV</th><th>Last</th><th>Batterie</th><th>SOC am Ende</th><th>Netz</th><th>Bezug / Einspeisung</th><th>Begründung</th></tr></thead><tbody id="plan-table"></tbody></table></div></article>
+      </section>
+      <section class="page" id="page-devices" aria-labelledby="devices-heading" hidden>
+        <div class="page-heading"><div><p class="eyebrow">ANLAGENSTRUKTUR</p><h1 id="devices-heading">Geräte & Messung</h1><p class="subheading">Geplanter Bestand nach Ihren Angaben. Noch keine Live-Verbindungen.</p></div><span class="source-badge">KONZEPT</span></div>
+        <div class="device-grid" id="device-list"></div>
+        <div class="notice"><span class="notice-icon">i</span><p>Der zweite Stringwechselrichter ist als SG50CX oder SG50CX-P2 zu bestätigen. Kommunikationsports und Schreibrechte werden vor einer späteren Steuerung gerätespezifisch geprüft.</p></div>
+      </section>
+      <section class="page" id="page-costs" aria-labelledby="costs-heading" hidden>
+        <div class="page-heading"><div><p class="eyebrow">TRANSPARENTE ANNAHMEN</p><h1 id="costs-heading">Was kostet das Speichern?</h1><p class="subheading">Vollkosten für die Auswertung. Zusätzlicher Verschleiß für die Betriebsentscheidung.</p></div><span class="source-badge">SZENARIORECHNER</span></div>
+        <div class="cost-layout"><form id="cost-form" class="panel form-panel"><h2>Speichermodell</h2><p class="form-intro">Vorbelegte Werte sind Rechenannahmen, keine bestätigten Herstellerdaten. Die Zyklenzahl muss zum gewählten SOC-Fenster passen.</p><div class="form-grid">
+          <label>Batterietyp<select name="chemistry"><option value="lfp">LiFePO₄ · eigene Annahmen</option><option value="nmc">NMC · eigene Annahmen</option><option value="other">Anderer Typ</option></select></label>
+          <label>Kaufpreis System (€)<input name="purchase" type="number" min="0" step="100" value="40000" required></label>
+          <label>Nennkapazität (kWh)<input name="capacity" type="number" min="0.1" step="0.001" value="200.704" required></label>
+          <label>Restwert (€)<input name="residual" type="number" min="0" step="100" value="0" required></label>
+          <label>Minimaler Ladezustand (%)<input name="minSoc" type="number" min="0" max="99" step="1" value="10" required></label>
+          <label>Maximaler Ladezustand (%)<input name="maxSoc" type="number" min="1" max="100" step="1" value="90" required></label>
+          <label>Erwartete Durchläufe des SOC-Fensters<input name="cycles" type="number" min="1" step="1" value="6000" required></label>
+          <label>Kalenderlebensdauer (Jahre)<input name="years" type="number" min="1" step="1" value="15" required></label>
+          <label>Durchläufe des SOC-Fensters / Jahr<input name="cyclesPerYear" type="number" min="1" step="1" value="250" required></label>
+          <label>Mittlere verbleibende Kapazität (%)<input name="averageCapacity" type="number" min="1" max="100" step="1" value="90" required></label>
+          <label>Ladewirkungsgrad AC → DC (%)<input name="chargeEfficiency" type="number" min="1" max="100" step="0.1" value="95" required></label>
+          <label>Entladewirkungsgrad DC → AC (%)<input name="dischargeEfficiency" type="number" min="1" max="100" step="0.1" value="96" required></label>
+          <label>Marginaler Verschleiß (ct/kWh AC-Ausgabe)<input name="marginalWear" type="number" min="0" step="0.1" value="0" required><small>Separat festlegen. 0 bedeutet „nicht bewertet“.</small></label>
+        </div><div id="cost-error" class="alert error" role="alert" hidden></div><p class="form-footnote">Ein Wechsel des Batterietyps ändert keine Lebensdauerannahmen automatisch. Dieser Rechner verändert weder einen importierten Plan noch Geräteeinstellungen.</p></form>
+        <div class="cost-results"><article class="panel cost-result-main"><p class="eyebrow">UMGELEGTE SPEICHERINVESTITION</p><p class="cost-number"><span id="cost-unit">—</span><small>ct/kWh</small></p><p>je über die Lebensdauer abgegebener AC-Energie. Ohne Kosten der geladenen Energie.</p><div class="cost-breakdown"><div><span>Nutzbares SOC-Fenster</span><strong id="cost-window">—</strong></div><div><span>Nutzbare DC-Energie anfangs</span><strong id="cost-usable">—</strong></div><div><span>Erwartete Durchläufe</span><strong id="cost-cycles">—</strong></div><div><span>Abgegebene AC-Energie gesamt</span><strong id="cost-throughput">—</strong></div><div><span>Begrenzender Faktor</span><strong id="cost-limit">—</strong></div><div><span>AC-Gesamtwirkungsgrad</span><strong id="cost-efficiency">—</strong></div></div></article><article class="panel explain-panel"><h2>Zwei unterschiedliche Perspektiven</h2><p><b>Vollkosten</b> verteilen die Investition auf die erwartete Energieabgabe. Sie helfen, die Wirtschaftlichkeit der Anschaffung einzuschätzen.</p><p><b>Betriebsentscheidung</b> vergleicht entgangenen Einspeiseerlös, Verluste, später vermiedenen Netzbezug und zusätzlichen Verschleiß. Bereits angefallene Investitionen werden nicht erneut als zusätzliche Kosten addiert.</p><p class="wear-result" id="wear-result"></p></article></div></div>
+      </section>
+      <section class="page" id="page-settings" aria-labelledby="settings-heading" hidden>
+        <div class="page-heading"><div><p class="eyebrow">KLARE VERANTWORTUNG</p><h1 id="settings-heading">Einstellungen</h1><p class="subheading">Was diese Vorschau kann – und was später ergänzt wird.</p></div></div>
+        <div class="settings-grid"><article class="panel explain-panel"><h2>Planung statt Gerätesteuerung</h2><p>Diese Vorschau läuft ausschließlich im Browser. Sie besitzt keine Gerätezugänge, sendet keine Modbus-Befehle und verändert keine Home-Assistant- oder Node-RED-Konfiguration.</p><p>Kostenannahmen werden nur lokal in diesem Browser gespeichert. Importierte Fahrpläne bleiben im Arbeitsspeicher und werden beim Neuladen verworfen.</p><button class="button secondary" id="reset-settings">Kostenannahmen zurücksetzen</button></article><article class="panel explain-panel"><h2>Berechneten Fahrplan importieren</h2><p>Der Python-Planer liefert eine JSON-Datei mit Zeitintervallen, Leistungen, Preisen und Annahmen. Die Ansicht prüft die Daten und zeigt sie anschließend als importierten Plan.</p><button class="button primary" data-action="import">JSON-Datei auswählen</button><p>Zeiten werden in <b>Europe/Berlin</b> angezeigt. Geldbeträge im Datenformat: €/kWh, Anzeige: ct/kWh.</p></article></div>
+      </section>
+      <footer>Pohl Solutions Energiemanager <span>Lokale Entwicklung · v0.1</span></footer>
+    </main>
+  </div>
+  <input type="file" id="plan-file" accept="application/json,.json" hidden>
+</body>
+</html>
+
