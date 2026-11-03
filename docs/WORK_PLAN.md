@@ -37,6 +37,8 @@ V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberf
 
 Grundlagen: [bestätigte Anforderungen und Fragen](REQUIREMENTS.md), [nachgewiesene Logikbefunde](LOGIC_REVIEW_2026-11-03.md). Zunächst Rechenfehler und Datenmodell bearbeiten. Offene Betriebsentscheidungen nicht stillschweigend durch Standardwerte ersetzen.
 
+Überarbeiteter Gesamtentwurf: [Navigation, Gerätehierarchie und Funktionsprüfung](NAVIGATION_AND_PRODUCT_DESIGN.md). Enthält Messkanal-/Phasenzuordnung, Batterien unter dem jeweiligen WR und sieben Hauptbereiche mit eindeutigen Einstellungsorten. Zielentwurf, kein Implementierungsnachweis.
+
 ### 1. Rechenkern und wirtschaftliche Ziele
 
 - [ ] Mehrere Solis/Bluesun-Speicher-Wechselrichter bereits im ersten nutzbaren Umfang gemeinsam optimieren: eigene SOCs, Wirkungsgrade, Reserven und Grenzen; gemeinsame Bilanz ohne Doppelzählung.
