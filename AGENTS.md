@@ -13,3 +13,4 @@
 - Test physical energy balance, operating limits, invalid input, negative prices, reproducibility, and missing/stale data behavior.
 - Do not commit private site documents, serial numbers, actual contracts, credentials or Home Assistant configuration. Put local private inputs in private/.
 - Update CHANGELOG.md and docs when behavior changes. Commit small, reviewable changes; no release claims before relevant tests pass.
+- Shared project UI lives in preview/. After editing its assets, run tools/sync_frontend.py and the archive/synchronization tests so HACS ships the same tested UI. frontend/pohl-panel.js is the HA-only wrapper.

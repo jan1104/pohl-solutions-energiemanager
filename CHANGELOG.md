@@ -1,10 +1,16 @@
 # Änderungen
 
-## Noch nicht veröffentlicht
+## 0.4.0 — 2026-11-03
+
+- Eigener HA-Seitenleisteneintrag „Energiemanager“ mit eingebauter Projektoberfläche und HA-Farben, ohne separate Browserinstallation.
+- Projekt direkt aus HA laden/speichern, grafisch Netzanschlüsse, Bereiche, Verbindungen und Geräte hinzufügen; Batterien einem WR zuordnen, Import/Export und drei Strukturansichten.
+- Adminpflicht für Projektzugriffe und Konfliktprüfung beim Speichern; Entwurf bleibt bei veraltetem Stand erhalten. Keine HA-Zugangsdaten werden an die eingebettete Seite weitergegeben.
+- Im Projektmodus nur Statussensor; alte Plansensoren reversibel deaktivieren und bei Simulation wieder aktivieren, Benutzer-/Gerätesperren erhalten.
+- HACS-ZIP enthält geprüfte Frontendassets, mobile HA-Navigation und erweiterte HA-/Browserprüfungen.
 
 - HA-unabhängige, ausschließlich lesende Modbus-TCP-Basis mit expliziten Zieladressen für TCP-zu-RTU-Gateways. Gemeinsamer Zugriff pro Client wird serialisiert; Rahmenprüfung, begrenzte Wartezeit und Wiederverbindung nach Fehler/Abbruch.
 - Erstes UMG-103-CBM-Leseprofil für Wirk-/Phasenleistungen mit dokumentierter Float-Dekodierung und W→kW-Umrechnung.
-- Loopback-Simulatorprüfungen für mehrere Gatewayziele, ungültige Antworten, Gerätefehler, Timeout und Abbruch. Noch nicht an HA-Einrichtung oder automatische Geräteabfrage angeschlossen; kein neuer HACS-Release und keine Live-Geräte getestet.
+- Loopback-Simulatorprüfungen für mehrere Gatewayziele, ungültige Antworten, Gerätefehler, Timeout und Abbruch. Lesender Transport noch nicht an Geräteformulare/automatische Abfrage angeschlossen; keine Live-Geräte getestet.
 
 ## 0.3.1 — 2026-11-03
 

@@ -35,6 +35,8 @@ V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberf
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
 
+0.4.0: Nutzeranforderung echte HA-Seitenleiste umgesetzt: natives Panel „Energiemanager“, direkte HA-Projektpersistenz mit Administrator-/Revisionsprüfung, grafische Basisformulare und bestehende Struktur-/Importansichten. Projektmodus zeigt nur Status; alte Plansensoren reversibel deaktiviert. UI im HACS-ZIP enthalten und byteweise auf Synchronität geprüft. Keine Geräteabfrage aus den Formularen. Bedienung/Grenzen: HA_PANEL.md. Standort-/Regel-/Prognoseseiten und vollständige Messzuordnung weiter offen.
+
 0.3.1: Einstieg auf frei benannten Energiemanager ohne HA-Sensorpflicht umgestellt; bestehende Simulation separat in Optionen. Neue Projekte leer anlegen, bestehende Importe erhalten. Standort/Netzanschluss/Bereich/Gerätegruppe künftig sauber trennen, siehe PROJECT_HIERARCHY.md. Eigene Standortverwaltung und direkter Geräteassistent noch offen.
 
 Unveröffentlichter Entwicklungsschritt am 03.11.2026: lesender nativer Modbus-TCP-Client und UMG-103-CBM-Wirkleistungsprofil implementiert, ohne HA-/Setup-Anbindung. 47 neue Loopback-/Dekodierprüfungen erfolgreich, einschließlich zweier Zieladressen über einen gemeinsam genutzten Client. Keine Anlage verbunden, kein Scan, kein Aktor und kein HACS-Release. Details/Quellen/Grenzen: protocols/READ_ONLY_MODBUS.md. Standortassistent und erste explizite lesende Anbindung bleiben offen.
@@ -116,6 +118,7 @@ Abnahme: Lastsprung und Preisänderung werden in Replay erkannt; kurze Schwankun
 
 - [ ] Anlagenübersicht und Anlagenwechsel vorsehen; im Einrichtungsassistenten Netzanschluss, Messstellen, Speicher und Verbraucher eindeutig einer Anlage zuordnen.
 - [ ] Echte HA-Oberfläche als erste Betriebsplattform aus dem lokalen Prototyp entwickeln; Anlage/Quellen/mehrere Speicher/Strategie mit wenigen Pflichtangaben geführt einrichten, Details optional für Experten.
+- [x] Erste HA-Projektoberfläche mit Seitenleiste, Speichern/Laden, Import/Export, Netz-/Bereich-/Verbindungs-/Geräteformularen und drei Strukturansichten. Vollständige Prognose-/Regelbedienung bleibt offen.
 - [ ] Einfache Startvorlage mit einem Wechselrichter und einem Speicher anbieten; weitere Speicher, Messgeräte, Heizstäbe und E-Ladestationen einzeln ergänzen. Eine nutzbare Hauslastquelle in der Einrichtung prüfen; Ableitungsweg noch klären.
 - [ ] Kaufpreis, nutzbare Kapazität, SOC-Fenster, belegte Zyklen-/Kalenderannahmen, Betriebskosten und Wirkungsgrade bearbeiten.
 - [ ] Investitionsumlage, marginalen Verschleiß, Verluste und entgangene Einspeiseerlöse verständlich getrennt darstellen.

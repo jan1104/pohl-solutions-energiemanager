@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +13,10 @@ from .const import DOMAIN
 from .core.project import COLLECTIONS, export_project_json, load_project_json, project_summary, validate_project
 
 DATA_PROJECT_STORE = f"{DOMAIN}_project_store"
+
+
+class ProjectConflictError(ValueError):
+    """The caller edited an obsolete project revision."""
 
 
 class ProjectStore:
@@ -33,12 +38,24 @@ class ProjectStore:
             self._project = validate_project(stored) if stored is not None else None
             self._loaded = True
 
-    async def async_import(self, project_json: str) -> dict[str, Any]:
+    async def async_import(self, project_json: str, expected_revision: str | None = None) -> dict[str, Any]:
         """Reject invalid input without touching disk or the active project."""
         candidate = await self._hass.async_add_executor_job(load_project_json, project_json)
         async with self._lock:
+            if expected_revision is not None and expected_revision != self.revision:
+                raise ProjectConflictError("Das Projekt wurde zwischenzeitlich geändert. Neu laden und Änderungen erneut prüfen.")
             await self._async_commit(candidate)
             return self.status()
+
+    @property
+    def revision(self) -> str:
+        """Content revision survives reloads without changing the project format."""
+        canonical = json.dumps(self._project, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
+        return sha256(canonical.encode("utf-8")).hexdigest()
+
+    def snapshot(self) -> dict[str, Any]:
+        """Return a consistent project/revision/status snapshot without yielding."""
+        return {**self.export(), **self.status()}
 
     async def async_ensure_project(self, name: str, project_id: str) -> None:
         """Create an empty named project once, never overwrite an existing import."""
@@ -67,6 +84,7 @@ class ProjectStore:
         """Return an independent serialized snapshot, never mutable internals."""
         return {
             "planning_only": True,
+            "revision": self.revision,
             "project_json": export_project_json(self._project) if self._project is not None else None,
         }
 
@@ -74,6 +92,7 @@ class ProjectStore:
         """Distinguish empty project storage from a configured simulation."""
         return {
             "planning_only": True,
+            "revision": self.revision,
             "has_project": self._project is not None,
             "summary": project_summary(self._project) if self._project is not None else None,
         }

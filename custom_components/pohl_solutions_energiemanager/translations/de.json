@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "Energiemanager anlegen",
-        "description": "Gib deinem Energiemanager einen Namen. Geräte und Messquellen werden später im Projekt zugeordnet; jetzt sind keine Home-Assistant-Sensoren erforderlich. Direkte Geräteverbindungen sind noch nicht implementiert.",
+        "description": "Gib deinem Energiemanager einen Namen. Öffne danach links in der HA-Seitenleiste „Energiemanager“, um dein Projekt und Gerätezuordnungen einzurichten. Jetzt sind keine HA-Sensoren erforderlich. Geräte werden noch nicht automatisch abgefragt oder gesteuert.",
         "data": {
           "name": "Name des Energiemanagers"
         }
@@ -80,7 +80,7 @@
       },
       "project": {
         "title": "Projektverwaltung",
-        "description": "Projektverwaltung ohne erforderliche HA-Sensoren verwenden. Ein bereits gespeichertes Projekt bleibt erhalten. Direkte Geräteverbindungen und der grafische Geräteassistent folgen in einem weiteren Ausbauschritt.",
+        "description": "Projektverwaltung ohne erforderliche HA-Sensoren verwenden. Die Oberfläche findest du links unter „Energiemanager“. Ein gespeichertes Projekt bleibt erhalten; Geräteverbindungen werden noch nicht automatisch abgefragt.",
         "data": {}
       }
     },

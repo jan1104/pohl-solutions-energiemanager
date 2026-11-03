@@ -20,7 +20,10 @@ def build(output: Path) -> Path:
         raise ValueError("Release filename must match hacs.json")
     files = sorted(p for p in component.rglob("*")
                    if p.is_file() and not p.is_symlink()
-                   and "__pycache__" not in p.parts and p.suffix in {".py", ".json", ".yaml"})
+                   and "__pycache__" not in p.parts
+                   and (p.suffix in {".py", ".json", ".yaml"}
+                        or "frontend" in p.relative_to(component).parts
+                        and p.suffix in {".js", ".css", ".html"}))
     if not files:
         raise ValueError("Integration source files are missing")
     output.parent.mkdir(parents=True, exist_ok=True)

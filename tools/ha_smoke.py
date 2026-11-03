@@ -3,6 +3,7 @@
 import asyncio
 from datetime import datetime, timedelta, timezone
 import json
+import logging
 from pathlib import Path
 import sys
 import tempfile
@@ -15,10 +16,15 @@ sys.path.insert(0, str(ROOT))
 
 async def main() -> None:
     from aiohttp import web
+    from homeassistant.auth import auth_manager_from_config
+    from homeassistant.components import frontend, panel_custom
     from homeassistant.components.network import async_get_adapters
+    from homeassistant.components.websocket_api.connection import ActiveConnection
+    from homeassistant.components.websocket_api.http import WebSocketAdapter
     from homeassistant.config_entries import ConfigEntries, ConfigEntry, ConfigEntryState
-    from homeassistant.core import HomeAssistant
+    from homeassistant.core import Context, HomeAssistant
     from homeassistant.exceptions import ServiceValidationError
+    from homeassistant.helpers import device_registry, entity_registry
     from homeassistant.helpers.storage import get_internal_store_manager
     from homeassistant.util.file import WriteError
 
@@ -30,8 +36,10 @@ async def main() -> None:
     from custom_components.pohl_solutions_energiemanager.const import BATTERY_DEFAULTS, DOMAIN
     from custom_components.pohl_solutions_energiemanager.coordinator import PohlEnergyCoordinator
     from custom_components.pohl_solutions_energiemanager.price_sources import PriceSourceLoader
+    from custom_components.pohl_solutions_energiemanager.panel import PANEL_URL
     from custom_components.pohl_solutions_energiemanager.project_store import DATA_PROJECT_STORE, ProjectStore
     from custom_components.pohl_solutions_energiemanager.sensor import DESCRIPTIONS, PohlEnergySensor
+    from custom_components.pohl_solutions_energiemanager.sensor import async_setup_entry as async_setup_sensors
 
     with tempfile.TemporaryDirectory() as folder:
         hass = HomeAssistant(folder)
@@ -41,6 +49,38 @@ async def main() -> None:
         hass.config_entries = ConfigEntries(hass, {})
         await get_internal_store_manager(hass).async_initialize()
         await hass.config_entries.async_initialize()
+        await device_registry.async_load(hass)
+        await entity_registry.async_load(hass)
+        hass.auth = await auth_manager_from_config(hass, [], [])
+        admin = await hass.auth.async_create_user("CI admin")
+        non_admin = await hass.auth.async_create_user("CI non-admin")
+        assert admin.is_admin and not non_admin.is_admin
+
+        class StaticHTTPHarness:
+            """Only static HTTP registration is isolated; HA panel/WS stay real."""
+
+            def __init__(self):
+                self.paths = []
+
+            async def async_register_static_paths(self, configs):
+                self.paths.extend(configs)
+
+        hass.http = static_http = StaticHTTPHarness()
+
+        async def ws_client(user):
+            queue = asyncio.Queue()
+            token = await hass.auth.async_create_refresh_token(user, client_id="https://ci.invalid")
+            connection = ActiveConnection(
+                WebSocketAdapter(logging.getLogger("pohl.ha_smoke.ws"), {"connid": user.id}),
+                hass, queue.put_nowait, user, token,
+            )
+
+            async def request(command, **kwargs):
+                connection.async_handle({"id": connection.last_id + 1, "type": command, **kwargs})
+                response = await asyncio.wait_for(queue.get(), timeout=5)
+                return json.loads(response) if isinstance(response, (str, bytes)) else response
+
+            return request
         # Normal HA bootstrap loads network before shared HTTP is used.
         await async_get_adapters(hass)
         coordinator = None
@@ -124,8 +164,116 @@ async def main() -> None:
             with patch.object(hass.config_entries, "async_forward_entry_setups", new=AsyncMock()), patch.object(
                 hass.config_entries, "async_unload_platforms", new=AsyncMock(return_value=True),
             ):
+                with patch.object(hass.config_entries, "async_forward_entry_setups", new=AsyncMock(side_effect=asyncio.CancelledError)):
+                    try:
+                        await async_setup_entry(hass, project_entry)
+                    except asyncio.CancelledError:
+                        pass
+                    else:
+                        raise AssertionError("Setup cancellation was swallowed")
+                assert DATA_PROJECT_STORE not in hass.data and DOMAIN not in hass.data
+                assert PANEL_URL not in hass.data.get(frontend.DATA_PANELS, {})
+                original_register_panel = panel_custom.async_register_panel
+
+                async def partially_register_then_fail(*args, **kwargs):
+                    await original_register_panel(*args, **kwargs)
+                    raise RuntimeError("CI partial panel registration failure")
+
+                with patch.object(panel_custom, "async_register_panel", new=partially_register_then_fail):
+                    try:
+                        await async_setup_entry(hass, project_entry)
+                    except RuntimeError:
+                        pass
+                    else:
+                        raise AssertionError("Partial panel registration failure was swallowed")
+                assert DATA_PROJECT_STORE not in hass.data and DOMAIN not in hass.data
+                assert PANEL_URL not in hass.data.get(frontend.DATA_PANELS, {})
+                # A conflicting real registry entry forces panel registration
+                # failure. Cleanup must preserve that foreign panel and remove
+                # this integration's partially created runtime resources.
+                frontend.async_register_built_in_panel(
+                    hass, component_name="custom", frontend_url_path=PANEL_URL,
+                    sidebar_title="Existing foreign panel",
+                )
+                try:
+                    await async_setup_entry(hass, project_entry)
+                except ValueError:
+                    pass
+                else:
+                    raise AssertionError("Conflicting panel registration was accepted")
+                assert frontend.DATA_PANELS in hass.data
+                assert hass.data[frontend.DATA_PANELS][PANEL_URL].sidebar_title == "Existing foreign panel"
+                assert DATA_PROJECT_STORE not in hass.data and DOMAIN not in hass.data
+                assert not hass.services.has_service(DOMAIN, "import_project")
+                admin_ws = await ws_client(admin)
+                non_admin_ws = await ws_client(non_admin)
+                before_loaded = await admin_ws("pohl_energy/project/get")
+                assert before_loaded["error"]["code"] == "not_loaded"
+                frontend.async_remove_panel(hass, PANEL_URL)
                 assert await async_setup_entry(hass, project_entry)
                 try:
+                    panel = hass.data[frontend.DATA_PANELS][PANEL_URL]
+                    assert panel.sidebar_title == "Energiemanager" and panel.require_admin is True
+                    assert panel.config["_panel_custom"]["name"] == "pohl-energy-manager-panel"
+                    assert panel.config["_panel_custom"]["module_url"].startswith("/pohl-energy-assets/pohl-panel.js?v=")
+                    assert len(static_http.paths) == 1
+                    registry = entity_registry.async_get(hass)
+                    legacy_rows = {}
+                    for description, disabled_by in zip(
+                        DESCRIPTIONS[1:],
+                        (None, entity_registry.RegistryEntryDisabler.USER,
+                         entity_registry.RegistryEntryDisabler.DEVICE,
+                         entity_registry.RegistryEntryDisabler.INTEGRATION),
+                        strict=True,
+                    ):
+                        registered = registry.async_get_or_create(
+                            "sensor", DOMAIN, f"{project_entry.entry_id}_{description.key}",
+                            config_entry=project_entry, suggested_object_id=f"legacy_{description.key}",
+                            disabled_by=disabled_by,
+                        )
+                        registry.async_update_entity(registered.entity_id, name=f"My {description.key}")
+                        legacy_rows[description.key] = registered.entity_id
+                    sensor_entities = []
+                    await async_setup_sensors(hass, project_entry, lambda entities: sensor_entities.extend(entities))
+                    assert len(sensor_entities) == 1 and sensor_entities[0].entity_description.key == "status"
+                    assert registry.async_get(legacy_rows["schedule"]).disabled_by == entity_registry.RegistryEntryDisabler.INTEGRATION
+                    assert registry.async_get(legacy_rows["current_power"]).disabled_by == entity_registry.RegistryEntryDisabler.USER
+                    assert registry.async_get(legacy_rows["next_power"]).disabled_by == entity_registry.RegistryEntryDisabler.DEVICE
+                    assert registry.async_get(legacy_rows["savings_eur"]).disabled_by == entity_registry.RegistryEntryDisabler.INTEGRATION
+                    simulation_entry = ConfigEntry(
+                        version=1, minor_version=1, domain=DOMAIN, title="Existing simulation",
+                        entry_id=project_entry.entry_id, data={"project_only": False},
+                        options={}, source="user", unique_id=None,
+                        discovery_keys=MappingProxyType({}), subentries_data=(),
+                    )
+                    simulation_entities = []
+                    await async_setup_sensors(hass, simulation_entry, lambda entities: simulation_entities.extend(entities))
+                    assert len(simulation_entities) == len(DESCRIPTIONS)
+                    assert registry.async_get(legacy_rows["schedule"]).disabled_by is None
+                    assert registry.async_get(legacy_rows["savings_eur"]).disabled_by is None
+                    assert registry.async_get(legacy_rows["current_power"]).disabled_by == entity_registry.RegistryEntryDisabler.USER
+                    assert registry.async_get(legacy_rows["next_power"]).disabled_by == entity_registry.RegistryEntryDisabler.DEVICE
+                    for key, entity_id in legacy_rows.items():
+                        assert registry.async_get(entity_id).name == f"My {key}"
+                        assert registry.async_get_entity_id("sensor", DOMAIN, f"{project_entry.entry_id}_{key}") == entity_id
+                    await async_setup_sensors(hass, project_entry, lambda entities: list(entities))
+                    assert registry.async_get(legacy_rows["schedule"]).disabled_by == entity_registry.RegistryEntryDisabler.INTEGRATION
+                    for command, args in (
+                        ("pohl_energy/project/get", {}),
+                        ("pohl_energy/project/set", {"project_json": "{}", "expected_revision": "irrelevant"}),
+                    ):
+                        denied = await non_admin_ws(command, **args)
+                        assert denied["error"]["code"] == "unauthorized", denied
+                    for service, args in (("export_project", {}), ("project_status", {}), ("import_project", {"project_json": "{}"})):
+                        try:
+                            await hass.services.async_call(
+                                DOMAIN, service, args, blocking=True, return_response=True,
+                                context=Context(user_id=non_admin.id),
+                            )
+                        except ServiceValidationError:
+                            pass
+                        else:
+                            raise AssertionError(f"Non-admin accessed {service}")
                     empty = await hass.services.async_call(DOMAIN, "project_status", {}, blocking=True, return_response=True)
                     assert empty["has_project"] is True
                     assert empty["summary"]["name"] == "Project CI"
@@ -142,6 +290,27 @@ async def main() -> None:
                     assert imported["has_project"] is True and imported["planning_only"] is True
                     exported = await hass.services.async_call(DOMAIN, "export_project", {}, blocking=True, return_response=True)
                     assert json.loads(exported["project_json"]) == fixture
+                    snapshot = (await admin_ws("pohl_energy/project/get"))["result"]
+                    assert snapshot["project_json"] == exported["project_json"]
+                    assert snapshot["revision"] == exported["revision"] and snapshot["planning_only"] is True
+                    changed = {**fixture, "name": "Changed through native HA panel"}
+                    saved = await admin_ws(
+                        "pohl_energy/project/set", project_json=json.dumps(changed), expected_revision=snapshot["revision"],
+                    )
+                    assert saved["success"] and saved["result"]["revision"] != snapshot["revision"]
+                    stale = await admin_ws(
+                        "pohl_energy/project/set", project_json=json.dumps(fixture), expected_revision=snapshot["revision"],
+                    )
+                    assert stale["error"]["code"] == "conflict"
+                    invalid_ws = await admin_ws(
+                        "pohl_energy/project/set", project_json="{}", expected_revision=saved["result"]["revision"],
+                    )
+                    assert invalid_ws["error"]["code"] == "invalid_project"
+                    assert (await admin_ws("pohl_energy/project/get"))["result"] == saved["result"]
+                    restored = await admin_ws(
+                        "pohl_energy/project/set", project_json=json.dumps(fixture), expected_revision=saved["result"]["revision"],
+                    )
+                    assert restored["success"] and restored["result"]["revision"] == exported["revision"]
                     await hass.data[DATA_PROJECT_STORE].async_ensure_project("Must not overwrite", "another_entry")
                     assert hass.data[DATA_PROJECT_STORE].export() == exported
                     reloaded_store = ProjectStore(hass)
@@ -179,6 +348,17 @@ async def main() -> None:
                         else:
                             raise AssertionError("Disk failure was ignored")
                     assert hass.data[DATA_PROJECT_STORE].export() == exported
+                    # An additional entry shares the same panel and project.
+                    other_entry = ConfigEntry(
+                        version=1, minor_version=1, domain=DOMAIN, title="Other CI entry",
+                        data={"project_only": True}, options={}, source="user", unique_id=None,
+                        discovery_keys=MappingProxyType({}), subentries_data=(),
+                        state=ConfigEntryState.SETUP_IN_PROGRESS,
+                    )
+                    assert await async_setup_entry(hass, other_entry)
+                    assert hass.data[DATA_PROJECT_STORE].export() == exported
+                    assert await async_unload_entry(hass, other_entry)
+                    assert PANEL_URL in hass.data[frontend.DATA_PANELS]
                 finally:
                     assert await async_unload_entry(hass, project_entry)
                 assert DATA_PROJECT_STORE not in hass.data
@@ -186,6 +366,21 @@ async def main() -> None:
                 assert not hass.services.has_service(DOMAIN, "export_project")
                 assert not hass.services.has_service(DOMAIN, "project_status")
                 assert not hass.services.has_service(DOMAIN, "replan")
+                assert PANEL_URL not in hass.data[frontend.DATA_PANELS]
+                unloaded = await admin_ws("pohl_energy/project/get")
+                assert unloaded["error"]["code"] == "not_loaded"
+                unloaded_set = await admin_ws(
+                    "pohl_energy/project/set", project_json="{}", expected_revision="unused",
+                )
+                assert unloaded_set["error"]["code"] == "not_loaded"
+                assert await async_setup_entry(hass, project_entry)
+                try:
+                    assert len(static_http.paths) == 1
+                    after_reload = (await admin_ws("pohl_energy/project/get"))["result"]
+                    assert after_reload["project_json"] == exported["project_json"]
+                    assert after_reload["revision"] == exported["revision"]
+                finally:
+                    assert await async_unload_entry(hass, project_entry)
             coordinator = PohlEnergyCoordinator(hass, entry)
             result = await coordinator._async_update_data()
             assert result["valid"], result

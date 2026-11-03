@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "Create your energy manager",
-        "description": "Name your energy manager. Devices and measurement sources are assigned later in the project; no Home Assistant sensors are required now. Direct device connections are not implemented yet.",
+        "description": "Name your energy manager, then open Energy Manager in the HA sidebar to configure the project and device assignments. No HA sensors are required now. Devices are not automatically queried or controlled yet.",
         "data": {
           "name": "Energy manager name"
         }
@@ -80,7 +80,7 @@
       },
       "project": {
         "title": "Project management",
-        "description": "Use project management without required HA sensors. Any saved project is preserved. Direct device connections and the graphical device wizard are still under development.",
+        "description": "Use project management without required HA sensors. Open Energy Manager in the sidebar. Saved projects are preserved; device connections are not automatically queried yet.",
         "data": {}
       }
     },

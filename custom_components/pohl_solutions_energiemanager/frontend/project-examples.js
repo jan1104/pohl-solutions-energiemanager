@@ -1,0 +1,681 @@
+/* Anonymisierte Konfigurationsbeispiele, keine Livewerte. */
+"use strict";
+const PohlProjectExamples = {
+  "reference": {
+    "format": "pohl-energy-project",
+    "schema_version": 1,
+    "id": "reference_project",
+    "name": "Referenzprojekt – gemeinsamer Netzanschluss",
+    "mode": "planning_only",
+    "grids": [
+      {
+        "id": "grid_main",
+        "name": "Gemeinsamer Netzanschluss"
+      }
+    ],
+    "areas": [
+      {
+        "id": "area_a",
+        "name": "Bereich A",
+        "grid_id": "grid_main"
+      },
+      {
+        "id": "area_b",
+        "name": "Wärmebereich B",
+        "grid_id": "grid_main"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "main",
+        "name": "Netzanschluss",
+        "grid_id": "grid_main",
+        "parent_id": null
+      },
+      {
+        "id": "house",
+        "name": "Hausabgang",
+        "grid_id": "grid_main",
+        "parent_id": "main"
+      },
+      {
+        "id": "pv",
+        "name": "Gemischter PV-Abgang",
+        "grid_id": "grid_main",
+        "parent_id": "main"
+      },
+      {
+        "id": "heat",
+        "name": "Wärmebereich",
+        "grid_id": "grid_main",
+        "parent_id": "pv"
+      },
+      {
+        "id": "pv_wr_1",
+        "name": "Bestehender PV-WR 1",
+        "grid_id": "grid_main",
+        "parent_id": "pv"
+      },
+      {
+        "id": "pv_wr_2",
+        "name": "Bestehender PV-WR 2",
+        "grid_id": "grid_main",
+        "parent_id": "pv"
+      },
+      {
+        "id": "pv_wr_3",
+        "name": "Bestehender PV-WR 3",
+        "grid_id": "grid_main",
+        "parent_id": "pv"
+      },
+      {
+        "id": "pv_wr_4",
+        "name": "Bestehender PV-WR 4",
+        "grid_id": "grid_main",
+        "parent_id": "pv"
+      },
+      {
+        "id": "storage",
+        "name": "Nachgerüsteter Speicherzweig",
+        "grid_id": "grid_main",
+        "parent_id": "pv"
+      },
+      {
+        "id": "charger_1",
+        "name": "Ladesäulenabgang 1",
+        "grid_id": "grid_main",
+        "parent_id": "house"
+      },
+      {
+        "id": "charger_2",
+        "name": "Ladesäulenabgang 2",
+        "grid_id": "grid_main",
+        "parent_id": "house"
+      },
+      {
+        "id": "charger_3",
+        "name": "Ladesäulenabgang 3",
+        "grid_id": "grid_main",
+        "parent_id": "house"
+      }
+    ],
+    "connections": [
+      {
+        "id": "janitza_network",
+        "name": "Janitza-Gateway – Endpunkt offen",
+        "kind": "modbus_tcp_rtu_gateway"
+      },
+      {
+        "id": "inverter_network",
+        "name": "WR-Kommunikation – Endpunkt offen",
+        "kind": "modbus_tcp"
+      },
+      {
+        "id": "consumer_mqtt",
+        "name": "Verbraucher-MQTT – Endpunkt offen",
+        "kind": "mqtt"
+      }
+    ],
+    "devices": [
+      {
+        "id": "gateway604",
+        "name": "UMG 604-PRO: Zweigmessung und Gateway",
+        "kind": "gateway",
+        "area_id": "area_a",
+        "node_id": "pv",
+        "connection_id": "janitza_network",
+        "model": "Janitza UMG 604-PRO",
+        "phases": 3,
+        "capabilities": [
+          "measure"
+        ]
+      },
+      {
+        "id": "meter_grid",
+        "name": "UMG 103-CBM: Netzgesamtmessung",
+        "kind": "meter",
+        "area_id": "area_a",
+        "node_id": "main",
+        "connection_id": "janitza_network",
+        "via_device_id": "gateway604",
+        "model": "Janitza UMG 103-CBM",
+        "phases": 3,
+        "capabilities": [
+          "measure"
+        ]
+      },
+      {
+        "id": "meter_house",
+        "name": "UMG 103-CBM: Hausabgang",
+        "kind": "meter",
+        "area_id": "area_a",
+        "node_id": "house",
+        "connection_id": "janitza_network",
+        "via_device_id": "gateway604",
+        "model": "Janitza UMG 103-CBM",
+        "phases": 3,
+        "capabilities": [
+          "measure"
+        ]
+      },
+      {
+        "id": "pv_wr_1",
+        "name": "Sungrow SG125CX-P2",
+        "kind": "pv_inverter",
+        "area_id": "area_a",
+        "node_id": "pv_wr_1",
+        "model": "Sungrow SG125CX-P2",
+        "connection_id": "inverter_network",
+        "phases": 3,
+        "max_power_kw": 125,
+        "capabilities": [
+          "measure"
+        ]
+      },
+      {
+        "id": "pv_wr_2",
+        "name": "Sungrow 50 kW – Variante offen",
+        "kind": "pv_inverter",
+        "area_id": "area_a",
+        "node_id": "pv_wr_2",
+        "model": "Sungrow 50 kW – Variante offen",
+        "connection_id": "inverter_network",
+        "phases": 3,
+        "max_power_kw": 50,
+        "capabilities": [
+          "measure"
+        ]
+      },
+      {
+        "id": "pv_wr_3",
+        "name": "Sungrow SH20T ohne Batterie",
+        "kind": "hybrid_inverter",
+        "area_id": "area_a",
+        "node_id": "pv_wr_3",
+        "model": "Sungrow SH20T ohne Batterie",
+        "connection_id": "inverter_network",
+        "phases": 3,
+        "max_power_kw": 20,
+        "capabilities": [
+          "measure"
+        ]
+      },
+      {
+        "id": "pv_wr_4",
+        "name": "Sungrow SH25T ohne Batterie",
+        "kind": "hybrid_inverter",
+        "area_id": "area_a",
+        "node_id": "pv_wr_4",
+        "model": "Sungrow SH25T ohne Batterie",
+        "connection_id": "inverter_network",
+        "phases": 3,
+        "max_power_kw": 25,
+        "capabilities": [
+          "measure"
+        ]
+      },
+      {
+        "id": "storage_wr",
+        "name": "Zusätzlicher Speicher-WR 50 kW",
+        "kind": "storage_inverter",
+        "area_id": "area_a",
+        "node_id": "storage",
+        "model": "Solis / BSE – Firmwareprofil offen",
+        "connection_id": "inverter_network",
+        "phases": 3,
+        "max_power_kw": 50,
+        "capabilities": [
+          "measure"
+        ]
+      },
+      {
+        "id": "battery_1",
+        "name": "Batterieturm 1",
+        "kind": "battery",
+        "area_id": "area_a",
+        "node_id": "storage",
+        "parent_id": "storage_wr",
+        "capacity_kwh": 100.352,
+        "capabilities": []
+      },
+      {
+        "id": "battery_2",
+        "name": "Batterieturm 2",
+        "kind": "battery",
+        "area_id": "area_a",
+        "node_id": "storage",
+        "parent_id": "storage_wr",
+        "capacity_kwh": 100.352,
+        "capabilities": []
+      },
+      {
+        "id": "charger_1",
+        "name": "Ladesäule 1: Modell offen",
+        "kind": "ev_charger",
+        "area_id": "area_a",
+        "node_id": "charger_1",
+        "capabilities": [
+          "measure"
+        ]
+      },
+      {
+        "id": "charger_2",
+        "name": "Ladesäule 2: Modell offen",
+        "kind": "ev_charger",
+        "area_id": "area_a",
+        "node_id": "charger_2",
+        "capabilities": [
+          "measure"
+        ]
+      },
+      {
+        "id": "charger_3",
+        "name": "Ladesäule 3: Modell offen",
+        "kind": "ev_charger",
+        "area_id": "area_a",
+        "node_id": "charger_3",
+        "capabilities": [
+          "measure"
+        ]
+      },
+      {
+        "id": "heat_meter",
+        "name": "Shelly: Wärmebereich gesamt, Modell offen",
+        "kind": "meter",
+        "area_id": "area_b",
+        "node_id": "heat",
+        "connection_id": "consumer_mqtt",
+        "phases": 3,
+        "capabilities": [
+          "measure"
+        ]
+      },
+      {
+        "id": "heater_1",
+        "name": "Dreiphasiger Heizstab 1",
+        "kind": "heater",
+        "area_id": "area_b",
+        "node_id": "heat",
+        "phases": 3,
+        "capabilities": []
+      },
+      {
+        "id": "heater_2",
+        "name": "Dreiphasiger Heizstab 2",
+        "kind": "heater",
+        "area_id": "area_b",
+        "node_id": "heat",
+        "phases": 3,
+        "capabilities": []
+      },
+      {
+        "id": "heater_3",
+        "name": "Dreiphasiger Heizstab 3",
+        "kind": "heater",
+        "area_id": "area_b",
+        "node_id": "heat",
+        "phases": 3,
+        "capabilities": []
+      },
+      {
+        "id": "heater_4",
+        "name": "Dreiphasiger Heizstab 4",
+        "kind": "heater",
+        "area_id": "area_b",
+        "node_id": "heat",
+        "phases": 3,
+        "capabilities": []
+      }
+    ],
+    "channels": [
+      {
+        "id": "power_grid",
+        "name": "Netzleistung",
+        "device_id": "meter_grid",
+        "quantity": "active_power",
+        "unit": "kW",
+        "source": {
+          "kind": "unconfigured"
+        }
+      },
+      {
+        "id": "power_house",
+        "name": "Hauszweig inklusive Ladestationen",
+        "device_id": "meter_house",
+        "quantity": "active_power",
+        "unit": "kW",
+        "source": {
+          "kind": "unconfigured"
+        }
+      },
+      {
+        "id": "power_pv_branch",
+        "name": "Nettoleistung PV-Zweig inklusive Speicher und Wärme",
+        "device_id": "gateway604",
+        "quantity": "active_power",
+        "unit": "kW",
+        "source": {
+          "kind": "unconfigured"
+        }
+      },
+      {
+        "id": "power_pv_wr_1",
+        "name": "PV-Erzeugung WR 1",
+        "device_id": "pv_wr_1",
+        "quantity": "active_power",
+        "unit": "kW",
+        "source": {
+          "kind": "unconfigured"
+        }
+      },
+      {
+        "id": "power_pv_wr_2",
+        "name": "PV-Erzeugung WR 2",
+        "device_id": "pv_wr_2",
+        "quantity": "active_power",
+        "unit": "kW",
+        "source": {
+          "kind": "unconfigured"
+        }
+      },
+      {
+        "id": "power_pv_wr_3",
+        "name": "PV-Erzeugung WR 3",
+        "device_id": "pv_wr_3",
+        "quantity": "active_power",
+        "unit": "kW",
+        "source": {
+          "kind": "unconfigured"
+        }
+      },
+      {
+        "id": "power_pv_wr_4",
+        "name": "PV-Erzeugung WR 4",
+        "device_id": "pv_wr_4",
+        "quantity": "active_power",
+        "unit": "kW",
+        "source": {
+          "kind": "unconfigured"
+        }
+      },
+      {
+        "id": "power_storage",
+        "name": "Speicher AC: positiv Laden",
+        "device_id": "storage_wr",
+        "quantity": "active_power",
+        "unit": "kW",
+        "source": {
+          "kind": "unconfigured"
+        }
+      },
+      {
+        "id": "soc_storage",
+        "name": "SOC der Batteriegruppe – Quelle offen",
+        "device_id": "storage_wr",
+        "quantity": "soc",
+        "unit": "%",
+        "source": {
+          "kind": "unconfigured"
+        }
+      },
+      {
+        "id": "power_charger_1",
+        "name": "Interne Messung Ladesäule 1",
+        "device_id": "charger_1",
+        "quantity": "active_power",
+        "unit": "kW",
+        "source": {
+          "kind": "unconfigured"
+        }
+      },
+      {
+        "id": "power_charger_2",
+        "name": "Interne Messung Ladesäule 2",
+        "device_id": "charger_2",
+        "quantity": "active_power",
+        "unit": "kW",
+        "source": {
+          "kind": "unconfigured"
+        }
+      },
+      {
+        "id": "power_charger_3",
+        "name": "Interne Messung Ladesäule 3",
+        "device_id": "charger_3",
+        "quantity": "active_power",
+        "unit": "kW",
+        "source": {
+          "kind": "unconfigured"
+        }
+      },
+      {
+        "id": "power_heat",
+        "name": "Gesamtverbrauch Wärmebereich, keine Einzelmessung",
+        "device_id": "heat_meter",
+        "quantity": "active_power",
+        "unit": "kW",
+        "source": {
+          "kind": "unconfigured"
+        }
+      }
+    ],
+    "measurements": [
+      {
+        "id": "grid_primary",
+        "name": "Primäre Netzbilanz",
+        "role": "grid",
+        "node_id": "main",
+        "channel_id": "power_grid",
+        "includes_device_ids": []
+      },
+      {
+        "id": "measure_pv_wr_1",
+        "name": "PV-Erzeugung WR 1",
+        "role": "pv_generation",
+        "node_id": "pv_wr_1",
+        "channel_id": "power_pv_wr_1",
+        "includes_device_ids": []
+      },
+      {
+        "id": "measure_pv_wr_2",
+        "name": "PV-Erzeugung WR 2",
+        "role": "pv_generation",
+        "node_id": "pv_wr_2",
+        "channel_id": "power_pv_wr_2",
+        "includes_device_ids": []
+      },
+      {
+        "id": "measure_pv_wr_3",
+        "name": "PV-Erzeugung WR 3",
+        "role": "pv_generation",
+        "node_id": "pv_wr_3",
+        "channel_id": "power_pv_wr_3",
+        "includes_device_ids": []
+      },
+      {
+        "id": "measure_pv_wr_4",
+        "name": "PV-Erzeugung WR 4",
+        "role": "pv_generation",
+        "node_id": "pv_wr_4",
+        "channel_id": "power_pv_wr_4",
+        "includes_device_ids": []
+      },
+      {
+        "id": "storage_power",
+        "name": "Speicherleistung",
+        "role": "battery_power",
+        "node_id": "storage",
+        "channel_id": "power_storage",
+        "includes_device_ids": []
+      },
+      {
+        "id": "measure_charger_1",
+        "name": "Ladesäule 1",
+        "role": "consumer",
+        "node_id": "charger_1",
+        "channel_id": "power_charger_1",
+        "includes_device_ids": []
+      },
+      {
+        "id": "measure_charger_2",
+        "name": "Ladesäule 2",
+        "role": "consumer",
+        "node_id": "charger_2",
+        "channel_id": "power_charger_2",
+        "includes_device_ids": []
+      },
+      {
+        "id": "measure_charger_3",
+        "name": "Ladesäule 3",
+        "role": "consumer",
+        "node_id": "charger_3",
+        "channel_id": "power_charger_3",
+        "includes_device_ids": []
+      },
+      {
+        "id": "house_branch",
+        "name": "Hausabgang: Ladestationen bereits enthalten",
+        "role": "branch",
+        "node_id": "house",
+        "channel_id": "power_house",
+        "includes_device_ids": [
+          "charger_1",
+          "charger_2",
+          "charger_3"
+        ]
+      },
+      {
+        "id": "pv_branch",
+        "name": "Gemischter Zweig: keine reine PV-Erzeugung",
+        "role": "branch",
+        "node_id": "pv",
+        "channel_id": "power_pv_branch",
+        "includes_device_ids": [
+          "storage_wr",
+          "heater_1",
+          "heater_2",
+          "heater_3",
+          "heater_4",
+          "pv_wr_1",
+          "pv_wr_2",
+          "pv_wr_3",
+          "pv_wr_4"
+        ]
+      },
+      {
+        "id": "heat_total",
+        "name": "Gemeinsame Messung der vier Heizstäbe",
+        "role": "consumer",
+        "node_id": "heat",
+        "channel_id": "power_heat",
+        "includes_device_ids": [
+          "heater_1",
+          "heater_2",
+          "heater_3",
+          "heater_4"
+        ]
+      }
+    ],
+    "settings": {
+      "example_notice": "Anonymisiertes Strukturbeispiel. Keine Livewerte, keine hinterlegten Register, Tarife oder bestätigten Gerätesteuerungen. Quellen und Endpunkte müssen zugeordnet werden.",
+      "pv_existing": "Vier bestehende PV-WR, Hybride derzeit ohne Batterie. Speicher-WR separat nachgerüstet.",
+      "heating_metering": "Gemeinsame dreiphasige Messung; kein gemessener Einzelverbrauch pro Heizstab."
+    }
+  },
+  "simple": {
+    "format": "pohl-energy-project",
+    "schema_version": 1,
+    "id": "simple_project",
+    "name": "Neue Anlage – einfache Startvorlage",
+    "mode": "planning_only",
+    "grids": [
+      {
+        "id": "grid_main",
+        "name": "Netzanschluss"
+      }
+    ],
+    "areas": [
+      {
+        "id": "area_main",
+        "name": "Meine Anlage",
+        "grid_id": "grid_main"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "main",
+        "name": "Netzanschluss",
+        "grid_id": "grid_main",
+        "parent_id": null
+      },
+      {
+        "id": "storage",
+        "name": "Wechselrichterzweig",
+        "grid_id": "grid_main",
+        "parent_id": "main"
+      }
+    ],
+    "connections": [
+      {
+        "id": "connection_main",
+        "name": "Verbindung noch einzurichten",
+        "kind": "modbus_tcp"
+      }
+    ],
+    "devices": [
+      {
+        "id": "meter_grid",
+        "name": "Netzmessung noch zuordnen",
+        "kind": "meter",
+        "area_id": "area_main",
+        "node_id": "main",
+        "capabilities": []
+      },
+      {
+        "id": "hybrid",
+        "name": "Mein Wechselrichter",
+        "kind": "hybrid_inverter",
+        "area_id": "area_main",
+        "node_id": "storage",
+        "connection_id": "connection_main",
+        "capabilities": []
+      },
+      {
+        "id": "battery",
+        "name": "Meine Batterie",
+        "kind": "battery",
+        "area_id": "area_main",
+        "node_id": "storage",
+        "parent_id": "hybrid",
+        "capabilities": []
+      }
+    ],
+    "channels": [
+      {
+        "id": "power_grid",
+        "name": "Netzleistung – Quelle offen",
+        "device_id": "meter_grid",
+        "quantity": "active_power",
+        "unit": "kW",
+        "source": {
+          "kind": "unconfigured"
+        }
+      }
+    ],
+    "measurements": [
+      {
+        "id": "grid_primary",
+        "name": "Primäre Netzbilanz",
+        "role": "grid",
+        "node_id": "main",
+        "channel_id": "power_grid",
+        "includes_device_ids": []
+      }
+    ],
+    "settings": {
+      "example_notice": "Leere Startvorlage ohne bestätigte Geräteeigenschaften. Netzquelle, Verbindung, Batterieparameter, Tarife und Prognosen fehlen noch."
+    }
+  }
+};
+if (typeof window !== "undefined") window.PohlProjectExamples = PohlProjectExamples;
+if (typeof module !== "undefined" && module.exports) module.exports = PohlProjectExamples;

@@ -7,6 +7,7 @@ from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, Sen
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfPower
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -25,7 +26,22 @@ DESCRIPTIONS = (
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     coordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(PohlEnergySensor(coordinator, entry, description) for description in DESCRIPTIONS)
+    project_only = entry.options.get("project_only", entry.data.get("project_only", False))
+    registry = er.async_get(hass)
+    for description in DESCRIPTIONS[1:]:
+        # Omitting an old entity on setup does not remove/disable its registry
+        # row. Preserve the row and customizations, respecting user/device flags.
+        entity_id = registry.async_get_entity_id("sensor", DOMAIN, f"{entry.entry_id}_{description.key}")
+        if entity_id is None or (registered := registry.async_get(entity_id)) is None:
+            continue
+        if registered.config_entry_id != entry.entry_id:
+            continue
+        if project_only and registered.disabled_by is None:
+            registry.async_update_entity(entity_id, disabled_by=er.RegistryEntryDisabler.INTEGRATION)
+        elif not project_only and registered.disabled_by == er.RegistryEntryDisabler.INTEGRATION:
+            registry.async_update_entity(entity_id, disabled_by=None)
+    descriptions = DESCRIPTIONS[:1] if project_only else DESCRIPTIONS
+    async_add_entities(PohlEnergySensor(coordinator, entry, description) for description in descriptions)
 
 
 class PohlEnergySensor(CoordinatorEntity[PohlEnergyCoordinator], SensorEntity):

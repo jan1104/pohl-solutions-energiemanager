@@ -32,6 +32,9 @@ jobs:
       - run: node --check preview/project-model.js
       - run: node --check preview/project-ui.js
       - run: node --test preview/test-project.cjs
+      - run: node --check preview/project-actions.js
+      - run: node --check custom_components/pohl_solutions_energiemanager/frontend/pohl-panel.js
+      - run: node --test preview/test-project-actions.cjs preview/test-panel.cjs
   home-assistant:
     runs-on: ubuntu-latest
     timeout-minutes: 15

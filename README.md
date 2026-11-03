@@ -19,6 +19,8 @@ Lokale, nachvollziehbare Energieplanung für Home Assistant und Node-RED.
 
 ## Schnell ansehen
 
+**Ab 0.4:** Nach HACS-Update und HA-Neustart links **Energiemanager** öffnen (Administrator). Dort Projekt direkt aus HA laden/speichern, Netzanschlüsse, Bereiche, Verbindungen und Geräte über Formulare hinzufügen sowie Messzuordnungen ansehen. Keine separate Installation der Browserseite erforderlich. [Bedienung und Grenzen](docs/HA_PANEL.md). Noch keine automatische Geräteabfrage oder aktive Steuerung.
+
 **Neu in 0.3:** `preview/project.html` öffnen, um ganze Projekte mit Geräten und Messzuordnungen zu prüfen, umzubenennen sowie zu exportieren/importieren. Referenzprojekt, Startvorlage und ein HA-Projektmodus ohne erforderliche Live-Sensoren sind implementiert. [Anleitung für den ersten Test](docs/TESTING_0_3.md). Noch keine Geräteanbindung oder gemeinsame Mehrspeicheroptimierung.
 
 `preview/index.html` im Browser öffnen. Die Vorschau benötigt keine Installation und keine Verbindung ins Internet. Sichtbare Demo-Zeitreihen sind synthetisch und keine echten SMARD-/Anlagendaten. Der Beispielrechner speichert keine Gerätebefehle.
@@ -55,7 +57,7 @@ Zur Entwicklung den Ordner `custom_components/pohl_solutions_energiemanager` in 
 
 Zielbasis: Home Assistant 2026.1 oder neuer. Der reine Rechenkern läuft mit Python 3.12+. Home Assistant selbst hat eigene Python-/Betriebssystemanforderungen.
 
-**Noch nicht im Umfang:** dedizierte Tarifanbieter-Logins, automatische Wetter-/PV-Prognose, automatische Historienabfrage, vollständiges HA-Dashboard, direktes Lesen/Schreiben von Solis/Sungrow/Janitza und produktiver Regelbetrieb. Ein vorhandener Sensor-/Treibername ist kein Nachweis einer Schreibfreigabe. Der Browserprototyp speichert Preisquellen lokal und exportiert deren Konfiguration, ruft aber selbst keine Live-Preise ab.
+**Noch nicht im Umfang:** dedizierte Tarifanbieter-Logins, automatische Wetter-/PV-Prognose, automatische Historienabfrage, vollständige HA-Bedienung aller Planungs-/Kostenfunktionen, direkte Geräteabfrage aus der Oberfläche und produktiver Regelbetrieb. Die Projektverwaltung besitzt ab 0.4 ein eingebautes HA-Panel. Ein vorhandener Sensor-/Treibername ist kein Nachweis einer Schreibfreigabe. Die separate Planungsvorschau speichert Preisquellen lokal und exportiert deren Konfiguration, ruft aber selbst keine Live-Preise ab.
 
 ## Annahmen und Grenzen
 
