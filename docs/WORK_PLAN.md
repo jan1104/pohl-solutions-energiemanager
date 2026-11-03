@@ -39,6 +39,9 @@ Grundlagen: [bestätigte Anforderungen und Fragen](REQUIREMENTS.md), [nachgewies
 
 ### 1. Rechenkern und wirtschaftliche Ziele
 
+- [ ] Mehrere Solis/Bluesun-Speicher-Wechselrichter bereits im ersten nutzbaren Umfang gemeinsam optimieren: eigene SOCs, Wirkungsgrade, Reserven und Grenzen; gemeinsame Bilanz ohne Doppelzählung.
+- [ ] Verfahren für mehrere Speicher benchmarken; ein kartesisches Produkt aller SOC-Raster wächst schnell und darf nicht ungeprüft übernommen werden. Gegen kleine exakt lösbare Mehrspeicherfälle vergleichen.
+- [ ] Unnötiges Laden eines Speichers aus einem gleichzeitig entladenden Speicher verhindern oder einen ausdrücklich begründeten Nutzen nachweisen; Energiequellen für getrennte Exportfreigaben modellieren.
 - [ ] Kleine Lasten/Ladeleistungen korrekt berücksichtigen; nachgewiesenen 1-kW-Fall als Regression aufnehmen.
 - [ ] Laufzeit und Speicherbedarf des bisherigen Verfahrens messen; Kandidat gegen kontinuierliche Referenz und analytische Fälle vergleichen.
 - [ ] Rollierendes Endenergie-/Reservekonzept entwerfen; keine pauschale Gleichsetzung von aktuellem und End-SOC.
@@ -66,7 +69,7 @@ Abnahme: eine nachvollziehbare Bilanz je Messintervall; Preise stimmen mit Vertr
 
 - [ ] Historische Messdaten über dokumentiertes Format importieren; Lücken/Ausreißer/Nettozweigmessungen erkennen.
 - [ ] Lastprognose an HA-Datenfluss anschließen; Tages-/Wochenprofile, aktuelle Abweichungen und bekannte Sonderlasten berücksichtigen.
-- [ ] PV-Prognosedienst/HA-Quelle auswählen; Anlagenorientierung und Leistungsgrenzen berücksichtigen.
+- [ ] Vorhandene HA-Prognose bevorzugen und direkten PV-Prognosedienst anbieten; Auswahl, Kosten und Einführung noch klären. Anlagenorientierung und Leistungsgrenzen berücksichtigen.
 - [ ] Rollierende Rücktests ohne Zukunftswissen; MAE, Bias und wirtschaftliches Ergebnis gegen einfache Baselines ausweisen.
 - [ ] Prognoseunsicherheit zunächst über transparente Szenarien behandeln; keine unbelegten Wahrscheinlichkeiten.
 
@@ -84,7 +87,7 @@ Abnahme: Lastsprung und Preisänderung werden in Replay erkannt; kurze Schwankun
 
 ### 5. Bedienung und Kostenrechnung
 
-- [ ] Echte HA-Oberfläche aus dem lokalen Prototyp entwickeln; Anlage/Quellen/Batterie/Strategie geführt einrichten.
+- [ ] Echte HA-Oberfläche als erste Betriebsplattform aus dem lokalen Prototyp entwickeln; Anlage/Quellen/mehrere Speicher/Strategie mit wenigen Pflichtangaben geführt einrichten, Details optional für Experten.
 - [ ] Kaufpreis, nutzbare Kapazität, SOC-Fenster, belegte Zyklen-/Kalenderannahmen, Betriebskosten und Wirkungsgrade bearbeiten.
 - [ ] Investitionsumlage, marginalen Verschleiß, Verluste und entgangene Einspeiseerlöse verständlich getrennt darstellen.
 - [ ] Plan/Ist, SOC, Haus/PV/Netz und Preise mit Begründungen anzeigen; Datenlücken und Prognoseunsicherheit kenntlich machen.
@@ -93,6 +96,8 @@ Abnahme: Lastsprung und Preisänderung werden in Replay erkannt; kurze Schwankun
 
 ### 6. Geräteintegration zunächst lesend und simuliert
 
+- [ ] Zunächst Solis/Bluesun unterstützen; Energiemanager als späteren direkten Gerätecontroller auslegen, Node-RED übergibt Wünsche über dokumentierte Schnittstelle.
+- [ ] Wünsche mit Quelle, Priorität, Gültigkeit und Konfliktbehandlung definieren; Geräte-/Reservegrenzen bleiben von der gewählten Bedienpriorität getrennt.
 - [ ] Rolle Plexlog/Node-RED/Solis klären; ein Sollwertgeber je Aktor, ein Master je RTU-Bus.
 - [ ] Modell-/Firmwareabhängige Solis/BSE-Schnittstelle belegen; Register nicht aus Umlabelung ableiten.
 - [ ] Simulierten Node-RED-Vertrag mit Einheiten, Gültigkeit, Quittierung, Planversion und Wiederholungsverhalten festlegen.
@@ -108,7 +113,7 @@ Abnahme: Lastsprung und Preisänderung werden in Replay erkannt; kurze Schwankun
 - [ ] CI-Warnungen zu Actions-Versionen gesondert bereinigen; aktueller erfolgreicher Lauf bleibt Referenz.
 - [ ] Nachweisbare Reifegradgrenzen für Simulation, beobachtenden Parallelbetrieb und späteren Regelbetrieb festlegen.
 
-Nächster unabhängiger Entwicklungsschritt: Regression und Ressourcenvergleich für kleine Leistungen. Batterieverkauf ist als optionale Fähigkeit bestätigt, Reserve bleibt konfigurierbar und Vertragsformeln fehlen. Fragen zu Betriebsplattform, erstem Geräteumfang und Einrichtungsablauf sind offen. Endenergie-/Reservepolitik erst nach den erforderlichen Antworten implementieren.
+Nächster unabhängiger Entwicklungsschritt: Regression und Ressourcenvergleich für kleine Leistungen sowie Entwurf für gemeinsame Mehrspeicherplanung. Bestätigt: HA, Solis/Bluesun, mehrere Speicher-Wechselrichter, geführte Einrichtung und später direkte Gerätesteuerung durch den Energiemanager. Offen: Netzanschlusstopologie, Wunschprioritäten, Prognosedienst, genaue Reservepolitik und Vertragsformeln. Aktuelle Version bleibt Planung/Simulation.
 
 ## Pro wiederkehrendem Lauf
 

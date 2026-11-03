@@ -5,7 +5,12 @@ Stand: 2026-11-03. Bestätigte Wünsche sind von Vorschlägen und noch offenen E
 ## Bestätigt
 
 - Marke: Pohl Solutions Energiemanager; verständliche deutsche Bedienung in Home Assistant, Zusammenarbeit mit Node-RED.
-- Allgemeines Produkt für unterschiedliche Anlagen und Geräte; Vincent ist nur eine Beispielanwendung. Dessen Kapazität, Tarife, Messstellen und Geräte dürfen keine fest eingebauten Betriebsannahmen werden. Endgültiger Umfang der ersten Version ist noch offen.
+- Allgemeines Produkt für unterschiedliche Anlagen und Geräte; Vincent ist nur eine Beispielanwendung. Dessen Kapazität, Tarife, Messstellen und Geräte dürfen keine fest eingebauten Betriebsannahmen werden.
+- Erste nutzbare Version: Home-Assistant-Integration mit eigener übersichtlicher Bedienoberfläche, zunächst Solis/Bluesun; weitere Geräte später.
+- Bereits die erste Version plant mehrere Speicher-Wechselrichter gemeinsam. Jeder besitzt eigene SOC-/Kapazitäts-/Leistungsgrenzen und angeschlossene Batterien; Zahl der Türme ist nicht mit Zahl unabhängiger Wechselrichter gleichzusetzen.
+- Geführte Einrichtung mit wenigen Pflichtangaben und optionalen Experteneinstellungen.
+- PV-Prognosen: vorhandene HA-Prognose bevorzugen; direkt eingebundenen Prognosedienst ebenfalls anbieten. Dienst und Einführungsreihenfolge noch zu klären.
+- Später führt der Energiemanager Gerätebefehle direkt aus; Node-RED darf Wünsche übergeben. Es erhält damit keine parallele unkoordinierte Schreibverantwortung.
 - Einspeisung wird beim Referenzfall über einen Direktvermarkter nach Viertelstundenpreisen vergütet. Die genaue Preisformel einschließlich Abzügen ist noch offen.
 - Netzladen ist erlaubt, sofern die Gesamtrechnung es rechtfertigt. Bei vorhandenem PV-Überschuss reduziert AC-Laden zunächst die Einspeisung; der Planer darf dieselbe Energie nicht zusätzlich als Netzbezug zählen.
 - Bestehende PV-Wechselrichter speisen weiter ein. Überschuss oberhalb der möglichen Speicherladung darf ins Netz gehen; keine zugesagte Nulleinspeisung der gesamten Anlage.
@@ -34,11 +39,18 @@ Stand: 2026-11-03. Bestätigte Wünsche sind von Vorschlägen und noch offenen E
 - Reserve: konfigurierbar, optionaler Notstrom; einfache Bedienung und allgemeine Anlagenverwendbarkeit sind entscheidend. Dynamische Reservepolitik und konkrete Werte noch offen.
 - Preise: nur Börsenpreise verfügbar; vollständige Aufschläge/Abzüge fehlen.
 
-## Fragerunde 3 – Antwort ausstehend
+## Fragerunden 3 und 4 – beantwortet
 
-- Erste nutzbare Version in HA, eigenständig oder beides?
-- Zunächst ein Speicher je Anlage oder von Beginn an mehrere gemeinsam planen? Bevorzugter Geräteumfang?
-- Geführte Einrichtung mit Expertenoptionen, direkte Detaileinstellungen oder zu bestätigende automatische Vorschläge?
+- HA mit eigener Oberfläche; Solis/Bluesun zuerst; geführte Einrichtung plus Expertenoptionen.
+- Mehrere Speicher-Wechselrichter bereits gemeinsam in der ersten Version.
+- HA-Prognose bevorzugen, zusätzlich direkte Prognosedienste anbieten.
+- Energiemanager als späterer direkter Gerätecontroller, Node-RED als Wunschgeber.
+
+## Fragerunde 5 – Antwort ausstehend
+
+- Zunächst ein gemeinsamer Netzanschluss je Anlage oder auch mehrere getrennte Anschlüsse/Tarife?
+- Vorrang und Gültigkeitsdauer manueller Vorgaben/Node-RED-Wünsche?
+- Kostenlose/optionale kostenpflichtige PV-Dienste oder direkte Dienste erst später?
 
 Notstromreserve ist technisch eine Randbedingung, die auch bei wirtschaftlicher Planung oder bei Minimierung des Netzbezugs gelten kann. Die vorgeschlagene einfache Bedienung darf diese Kombination nicht verhindern.
 
