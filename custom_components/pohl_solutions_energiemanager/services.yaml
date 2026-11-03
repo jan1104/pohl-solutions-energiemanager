@@ -1,0 +1,8 @@
+replan:
+  fields:
+    entry_id:
+      required: true
+      example: "01JEXAMPLEENTRYID"
+      selector:
+        config_entry:
+          integration: pohl_solutions_energiemanager

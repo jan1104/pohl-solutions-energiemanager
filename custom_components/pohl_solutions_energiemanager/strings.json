@@ -1,0 +1,111 @@
+{
+  "title": "Pohl Solutions Energiemanager",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Data sources",
+        "description": "This version calculates proposals only and sends no device commands. The forecast sensor must provide future quarter-hour PV, load, import and export prices. Optional power sensors are documented mappings only; they do not change the plan yet.",
+        "data": {
+          "name": "System name",
+          "forecast_entity": "Quarter-hour forecast (sensor with slots attribute)",
+          "soc_entity": "Current battery state of charge (%)",
+          "grid_entity": "Grid power (optional, mapping only)",
+          "pv_entity": "PV power (optional, mapping only)",
+          "load_entity": "Load power (optional, mapping only)"
+        }
+      },
+      "battery": {
+        "title": "Battery and planning assumptions",
+        "description": "Values are assumptions, not manufacturer approval. The final SOC is at least the initial SOC. A smaller step increases precision and computation time. Do not count the same investment twice as wear and capital cost.",
+        "data": {
+          "capacity_kwh": "Nominal capacity (kWh)",
+          "min_soc_pct": "Minimum state of charge (%)",
+          "max_soc_pct": "Maximum state of charge (%)",
+          "max_charge_kw": "Maximum AC charging power (kW)",
+          "max_discharge_kw": "Maximum AC discharging power (kW)",
+          "charge_efficiency": "Charging efficiency (0 to 1)",
+          "discharge_efficiency": "Discharging efficiency (0 to 1)",
+          "wear_cost_eur_per_kwh": "Additional wear per discharged AC kWh (EUR)",
+          "allow_grid_charge": "Allow grid charging in the simulation",
+          "allow_battery_export": "Allow battery export in the simulation",
+          "soc_step_kwh": "SOC calculation step (kWh)"
+        }
+      }
+    },
+    "error": {
+      "invalid_battery": "Check SOC limits, power, efficiencies and calculation step."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Data sources",
+        "description": "This version calculates proposals only and sends no device commands. The forecast sensor must provide future quarter-hour PV, load, import and export prices. Optional power sensors are documented mappings only; they do not change the plan yet.",
+        "data": {
+          "forecast_entity": "Quarter-hour forecast (sensor with slots attribute)",
+          "soc_entity": "Current battery state of charge (%)",
+          "grid_entity": "Grid power (optional, mapping only)",
+          "pv_entity": "PV power (optional, mapping only)",
+          "load_entity": "Load power (optional, mapping only)"
+        }
+      },
+      "battery": {
+        "title": "Battery and planning assumptions",
+        "description": "Values are assumptions, not manufacturer approval. The final SOC is at least the initial SOC. A smaller step increases precision and computation time. Do not count the same investment twice as wear and capital cost.",
+        "data": {
+          "capacity_kwh": "Nominal capacity (kWh)",
+          "min_soc_pct": "Minimum state of charge (%)",
+          "max_soc_pct": "Maximum state of charge (%)",
+          "max_charge_kw": "Maximum AC charging power (kW)",
+          "max_discharge_kw": "Maximum AC discharging power (kW)",
+          "charge_efficiency": "Charging efficiency (0 to 1)",
+          "discharge_efficiency": "Discharging efficiency (0 to 1)",
+          "wear_cost_eur_per_kwh": "Additional wear per discharged AC kWh (EUR)",
+          "allow_grid_charge": "Allow grid charging in the simulation",
+          "allow_battery_export": "Allow battery export in the simulation",
+          "soc_step_kwh": "SOC calculation step (kWh)"
+        }
+      }
+    },
+    "error": {
+      "invalid_battery": "Check battery parameters."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "schedule": {
+        "name": "Simulated schedule"
+      },
+      "current_power": {
+        "name": "Planned current battery power"
+      },
+      "next_power": {
+        "name": "Planned next battery power"
+      },
+      "savings": {
+        "name": "Estimated horizon benefit"
+      },
+      "status": {
+        "name": "Planning status",
+        "state": {
+          "ready": "Plan ready",
+          "missing_forecast": "Forecast missing",
+          "invalid_input": "Check inputs",
+          "planning_error": "Planning failed"
+        }
+      }
+    }
+  },
+  "services": {
+    "replan": {
+      "name": "Recalculate schedule",
+      "description": "Calculate a proposal only. No device control.",
+      "fields": {
+        "entry_id": {
+          "name": "System",
+          "description": "Integration instance to calculate."
+        }
+      }
+    }
+  }
+}

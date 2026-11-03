@@ -1,0 +1,111 @@
+{
+  "title": "Pohl Solutions Energiemanager",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Datenquellen",
+        "description": "Diese Version berechnet ausschließlich Vorschläge und sendet keine Gerätebefehle. Der Prognose-Sensor muss zukünftige Viertelstunden für PV, Verbrauch sowie Bezugs- und Einspeisepreise liefern. Optionale Leistungssensoren dienen nur der dokumentierten Zuordnung und verändern den Plan noch nicht.",
+        "data": {
+          "name": "Name der Anlage",
+          "forecast_entity": "Viertelstunden-Prognose (Sensor mit slots-Attribut)",
+          "soc_entity": "Aktueller Batterie-Ladezustand (%)",
+          "grid_entity": "Netzleistung (optional, nur Zuordnung)",
+          "pv_entity": "PV-Leistung (optional, nur Zuordnung)",
+          "load_entity": "Verbrauchsleistung (optional, nur Zuordnung)"
+        }
+      },
+      "battery": {
+        "title": "Speicher und Planungsannahmen",
+        "description": "Werte sind Annahmen und keine Herstellerfreigabe. Am Planungshorizont wird mindestens der anfängliche Ladezustand erhalten. Ein kleinerer Rechenschritt erhöht Genauigkeit und Rechenzeit. Verschleißkosten nicht zusätzlich zu denselben umgelegten Anschaffungskosten ansetzen.",
+        "data": {
+          "capacity_kwh": "Nennkapazität (kWh)",
+          "min_soc_pct": "Minimaler Ladezustand (%)",
+          "max_soc_pct": "Maximaler Ladezustand (%)",
+          "max_charge_kw": "Maximale AC-Ladeleistung (kW)",
+          "max_discharge_kw": "Maximale AC-Entladeleistung (kW)",
+          "charge_efficiency": "Ladewirkungsgrad (0 bis 1)",
+          "discharge_efficiency": "Entladewirkungsgrad (0 bis 1)",
+          "wear_cost_eur_per_kwh": "Zusätzlicher Verschleiß je abgegebener AC-kWh (EUR)",
+          "allow_grid_charge": "Netzladung in der Simulation erlauben",
+          "allow_battery_export": "Batterieeinspeisung in der Simulation erlauben",
+          "soc_step_kwh": "Rechenschritt des Ladezustands (kWh)"
+        }
+      }
+    },
+    "error": {
+      "invalid_battery": "Bitte SOC-Grenzen, Leistungen, Wirkungsgrade und Rechenschritt prüfen."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Datenquellen",
+        "description": "Diese Version berechnet ausschließlich Vorschläge und sendet keine Gerätebefehle. Der Prognose-Sensor muss zukünftige Viertelstunden für PV, Verbrauch sowie Bezugs- und Einspeisepreise liefern. Optionale Leistungssensoren dienen nur der dokumentierten Zuordnung und verändern den Plan noch nicht.",
+        "data": {
+          "forecast_entity": "Viertelstunden-Prognose (Sensor mit slots-Attribut)",
+          "soc_entity": "Aktueller Batterie-Ladezustand (%)",
+          "grid_entity": "Netzleistung (optional, nur Zuordnung)",
+          "pv_entity": "PV-Leistung (optional, nur Zuordnung)",
+          "load_entity": "Verbrauchsleistung (optional, nur Zuordnung)"
+        }
+      },
+      "battery": {
+        "title": "Speicher und Planungsannahmen",
+        "description": "Werte sind Annahmen und keine Herstellerfreigabe. Am Planungshorizont wird mindestens der anfängliche Ladezustand erhalten. Ein kleinerer Rechenschritt erhöht Genauigkeit und Rechenzeit. Verschleißkosten nicht zusätzlich zu denselben umgelegten Anschaffungskosten ansetzen.",
+        "data": {
+          "capacity_kwh": "Nennkapazität (kWh)",
+          "min_soc_pct": "Minimaler Ladezustand (%)",
+          "max_soc_pct": "Maximaler Ladezustand (%)",
+          "max_charge_kw": "Maximale AC-Ladeleistung (kW)",
+          "max_discharge_kw": "Maximale AC-Entladeleistung (kW)",
+          "charge_efficiency": "Ladewirkungsgrad (0 bis 1)",
+          "discharge_efficiency": "Entladewirkungsgrad (0 bis 1)",
+          "wear_cost_eur_per_kwh": "Zusätzlicher Verschleiß je abgegebener AC-kWh (EUR)",
+          "allow_grid_charge": "Netzladung in der Simulation erlauben",
+          "allow_battery_export": "Batterieeinspeisung in der Simulation erlauben",
+          "soc_step_kwh": "Rechenschritt des Ladezustands (kWh)"
+        }
+      }
+    },
+    "error": {
+      "invalid_battery": "Bitte Speicherparameter prüfen."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "schedule": {
+        "name": "Simulierter Fahrplan"
+      },
+      "current_power": {
+        "name": "Geplante aktuelle Batterieleistung"
+      },
+      "next_power": {
+        "name": "Geplante nächste Batterieleistung"
+      },
+      "savings": {
+        "name": "Geschätzter Vorteil im Planungshorizont"
+      },
+      "status": {
+        "name": "Planungsstatus",
+        "state": {
+          "ready": "Plan berechnet",
+          "missing_forecast": "Prognose fehlt",
+          "invalid_input": "Eingaben prüfen",
+          "planning_error": "Berechnung fehlgeschlagen"
+        }
+      }
+    }
+  },
+  "services": {
+    "replan": {
+      "name": "Fahrplan neu berechnen",
+      "description": "Berechnet ausschließlich einen neuen Vorschlag. Keine Gerätesteuerung.",
+      "fields": {
+        "entry_id": {
+          "name": "Anlage",
+          "description": "Zu berechnende Integrationsinstanz."
+        }
+      }
+    }
+  }
+}
