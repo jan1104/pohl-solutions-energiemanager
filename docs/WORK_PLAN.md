@@ -44,6 +44,7 @@ Grundlagen: [bestätigte Anforderungen und Fragen](REQUIREMENTS.md), [nachgewies
 - [ ] Unnötiges Laden eines Speichers aus einem gleichzeitig entladenden Speicher verhindern oder einen ausdrücklich begründeten Nutzen nachweisen; Energiequellen für getrennte Exportfreigaben modellieren.
 - [ ] Kleine Lasten/Ladeleistungen korrekt berücksichtigen; nachgewiesenen 1-kW-Fall als Regression aufnehmen.
 - [ ] Laufzeit und Speicherbedarf des bisherigen Verfahrens messen; Kandidat gegen kontinuierliche Referenz und analytische Fälle vergleichen.
+- [ ] Ressourcenvergleich für Zielhardware Raspberry Pi 5 planen; Desktop-Messungen nicht als Pi-Nachweis ausgeben. RAM und weitere HA-Auslastung noch erfassen.
 - [ ] Rollierendes Endenergie-/Reservekonzept entwerfen; keine pauschale Gleichsetzung von aktuellem und End-SOC.
 - [ ] Nachtentladung, billiges Netzladen vor teurem Bezug, bevorstehenden PV-Überschuss und negative Einspeisepreise prüfen.
 - [ ] Wirtschaftlichkeitsziel und Autarkiewunsch als getrennte Betriebsarten definieren; optionaler Batterieverkauf einschließlich netzgeladener Energie nur mit ausdrücklicher anlagenspezifischer Freigabe.
@@ -92,6 +93,7 @@ Abnahme: Lastsprung und Preisänderung werden in Replay erkannt; kurze Schwankun
 
 - [ ] Anlagenübersicht und Anlagenwechsel vorsehen; im Einrichtungsassistenten Netzanschluss, Messstellen, Speicher und Verbraucher eindeutig einer Anlage zuordnen.
 - [ ] Echte HA-Oberfläche als erste Betriebsplattform aus dem lokalen Prototyp entwickeln; Anlage/Quellen/mehrere Speicher/Strategie mit wenigen Pflichtangaben geführt einrichten, Details optional für Experten.
+- [ ] Einfache Startvorlage mit einem Wechselrichter und einem Speicher anbieten; weitere Speicher, Messgeräte, Heizstäbe und E-Ladestationen einzeln ergänzen. Eine nutzbare Hauslastquelle in der Einrichtung prüfen; Ableitungsweg noch klären.
 - [ ] Kaufpreis, nutzbare Kapazität, SOC-Fenster, belegte Zyklen-/Kalenderannahmen, Betriebskosten und Wirkungsgrade bearbeiten.
 - [ ] Investitionsumlage, marginalen Verschleiß, Verluste und entgangene Einspeiseerlöse verständlich getrennt darstellen.
 - [ ] Plan/Ist, SOC, Haus/PV/Netz und Preise mit Begründungen anzeigen; Datenlücken und Prognoseunsicherheit kenntlich machen.

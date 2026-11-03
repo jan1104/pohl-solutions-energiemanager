@@ -14,6 +14,9 @@ Stand: 2026-11-03. Bestätigte Wünsche sind von Vorschlägen und noch offenen E
 - Vorhandene Heizstäbe werden über HA ein-/ausgeschaltet und intern geregelt; Shelly misst deren Verbrauch. Ein konkretes Modell oder eine externe stufenlose Schnittstelle ist nicht nachgewiesen. Freigabe, Messung und Leistungsregelung sind getrennte Gerätefähigkeiten.
 - Konfiguration muss je Gerät festlegen können, ob aktueller PV-Überschuss, Batterieenergie oder Netzbezug zulässig ist. Nur gespeicherte PV-Energie gegenüber netzgeladener Energie zu unterscheiden erfordert eine belegte Herkunftsrechnung; ein SOC-Wert allein genügt dafür nicht.
 - Geführte Einrichtung mit wenigen Pflichtangaben und optionalen Experteneinstellungen.
+- Einfache Startvorlage mit einem Wechselrichter und einem Speicher. Weitere Speicher, Messgeräte, Heizstäbe und E-Ladestationen können individuell ergänzt werden; die einfache Vorlage begrenzt nicht die bestätigte Mehrspeicher-/Mehranlagenfähigkeit.
+- Hausverbrauch ist eine wesentliche Eingangsgröße. Ob eine direkte Verbrauchsentität erforderlich ist oder eine validierte Berechnung aus vollständigen Messwerten angeboten wird, ist noch zu klären.
+- Zielhardware der Referenzinstallation ist ein Raspberry Pi 5. Laufzeit und Speicherbedarf daran messen; vorhandene RAM-Ausstattung und weitere HA-Last sind noch unbekannt. Keine belegte Performancezusage vorhanden.
 - PV-Prognosen: vorhandene HA-Prognose bevorzugen; direkt eingebundenen Prognosedienst ebenfalls anbieten. Möglichst kostenlos starten, kostenpflichtige Dienste optional. Konkreter Anbieter und dessen Grenzen noch zu prüfen.
 - Später führt der Energiemanager Gerätebefehle direkt aus; Node-RED darf Wünsche übergeben. Es erhält damit keine parallele unkoordinierte Schreibverantwortung.
 - Einspeisung wird beim Referenzfall über einen Direktvermarkter nach Viertelstundenpreisen vergütet. Die genaue Preisformel einschließlich Abzügen ist noch offen.
@@ -70,11 +73,17 @@ Stand: 2026-11-03. Bestätigte Wünsche sind von Vorschlägen und noch offenen E
 - Erlaubte Energiequellen ebenfalls konfigurierbar, keine allgemein verbotene Batterieentladung für Heizstäbe beschlossen.
 - Bestehende Umsetzung: HA Ein/Aus, interne Heizstabregelung, Shelly-Messung. Modelle bleiben offen.
 
-## Fragerunde 8 – Antwort ausstehend
+## Fragerunde 8 – beantwortet
 
-- Einfache anpassbare Vorlagen oder ausschließlich eigene Regeln?
-- Geräteabhängigen Rückfall bei fehlenden benötigten Messwerten grundsätzlich vorsehen oder später konkret entscheiden?
-- Verwendete HA-Hardware zur Bemessung des Rechenbudgets?
+- Einfache Startvorlage Wechselrichter plus Batterie; weitere Geräte individuell ergänzen. Hausverbrauch berücksichtigen.
+- Ausfallverhalten später anhand konkreter Geräte entscheiden; kein pauschaler Abschaltmodus beschlossen.
+- HA läuft auf Raspberry Pi 5.
+
+## Fragerunde 9 – Antwort ausstehend
+
+- Hauslast direkt auswählen oder zusätzlich aus einer validierten vollständigen Bilanz ableiten?
+- Zusätzliche Geräte zuerst über vorhandene HA-Entitäten oder direkte Verbindungen anbinden?
+- Geführter Start zunächst mit Planprüfung oder Planung und spätere Steuerung in einer gemeinsamen Einrichtung?
 
 Notstromreserve ist technisch eine Randbedingung, die auch bei wirtschaftlicher Planung oder bei Minimierung des Netzbezugs gelten kann. Die vorgeschlagene einfache Bedienung darf diese Kombination nicht verhindern.
 
@@ -87,7 +96,7 @@ Notstromreserve ist technisch eine Randbedingung, die auch bei wirtschaftlicher 
 - Rolle von Plexlog und Node-RED, bestehende Schreibzugriffe, Kommunikationswege und gewünschter alleiniger Sollwertgeber.
 - Anschlusslimits, weitere Verbraucher am PV-Abgang, eindeutige Messstellenbilanz. Ein Zweigzähler ist nicht automatisch ein reiner Erzeugungszähler.
 - Zulässiges Verhalten bei fehlenden Preisen, Prognosen, Internet, Messwerten und HA-Neustart; manuelle Rücknahme und Erreichbarkeit.
-- Hardware für HA, akzeptable Berechnungsdauer und Zeitraum der Historie; daraus messbares Ressourcenbudget ableiten.
+- RAM-Ausstattung des Raspberry Pi 5, weitere HA-Auslastung, akzeptable Berechnungsdauer und Zeitraum der Historie; daraus messbares Ressourcenbudget ableiten.
 - Kaufpreis, Förderungen/Restwert, laufende Kosten, Wirkungsgrade, belegte Lebensdauerbedingungen und gewünschte Wirtschaftlichkeitsanzeige.
 - Lokale Datenhaltung, Aufbewahrung und Sicherung; gemeinsame Übersicht und Berechtigungen für mehrere Anlagen?
 
