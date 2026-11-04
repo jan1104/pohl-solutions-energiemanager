@@ -8,6 +8,10 @@ htmlcov/
 .DS_Store
 Thumbs.db
 *.log
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*
 .env
 .env.*
 !.env.example

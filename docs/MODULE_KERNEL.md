@@ -57,6 +57,8 @@ Getrennte Modulversionen bedeuten **noch kein unterbrechungsfreies Update** in H
 
 ## Grenzen und nächste Schritte
 
+Die Datenhaltung gehört ebenfalls zum Grundmodul. Eine gemeinsame, projekt-/modulbezogene SQLite-Konfigurationsablage ist nun separat implementiert; Kontextinjektion, HA-Migration und Historien folgen. Siehe [CENTRAL_STORAGE.md](CENTRAL_STORAGE.md). Modulregistrierung erzeugt bislang weiterhin keine automatischen Dateien oder Migrationen.
+
 Async-Timeouts funktionieren nur kooperativ. CPU-blockierende Module, fremde gemeinsam veränderte Objekte oder Handler, die Abbruch ignorieren, können andere Arbeit im Prozess beeinträchtigen. Der Kernel ist keine Sicherheits- oder Prozessisolationsgrenze. Blockierende Berechnungen gehören später in geeignete Worker; Live-Aktoren sind keine freigegebenen Handler dieses Kernels.
 
 Eine Registry gehört nach Beginn asynchroner Aufrufe zu genau einer Eventloop/Projektlaufzeit. Wiederverwendung derselben Async-Locks über verschiedene Eventloops ist nicht vorgesehen; bei neuer Laufzeit eine neue Registry anlegen.

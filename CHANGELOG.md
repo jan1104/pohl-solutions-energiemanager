@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht — 2026-11-04
 
+- Erste zentrale SQLite-Konfigurationsablage für das Grundmodul: getrennte Projekt-/Modulbereiche, eigene Schemaversionen, Schutz vor veralteten Schreibständen und atomare Mehrdokumentänderungen. 21 neue Datenbanktests.
+- Bestehender HA-Projektspeicher bleibt unverändert maßgeblich. Automatische Modulkontextanbindung, Migration, Historien und Sicherung folgen; siehe `docs/CENTRAL_STORAGE.md`. Keine Datenbankdateien in Git.
 - Erste versionierte Modulgrundlage: getrennte Modul-/API-Versionen, explizite Abhängigkeiten, begrenzte Async-Aufrufe, gezielte Fehlerfortpflanzung und Schutz gegen überholte Ergebnisse/Fehler. 18 neue synthetische Tests.
 - Prognose als eigener Fachbaustein vorgesehen. Kernel noch nicht in HA verdrahtet; konkrete Datenverträge, Provider, Migrationen und Moduloberfläche folgen. Getrennte Versionen bedeuten kein unterbrechungsfreies Update oder Prozessisolation; siehe `docs/MODULE_KERNEL.md`.
 - Bedien-/Modulentwurf konkretisiert: zentrale Eingabeorte, Herkunft automatisch/manuell bezogener Werte, wiederverwendbare Gerätebausteine und gemeinsame Messgruppen. Keine neue Laufzeitfunktion; siehe `docs/DEVICE_MODULES_AND_SETUP.md`.
