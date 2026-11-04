@@ -1,18 +1,20 @@
-# Grundmodul 0.5.0 testen
+# Grundmodul 0.5.x testen
 
 Testbare Entwicklungsversion für Projektverwaltung, Basis-Module und zentrale Konfigurationsablage. Kein Geräteabruf aus der Projektverwaltung und keine Geräteschaltbefehle. Bestehende explizite Plansimulation bleibt getrennt verfügbar. Keine vollständigen Prognose-/Verbrauchermodule oder gemeinsame Mehrspeicherautomatik behauptet.
 
 ## Installation oder Update
 
-1. In HACS auf **0.5.0** aktualisieren und Home Assistant neu starten. Vorhandenen Integrationseintrag behalten.
+1. In HACS auf **0.5.1** aktualisieren und Home Assistant neu starten. Vorhandenen Integrationseintrag behalten.
 2. Browser neu laden, bei alter Ansicht einmal vollständig aktualisieren. Als Administrator links **Energiemanager** öffnen.
 3. Bei Ersteinrichtung zunächst nur einen Projektnamen angeben; Sensoren und Geräte sind für diesen Test nicht erforderlich.
 
 ## Prüfschritte
 
-1. **Grundmodul** öffnen: Produktversion **0.5.0**, Projektablage **SQLite**, Speicherformat **1**. Die tatsächlich registrierten Basisfunktionen heißen **Grundmodul**, **Konfigurationsspeicher** und **Projektverwaltung**. Deren eigene Modulversion ist zunächst **0.1.0**; sie ist bewusst getrennt von der Produktversion.
+Ab 0.5.1 beginnt ein leeres Projekt mit einem einzelnen nächsten Schritt. Seltene Aktionen und der JSON-Editor werden gezielt über Projektoptionen geöffnet. Die zentrale Speicherung aus 0.5.0 bleibt unverändert.
+
+1. **Grundmodul** öffnen: Produktversion **0.5.1**, Projektablage **SQLite**, Speicherformat **1**. Die tatsächlich registrierten Basisfunktionen heißen **Grundmodul**, **Konfigurationsspeicher** und **Projektverwaltung**. Deren eigene Modulversion ist zunächst **0.1.0**; sie ist bewusst getrennt von der Produktversion.
 2. Bei einem bestehenden Projekt prüfen, ob Name, Geräte und Zuordnungen erhalten sind. Nach erfolgreicher Übernahme zeigt die Speicheranzeige den Hinweis auf die erhaltene bisherige Projektdatei. Bei einer leeren Neuinstallation ist kein Migrationshinweis erforderlich.
-3. Zu **Projekt** wechseln. Namen ändern oder einen Test-Netzanschluss hinzufügen. **In Home Assistant speichern** anklicken. Anschließend zum Grundmodul wechseln und **Status aktualisieren** wählen. Ein gespeichertes Projekt muss entsprechend angezeigt werden; ungespeicherte Entwürfe sind davon ausdrücklich getrennt.
+3. Zu **Projekt** wechseln. Bei leerem Projekt **Netzanschluss hinzufügen** wählen; den Namen bei Bedarf unter **Projektoptionen** ändern. **Speichern** anklicken. Anschließend zum Grundmodul wechseln und **Status aktualisieren** wählen. Ein gespeichertes Projekt muss entsprechend angezeigt werden; ungespeicherte Entwürfe sind davon ausdrücklich getrennt.
 4. HA neu starten und denselben gespeicherten Projektstand erneut prüfen. Keine Integration löschen oder neu anlegen.
 5. Optional zwei Browseransichten öffnen, beide denselben Ausgangsstand laden. In Ansicht A speichern, danach in Ansicht B einen anderen Entwurf speichern. B muss einen Versionskonflikt anzeigen, statt A zu überschreiben. Den eigenen Entwurf erst nach Vergleich des neuen Stands übernehmen.
 6. Optional Projekt exportieren und die Datei lokal sichern. Reale Projektdateien und Datenbanken gehören nicht in öffentliche Issues oder Git.

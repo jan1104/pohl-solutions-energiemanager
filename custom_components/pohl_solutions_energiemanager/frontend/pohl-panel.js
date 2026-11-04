@@ -21,7 +21,7 @@
       const menu = document.createElement('button'); menu.type = 'button'; menu.textContent = '☰'; menu.setAttribute('aria-label', 'HA-Navigation öffnen'); menu.title = 'HA-Navigation öffnen'; menu.style.width = '40px'; menu.style.height = '40px'; menu.style.border = '0'; menu.style.background = 'transparent'; menu.style.color = 'inherit'; menu.style.fontSize = '24px'; menu.style.cursor = 'pointer';
       menu.addEventListener('click', () => this.dispatchEvent(new CustomEvent('hass-toggle-menu', {bubbles: true, composed: true})));
       const title = document.createElement('span'); title.textContent = 'Pohl Energiemanager'; title.style.font = '500 18px Roboto, sans-serif'; header.append(menu, title); this._header = header; this.append(header);
-      const frame = document.createElement('iframe'); frame.title = 'Pohl Solutions Energiemanager'; frame.src = '/pohl-energy-assets/project.html?ha=1&v=0.5.0';
+      const frame = document.createElement('iframe'); frame.title = 'Pohl Solutions Energiemanager'; frame.src = '/pohl-energy-assets/project.html?ha=1&v=0.5.1';
       frame.style.width = '100%'; frame.style.height = 'calc(100vh - 56px)'; frame.style.border = '0'; frame.style.display = 'block';
       frame.addEventListener('load', () => this._sendTheme()); this._frame = frame; this.append(frame); this._updateLayout();
     }

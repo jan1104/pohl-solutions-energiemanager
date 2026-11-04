@@ -20,7 +20,7 @@ function setup(handler) {
 }
 test('HA updates create one iframe and theme messages never contain authentication', () => {
   const t = setup(); t.panel.hass = t.hass; t.panel.hass = {...t.hass};
-  assert.equal(t.panel.children.length, 2); assert.equal(t.panel._frame.src, '/pohl-energy-assets/project.html?ha=1&v=0.5.0');
+  assert.equal(t.panel.children.length, 2); assert.equal(t.panel._frame.src, '/pohl-energy-assets/project.html?ha=1&v=0.5.1');
   assert.equal(t.calls.length, 0); assert.ok(t.sent.length > 0); assert.ok(!JSON.stringify(t.sent).includes('never-send-this'));
   assert.ok(t.sent.every(s => s.origin === 'https://ha.example'));
   t.panel.disconnectedCallback(); assert.equal(t.listeners.size, 0);
@@ -142,8 +142,9 @@ function editorSetup() {
   const outgoing = [], listeners = new Map(), parent = {postMessage: data => outgoing.push(data)};
   const document = {getElementById: id => elements.get(id), createElement: tag => new Element(tag), body: new Element('body'), documentElement: new Element('html'), querySelectorAll: selector => selector === '[data-view]' ? tabs : selector === '[data-add]' ? [] : [...elements.values()].filter(e => ['button', 'input', 'select', 'textarea'].includes(e.tagName))};
   const win = {location: {search: '?ha=1', origin: 'https://ha.example'}, parent, addEventListener: (type, fn) => listeners.set(type, fn)};
-  const context = vm.createContext({window: win, document, URLSearchParams, TextEncoder, Date, Map, Set, setTimeout, clearTimeout, Option: class extends Element {constructor(name, value) { super('option'); this.textContent = name; this.value = value; }}});
+  const context = vm.createContext({window: win, document, crypto: require('node:crypto').webcrypto, URLSearchParams, TextEncoder, Date, Map, Set, setTimeout, clearTimeout, Option: class extends Element {constructor(name, value) { super('option'); this.textContent = name; this.value = value; }}});
   vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, 'project-model.js'), 'utf8'), context);
+  vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, 'project-actions.js'), 'utf8'), context);
   vm.runInContext('window.PohlProjectExamples = {simple: ' + fs.readFileSync(require('node:path').join(__dirname, '../examples/simple-project.json'), 'utf8') + '};', context);
   vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, 'project-ui.js'), 'utf8'), context);
   const reply = (request, data, ok = true) => listeners.get('message')({origin: 'https://ha.example', source: parent, data: {type: 'pohl-energy-response', id: request.id, ok, ...(ok ? {data} : {error: data})}});
@@ -202,4 +203,33 @@ test('basic-module navigation remains available when initial project loading fai
   assert.equal(t.elements.get('section-tab-system').disabled, false); assert.equal(t.elements.get('system-refresh').disabled, false);
   const reading = t.click('section-tab-system'); t.reply(t.outgoing.at(-1), systemFixture()); await reading;
   assert.equal(t.elements.get('system-version').textContent, '0.5.0');
+});
+
+function emptyProject() {
+  return {format: 'pohl-energy-project', schema_version: 1, id: 'empty', name: 'Mein Energiemanager', mode: 'planning_only', grids: [], areas: [], nodes: [], connections: [], devices: [], channels: [], measurements: [], settings: {}};
+}
+
+test('minimal empty project shows one next-step flow and no zero-count map or expert forms', async () => {
+  const t = editorSetup(); t.reply(t.outgoing.at(-1), {project_json: JSON.stringify(emptyProject()), revision: 'r1'}); await Promise.resolve(); await Promise.resolve();
+  assert.equal(t.elements.get('project-heading').textContent, 'Mein Energiemanager');
+  assert.equal(t.elements.get('project-mode-note').textContent, 'Einrichtung'); assert.equal(t.elements.get('project-save').textContent, 'Speichern');
+  assert.equal(t.elements.get('project-empty').hidden, false); assert.equal(t.elements.get('project-overview').hidden, true);
+  assert.equal(t.elements.get('project-add-panel').hidden, true); assert.equal(t.elements.get('project-counts').children.length, 0);
+  assert.equal(t.elements.get('project-object-options').hidden, true); assert.notEqual(t.elements.get('project-options').open, true);
+  assert.notEqual(t.elements.get('project-json-options').open, true);
+  await t.click('project-start-add'); assert.equal(t.elements.get('project-add-panel').hidden, false); assert.equal(t.elements.get('project-empty').hidden, true);
+  assert.equal(t.elements.get('add-action').value, 'grid'); assert.equal(t.elements.get('add-action-field').hidden, true);
+  await t.click('project-add-cancel'); assert.equal(t.elements.get('project-add-panel').hidden, true); assert.equal(t.elements.get('project-empty').hidden, false);
+});
+
+test('focused first-grid flow reveals topology, closes the form and saves with original CAS revision', async () => {
+  const t = editorSetup(); t.reply(t.outgoing.at(-1), {project_json: JSON.stringify(emptyProject()), revision: 'r1'}); await Promise.resolve(); await Promise.resolve();
+  await t.click('project-start-add'); t.elements.get('add-name').value = 'Hauptanschluss';
+  await t.elements.get('project-add-form').handlers.get('submit')({preventDefault() {}});
+  assert.equal(t.elements.get('project-add-panel').hidden, true); assert.equal(t.elements.get('project-empty').hidden, true); assert.equal(t.elements.get('project-overview').hidden, false);
+  assert.equal(t.elements.get('project-object-options').hidden, false); assert.notEqual(t.elements.get('project-options').open, true);
+  const saving = t.click('project-save'), request = t.outgoing.at(-1);
+  assert.equal(request.operation, 'save'); assert.equal(request.expected_revision, 'r1');
+  const edited = JSON.parse(request.project_json); assert.equal(edited.grids.length, 1); assert.equal(edited.grids[0].name, 'Hauptanschluss');
+  t.reply(request, {project_json: request.project_json, revision: 'r2'}); await saving; assert.match(t.elements.get('project-message').textContent, /gespeichert/);
 });

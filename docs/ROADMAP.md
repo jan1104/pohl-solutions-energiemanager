@@ -10,8 +10,8 @@ Auswählbare Bezugs-/Einspeisequellen, JSON-URL, HA-Sensor, Festpreis, beobachte
 
 ## Danach — echte Datengrundlage
 
-- Zentrale Datenspeicherung im Grundmodul: [CENTRAL_STORAGE.md](CENTRAL_STORAGE.md). SQLite-Modulkonfiguration separat umgesetzt; Kontextanbindung, HA-Migration und Historien noch offen.
-- Grundmodul und eigene Prognosemodule: [MODULE_KERNEL.md](MODULE_KERNEL.md). Getesteter Versions-/Abhängigkeitskernel vorhanden; konkrete Fachverträge, Provider und HA-Anbindung noch offen.
+- Zentrale Datenspeicherung im Grundmodul: [CENTRAL_STORAGE.md](CENTRAL_STORAGE.md). HA-Projektablage seit 0.5.0 an SQLite angeschlossen; allgemeine Modulkontexte und Historien noch offen.
+- Grundmodul und eigene Prognosemodule: [MODULE_KERNEL.md](MODULE_KERNEL.md). Basisfunktionen in HA angebunden; konkrete Prognose-/Fachverträge und Provider noch offen.
 - Gemeinsame Grundfunktionen/Datenfluss: [SYSTEM_LOGIC.md](SYSTEM_LOGIC.md). Zentrale TCP-/Gatewayverwaltung und Profil-Lesevertrag implementiert; HA-Anbindung und weitere Transportarten offen.
 - Vorhandene HA-Entitäten und Node-RED-Flows inventarisieren, ohne Zugangsdaten ins Repository zu übernehmen.
 - Vorzeichen/Einheiten und Messstellenbilanz Eastron/Janitza abgleichen.
@@ -21,8 +21,9 @@ Auswählbare Bezugs-/Einspeisequellen, JSON-URL, HA-Sensor, Festpreis, beobachte
 - PV-/Wetterprognose anbinden; historische Lastmessungen importieren.
 - Prognosen mit rollierendem Rücktest messen, MAE/Bias dokumentieren, einfache Baseline schlagen.
 
-## 0.3 / 0.4 — Projektverwaltung und erste native HA-Oberfläche
+## 0.3 bis 0.5 — Projektverwaltung und native HA-Oberfläche
 
+- Ab 0.5.1 ruhige Projektübersicht: ein nächster Schritt für leere Projekte; seltene Aktionen und Formulare werden gezielt geöffnet.
 - Umgesetzt: HA-Seitenleisteneintrag „Energiemanager“, dauerhaft gespeichertes Projekt, Basisformulare für Netzanschlüsse, Bereiche, Verbindungen und Geräte; Import/Export und getrennte Strukturansichten.
 - Offen: durchgehend geführte Messquellen-Zuordnung, Kostenmodell und aktive Planung in dieser Oberfläche integrieren.
 - Geräteprofile mit Quellen, Firmware und nachgewiesenen Fähigkeiten.

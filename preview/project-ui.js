@@ -5,7 +5,7 @@
   const embedded = new URLSearchParams(window.location.search).get('ha') === '1' && window.parent !== window;
   const $ = id => document.getElementById(id), storageKey = 'pohl-energy-project-v1';
   let project, candidate = null, candidateRevision, baseRevision, view = 'electrical';
-  let initialLoadPending = false, systemBusy = false, systemLoaded = false;
+  let initialLoadPending = false, systemBusy = false, systemLoaded = false, addPanelOpen = false;
   function initialControls(disabled) {
     document.querySelectorAll('button,input,select,textarea').forEach(control => { control.disabled = disabled; });
     // Backend diagnostics remain reachable even if loading the project fails.
@@ -93,7 +93,7 @@
   $('system-open-project').addEventListener('click', () => { openSection('project'); $('section-tab-project').focus(); });
   $('system-refresh').addEventListener('click', refreshSystem);
   $('system-refresh').disabled = !embedded;
-  if (embedded) $('system-mode-note').textContent = 'Bestätigter Systemstatus aus Home Assistant. Die Modulübersicht beschreibt die installierten Basisfunktionen und deren Verfügbarkeit.';
+  if (embedded) $('system-mode-note').textContent = 'Status Ihrer Home-Assistant-Installation.';
   function message(text) { $('project-message').textContent = text; $('project-error').hidden = true; }
   function guard(fn) { return async function (...args) { try { await fn(...args); } catch (err) { $('project-error').textContent = `Nicht übernommen: ${err.message}`; $('project-error').hidden = false; $('project-message').textContent = ''; } }; }
   function warningList(target, warnings) {
@@ -106,6 +106,7 @@
     $('candidate-summary').textContent = `${origin}: „${checked.name}“ · ${summary.counts.grids} Netzanschlüsse · ${summary.counts.devices} Geräte · ${summary.counts.measurements} Bilanzmessungen. Noch nicht übernommen.`;
     warningList($('candidate-warnings'), summary.warnings); $('project-json').value = M.exportProjectJson(checked);
     message('Vorschau geprüft. Bitte prüfen und ausdrücklich übernehmen.');
+    $('project-apply').focus();
   }
   function accept(value, note, revision) { project = M.validateProject(value); if (revision !== undefined) baseRevision = revision; candidate = null; candidateRevision = undefined; $('project-candidate').hidden = true; render(); message(note); }
   function currentArea() { return $('project-area').value; }
@@ -172,12 +173,32 @@
     project.areas.forEach(a => $('project-area').append(new Option(`${a.name} · ${byId('grids', a.grid_id).name}`, a.id)));
     $('project-area').value = project.areas.some(a => a.id === previousArea) ? previousArea : '';
     const summary = M.projectSummary(project), counts = $('project-counts'); counts.replaceChildren();
-    for (const [key, name] of [['grids', 'Netzanschlüsse'], ['areas', 'Bereiche'], ['devices', 'Geräte'], ['measurements', 'Bilanzmessungen']]) { const card = el('article'); card.append(el('strong', summary.counts[key]), el('span', name)); counts.append(card); }
+    for (const [key, singular, plural] of [['grids', 'Netzanschluss', 'Netzanschlüsse'], ['areas', 'Bereich', 'Bereiche'], ['devices', 'Gerät', 'Geräte'], ['measurements', 'Messstelle', 'Messstellen']]) { if (!summary.counts[key]) continue; const card = el('article'); card.append(el('strong', summary.counts[key]), el('span', summary.counts[key] === 1 ? singular : plural)); counts.append(card); }
     warningList($('project-warnings'), summary.warnings); $('project-json').value = M.exportProjectJson(project);
+    $('project-warnings-section').hidden = !summary.warnings.length;
+    $('project-warnings-count').textContent = summary.warnings.length ? `(${summary.warnings.length})` : '';
     $('project-object').replaceChildren(); groups.forEach(g => project[g].forEach(o => $('project-object').append(new Option(`${o.name} (${groupLabels[g]})`, `${g}:${o.id}`))));
     $('project-object-name').value = selectedObject().value?.name || ''; $('project-object-rename').disabled = !$('project-object').value;
+    $('project-object-options').hidden = !$('project-object').value;
+    $('project-area-filter').hidden = project.areas.length < 2;
+    renderProjectLayout();
     renderAddForm(); renderView();
   }
+  function renderProjectLayout() {
+    const empty = project.grids.length === 0;
+    $('project-empty').hidden = !empty || addPanelOpen;
+    $('project-overview').hidden = empty;
+    $('project-add-panel').hidden = !addPanelOpen;
+  }
+  function openAdd(first = false) {
+    if (candidate) throw new Error('Offene Vorschau zuerst übernehmen oder verwerfen.');
+    addPanelOpen = true;
+    $('add-action').value = first || !project.grids.length ? 'grid' : project.areas.length ? 'device' : 'area';
+    renderProjectLayout(); renderAddForm(); $('add-name').focus();
+  }
+  $('project-start-add').addEventListener('click', guard(() => openAdd(true)));
+  $('project-open-add').addEventListener('click', guard(() => openAdd()));
+  $('project-add-cancel').addEventListener('click', () => { addPanelOpen = false; renderProjectLayout(); $(project.grids.length ? 'project-open-add' : 'project-start-add').focus(); });
   function renderAddForm() {
     const fill = (id, rows, empty) => { const prior = $(id).value; $(id).replaceChildren(); if (empty) $(id).append(new Option(empty, '')); rows.forEach(row => $(id).append(new Option(row.name, row.id))); if ([...$(id).options].some(o => o.value === prior)) $(id).value = prior; };
     fill('add-grid', project.grids); fill('add-area', project.areas); fill('add-device-connection', project.connections, 'Noch nicht zuordnen');
@@ -185,6 +206,8 @@
     fill('add-node', project.nodes.filter(n => n.grid_id === grid));
     fill('add-parent', project.devices.filter(d => ['hybrid_inverter', 'storage_inverter'].includes(d.kind) && byId('nodes', d.node_id).grid_id === grid));
     const action = $('add-action').value; document.querySelectorAll('[data-add]').forEach(field => { field.hidden = field.dataset.add !== action; });
+    $('add-action-field').hidden = !project.grids.length;
+    $('project-add-heading').textContent = ({grid: 'Netzanschluss hinzufügen', area: 'Bereich hinzufügen', connection: 'Verbindung hinzufügen', device: 'Gerät hinzufügen'})[action] || 'Projekt ergänzen';
     $('add-parent-field').hidden = action !== 'device' || $('add-device-kind').value !== 'battery';
   }
   $('project-new').addEventListener('click', guard(() => stage(examples.simple, 'Neue einfache Vorlage')));
@@ -236,17 +259,18 @@
       if (values.kind === 'battery') values.parentId = $('add-parent').value;
       next = A.addDevice(project, values);
     }
-    accept(next, embedded ? 'Hinzugefügt. Entwurf bitte in Home Assistant speichern.' : 'Hinzugefügt. Entwurf noch nicht lokal gespeichert.'); $('add-name').value = '';
+    addPanelOpen = false; accept(next, 'Hinzugefügt. Änderungen noch nicht gespeichert.'); $('add-name').value = '';
+    $('project-open-add').focus();
   }));
   try {
     if (!M || !examples?.simple) throw new Error('Lokale Projektdateien fehlen. Bitte Projektdateien vollständig bereitstellen.');
     if (embedded) {
-      document.body.classList.add('ha-embedded'); $('project-save').textContent = 'In Home Assistant speichern'; $('project-reload').textContent = 'Aus Home Assistant laden';
-      $('project-storage-note').textContent = 'Projekt zentral in Home Assistant speichern. Änderungen im Entwurf bleiben bis zum Speichern nur in dieser Ansicht.';
-      $('project-mode-note').textContent = 'Anlagenkonfiguration in Home Assistant. Noch keine Live-Verbindungen oder Gerätesteuerung. Vorlagen werden nur auf ausdrücklichen Wunsch geladen.';
+      document.body.classList.add('ha-embedded'); $('project-save').textContent = 'Speichern'; $('project-reload').textContent = 'Gespeicherten Stand laden';
+      $('project-storage-note').textContent = 'Ihr Projekt wird in Home Assistant gespeichert. Änderungen werden erst mit Speichern dauerhaft übernommen.';
+      $('project-mode-note').textContent = 'Einrichtung';
       const empty = {format: 'pohl-energy-project', schema_version: 1, id: 'energy-project', name: 'Mein Energieprojekt', mode: 'planning_only', grids: [], areas: [], nodes: [], connections: [], devices: [], channels: [], measurements: [], settings: {}};
       accept(empty, 'Projekt wird aus Home Assistant geladen …'); initialLoadPending = true; initialControls(true);
-      haRequest('load').then(data => { if (data.project_json) accept(M.loadProjectJson(data.project_json), 'Projekt aus Home Assistant geladen.', data.revision); else { baseRevision = data.revision; message('Noch kein Projekt gespeichert. Legen Sie Ihren ersten Netzanschluss an oder wählen Sie ausdrücklich eine Vorlage.'); } initialLoadPending = false; initialControls(false); }).catch(err => { $('project-error').hidden = false; $('project-error').textContent = err.message; $('project-reload').disabled = false; });
+      haRequest('load').then(data => { if (data.project_json) accept(M.loadProjectJson(data.project_json), '', data.revision); else { baseRevision = data.revision; message(''); } initialLoadPending = false; initialControls(false); }).catch(err => { $('project-error').hidden = false; $('project-error').textContent = err.message; $('project-reload').disabled = false; });
     } else accept(examples.simple, 'Einfache Beispielvorlage geladen. Keine Live-Verbindung.');
   }
   catch (err) { $('project-error').hidden = false; $('project-error').textContent = err.message; document.querySelectorAll('button').forEach(b => { b.disabled = true; }); }

@@ -14,3 +14,4 @@
 - Do not commit private site documents, serial numbers, actual contracts, credentials or Home Assistant configuration. Put local private inputs in private/.
 - Update CHANGELOG.md and docs when behavior changes. Commit small, reviewable changes; no release claims before relevant tests pass.
 - Shared project UI lives in preview/. After editing its assets, run tools/sync_frontend.py and the archive/synchronization tests so HACS ships the same tested UI. frontend/pohl-panel.js is the HA-only wrapper.
+- Keep the normal project view minimal: an empty project shows one clear next step. Reveal forms, templates and expert actions on demand; avoid zero-count cards and repeated technical prose. Save, errors and pending import previews must remain discoverable and visible when relevant.

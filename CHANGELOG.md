@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.5.1 — 2026-11-04
+
+- Projektoberfläche vereinfacht: fokussierter Einstieg für leere Projekte, kompakte Hauptaktionen und schrittweises Öffnen von Hinzufügen, Projektoptionen und Expertenfunktionen.
+- Import-/Export-/Vorlagenaktionen, Umbenennung und JSON-Editor bleiben erreichbar, überlagern aber nicht mehr die normale Projektübersicht. Speicherung und Revisionsschutz unverändert.
+
 ## 0.5.0 — 2026-11-04
 
 - Testbares Grundmodul im HA-Panel: Projekt-/Grundmodulnavigation, echte Produkt-/Modulversionen, Speicherstatus und gezielter Statusabruf ohne Veränderung des Projektentwurfs.
