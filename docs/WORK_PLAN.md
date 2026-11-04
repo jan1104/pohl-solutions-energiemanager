@@ -1,6 +1,6 @@
 # Arbeitsplan
 
-Stand: 2026-11-03. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
+Stand: 2026-11-04. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
 
 ## Auftrag und Grenzen
 
@@ -34,6 +34,8 @@ Stand: 2026-11-03. Dieser Plan steuert die weitere Entwicklung in diesem Chat un
 V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberflächenprüfungen getestet. Die erweiterte echte HA-Laufzeitprüfung ist im GitHub-Lauf 41618373561 auf Commit e02b711 erfolgreich. Die lokale Vorschau ruft keine Preise ab; die aktive Integration kann konfigurierte Quellen lesen. Der SMARD-Nutzungsstatus ist in PRICE_SOURCES.md dokumentiert.
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
+
+Unveröffentlichter Entwicklungsschritt am 04.11.2026: Laufzeitbaustein für normalisierte AC-Messwerte und lineare Ableitungen mit Quellenherkunft, Originalmess-/Empfangszeiten, Datenalter, Zeitversatz und Fehlerfortpflanzung. Getrennte Anschlüsse, Zirkelschlüsse und mehrfach genutzte Ursprungsquellen ablehnen. 23 neue synthetische Tests; insgesamt lokal 204 Python-Tests plus 18 Untertests erfolgreich. Noch keine Projekt-/Oberflächen-/Polling-Anbindung und keine Erkennung elektrisch überlappender verschiedener Zähler. Siehe RUNTIME_METERING.md. Nächster Schritt: Kanalzuordnung mit Abdeckungsprüfung; keine Verbindung als Setup-Nebenwirkung. Kein Release.
 
 0.4.0: Nutzeranforderung echte HA-Seitenleiste umgesetzt: natives Panel „Energiemanager“, direkte HA-Projektpersistenz mit Administrator-/Revisionsprüfung, grafische Basisformulare und bestehende Struktur-/Importansichten. Projektmodus zeigt nur Status; alte Plansensoren reversibel deaktiviert. UI im HACS-ZIP enthalten und byteweise auf Synchronität geprüft. Keine Geräteabfrage aus den Formularen. Bedienung/Grenzen: HA_PANEL.md. Standort-/Regel-/Prognoseseiten und vollständige Messzuordnung weiter offen.
 

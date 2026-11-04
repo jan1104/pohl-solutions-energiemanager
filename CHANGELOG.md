@@ -1,5 +1,11 @@
 # Änderungen
 
+## Unveröffentlicht — 2026-11-04
+
+- HA-unabhängige Prüfung von AC-Messwerten und gewichteten Ableitungen: Quellenherkunft, Mess-/Empfangszeit, Datenalter und Gleichzeitigkeit ausdrücklich führen; unbekannte oder ungültige Werte nicht durch null ersetzen.
+- Kreisabhängigkeiten, Netzanschlussvermischung und mehrfach verwendete Ursprungsquellen ablehnen. Aus seinen Eingängen berechneter Netzbezug kann nicht als unabhängiger Bilanznachweis derselben Eingänge dienen.
+- 23 synthetische Regressionen für Haus-/Nettozweigbilanz, Lade-/Entladevorzeichen, Fehlerfälle und Zeitgrenzen. Noch keine Projekt-/UI-/Polling-Anbindung oder elektrische Abdeckungsprüfung; Details: `docs/RUNTIME_METERING.md`. Keine neue Veröffentlichung.
+
 ## 0.4.0 — 2026-11-03
 
 - Eigener HA-Seitenleisteneintrag „Energiemanager“ mit eingebauter Projektoberfläche und HA-Farben, ohne separate Browserinstallation.

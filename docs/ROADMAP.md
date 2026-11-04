@@ -12,6 +12,7 @@ Auswählbare Bezugs-/Einspeisequellen, JSON-URL, HA-Sensor, Festpreis, beobachte
 
 - Vorhandene HA-Entitäten und Node-RED-Flows inventarisieren, ohne Zugangsdaten ins Repository zu übernehmen.
 - Vorzeichen/Einheiten und Messstellenbilanz Eastron/Janitza abgleichen.
+- Reine Laufzeitprüfung von Messwertalter, Originalmesszeit, Quellenherkunft und Ableitungen umgesetzt; Projektkanal-/Abdeckungszuordnung sowie lesende Adapteranbindung noch offen. Siehe [RUNTIME_METERING.md](RUNTIME_METERING.md).
 - Verfügbarkeit der Preisquellen einschließlich Zeitumstellung und verzögerter Folgetagsveröffentlichung weiter überwachen und einen geeigneten produktiven Datenanbieter festlegen.
 - Separate tatsächliche Bezugs- und Einspeiseverträge abbilden.
 - PV-/Wetterprognose anbinden; historische Lastmessungen importieren.
