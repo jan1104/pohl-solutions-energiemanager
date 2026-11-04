@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht — 2026-11-04
 
+- Einzelne Projektmessstellen offline an ausdrücklich übergebene Rohwerte binden: Messort, Quelle, Rolle und Phase erhalten; Skalierung, W→kW und explizite Vorzeichenausrichtung nachvollziehbar ausführen. Keine Geräteverbindung oder Auswertung als Importnebenwirkung.
+- Fehlende Mess-/Empfangszeiten bleiben unbekannt und ungültig. 26 weitere synthetische Tests; Quellenalias-/Abdeckungsprüfung, Adapter-/UI-Anbindung weiterhin offen.
 - HA-unabhängige Prüfung von AC-Messwerten und gewichteten Ableitungen: Quellenherkunft, Mess-/Empfangszeit, Datenalter und Gleichzeitigkeit ausdrücklich führen; unbekannte oder ungültige Werte nicht durch null ersetzen.
 - Kreisabhängigkeiten, Netzanschlussvermischung und mehrfach verwendete Ursprungsquellen ablehnen. Aus seinen Eingängen berechneter Netzbezug kann nicht als unabhängiger Bilanznachweis derselben Eingänge dienen.
 - 23 synthetische Regressionen für Haus-/Nettozweigbilanz, Lade-/Entladevorzeichen, Fehlerfälle und Zeitgrenzen. Noch keine Projekt-/UI-/Polling-Anbindung oder elektrische Abdeckungsprüfung; Details: `docs/RUNTIME_METERING.md`. Keine neue Veröffentlichung.

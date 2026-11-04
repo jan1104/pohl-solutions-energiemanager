@@ -14,8 +14,8 @@ from typing import Mapping
 class PowerSample:
     grid_id: str
     power_kw: float | None
-    measured_at: datetime
-    received_at: datetime
+    measured_at: datetime | None
+    received_at: datetime | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -90,14 +90,19 @@ def evaluate_power(
             sample = samples[key]
             if not isinstance(sample.grid_id, str) or not sample.grid_id.strip():
                 raise ValueError(f"{key}: grid ID is required")
-            measured, received = _instant(sample.measured_at), _instant(sample.received_at)
+            measured = _instant(sample.measured_at) if sample.measured_at is not None else None
+            received = _instant(sample.received_at) if sample.received_at is not None else None
             issues = []
             number = sample.power_kw
             if not _finite_number(number):
                 issues.append(f"{key}: missing_or_nonfinite")
-            if measured > now or received > now or measured > received:
+            if measured is None or received is None:
+                issues.append(f"{key}: missing_time")
+            if ((measured is not None and measured > now)
+                    or (received is not None and received > now)
+                    or (measured is not None and received is not None and measured > received)):
                 issues.append(f"{key}: invalid_time_order")
-            if now - measured > max_age:
+            if measured is not None and now - measured > max_age:
                 issues.append(f"{key}: stale")
             result = PowerValue(sample.grid_id, None if issues else float(number), "measured",
                                 (key,), measured, measured, (), tuple(issues))
