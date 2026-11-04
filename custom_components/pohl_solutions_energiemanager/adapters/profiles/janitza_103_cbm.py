@@ -8,7 +8,8 @@ Not a UMG 103 without CBM, not the UMG 604-PRO's own register profile.
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
-from ..transports.modbus_tcp import ReadOnlyModbusTCP, decode_registers
+from ..transports.base import RegisterReader
+from ..transports.modbus_tcp import decode_registers
 
 
 @dataclass(frozen=True, slots=True)
@@ -23,7 +24,7 @@ class JanitzaPowerSnapshot:
     total_kw: float
 
 
-async def read_power(client: ReadOnlyModbusTCP, *, unit_id: int,
+async def read_power(client: RegisterReader, *, unit_id: int,
                      power_sign: int = 1) -> JanitzaPowerSnapshot:
     """Explicit read only; configured CT ratios already apply to float values.
 

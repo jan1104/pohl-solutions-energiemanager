@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht — 2026-11-04
 
+- Zentrale lesende Verbindungsverwaltung: Geräte-/Profilreferenzen teilen einen nativen TCP-/Gatewayclient und dessen Warteschlange. Geräteeigene Unit-ID und Gatewayroute werden unabhängig vom elektrischen Messort aufgelöst.
+- Gemeinsamer Register-Lesevertrag, geordnetes Beenden und explizite Ablehnung noch nicht implementierter Transportarten. Keine automatische HA-Anbindung oder USB-/RTU-over-TCP-Implementierung. Gesamtdatenfluss: `docs/SYSTEM_LOGIC.md`.
 - Dokumentierten 1-kW-Viertelstundenfall im Planer korrigiert: begrenzte zusätzliche Energiezustände machen kleine Eigenverbrauchs-/Überschussübergänge wählbar, ohne das ursprüngliche Raster oder Endziel zu ändern. Vollständige Ergänzung nur innerhalb der Grenze von 1001 Zuständen, sonst sichtbarer Hinweis.
 - Sechs neue Optimiererregressionen und ausführbarer synthetischer Ressourcenvergleich. Bleibt eine endliche Näherung; allgemeine kleine Arbitrageleistungen, Endenergiepolitik und Raspberry-Pi-Nachweis weiter offen. Details: `docs/SMALL_POWER_PLANNING.md`.
 - Einzelne Projektmessstellen offline an ausdrücklich übergebene Rohwerte binden: Messort, Quelle, Rolle und Phase erhalten; Skalierung, W→kW und explizite Vorzeichenausrichtung nachvollziehbar ausführen. Keine Geräteverbindung oder Auswertung als Importnebenwirkung.

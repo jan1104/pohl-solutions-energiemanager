@@ -4,7 +4,7 @@ Stand: 03.11.2026. Transportbibliothek ohne HA-Abhängigkeit oder zusätzliche P
 
 ## Implementiert
 
-`adapters/transports/modbus_tcp.py`: explizit aufgerufener nativer Modbus-TCP-Client für FC03/FC04. Ein Client serialisiert seine Abfragen und wird für mehrere Geräteadressen eines Gateways wiederverwendet. IP/Port beschreiben den Endpunkt, Unit-ID das Ziel. Ein Verbindungsmanager über mehrere Clientinstanzen ist noch nicht implementiert; pro gemeinsamem Gateway-/Buspfad eine Instanz verwenden.
+`adapters/transports/modbus_tcp.py`: explizit aufgerufener nativer Modbus-TCP-Client für FC03/FC04. Ein Client serialisiert seine Abfragen und wird für mehrere Geräteadressen eines Gateways wiederverwendet. IP/Port beschreiben den Endpunkt, Unit-ID das Ziel. Nachtrag 04.11.2026: adapters/connections.py verwaltet nun gemeinsame Clients über Connection-ID-Referenzen und identische normalisierte Host-/Portangaben. Profile erhalten nur eine Lesereferenz. Anwendung muss einen zentralen Manager pro Projektlaufzeit besitzen; HA-Anbindung noch offen. Siehe ../SYSTEM_LOGIC.md.
 
 Transaktionsnummer, Protokollkennung, Zieladresse, Längen und Funktionscode werden geprüft. Geräteausnahmen sind Fehler statt Messwerte; vollständige Geräteausnahmen erlauben weitere Abfragen auf derselben Verbindung. Unvollständige/ungültige Antworten, Timeout und laufender Abbruch schließen den Stream; der nächste explizite Leseaufruf verbindet neu. Abbruch eines nur wartenden Aufrufs unterbricht keine bereits laufende Transaktion. Timeout umfasst auch Warteschlange und Verbindungsaufbau. Keine automatischen Wiederholungen oder Nullwert-Ersatzmessungen.
 

@@ -10,6 +10,7 @@ Auswählbare Bezugs-/Einspeisequellen, JSON-URL, HA-Sensor, Festpreis, beobachte
 
 ## Danach — echte Datengrundlage
 
+- Gemeinsame Grundfunktionen/Datenfluss: [SYSTEM_LOGIC.md](SYSTEM_LOGIC.md). Zentrale TCP-/Gatewayverwaltung und Profil-Lesevertrag implementiert; HA-Anbindung und weitere Transportarten offen.
 - Vorhandene HA-Entitäten und Node-RED-Flows inventarisieren, ohne Zugangsdaten ins Repository zu übernehmen.
 - Vorzeichen/Einheiten und Messstellenbilanz Eastron/Janitza abgleichen.
 - Reine Laufzeitprüfung von Messwertalter, Originalmesszeit, Quellenherkunft und Ableitungen sowie explizite Einzelmessstellenbindung an übergebene Rohwerte umgesetzt. Automatische Quellenidentität, elektrische Abdeckung und lesende Adapteranbindung noch offen. Siehe [RUNTIME_METERING.md](RUNTIME_METERING.md).
