@@ -2,6 +2,8 @@
 
 Stand: 04.11.2026. Präzisierter Produkt-/Implementierungsentwurf, noch keine fertige Modulverwaltung oder neue Bedienoberfläche. Ergänzt NAVIGATION_AND_PRODUCT_DESIGN.md und SYSTEM_LOGIC.md. Maßgeblich für weitere Umsetzung: Nutzer richtet Funktionen ein; Programmcode und technische Details bleiben im Hintergrund.
 
+Nachtrag: Prognosen sind ein eigener versionierter Fachbaustein. Die erste getestete Laufzeit-/Versionsgrundlage ist nun implementiert; Integration, Datenverträge und Formularverwaltung folgen. Grenzen von unabhängiger Weiterentwicklung gegenüber unterbrechungsfreien Updates: [MODULE_KERNEL.md](MODULE_KERNEL.md).
+
 ## Drei unabhängige Bausteine statt eines Sonderfalls je Gerät
 
 1. **Fachlicher Gerätebaustein:** Messgerät, PV, Speicher, Wärmeverbraucher, Ladestation oder Anlagenregler. Legt benötigte Werte, Bedienfelder, Regeln und Planungsbeitrag fest. Ein Messgerät liefert Daten und wird dadurch nicht selbst zum steuerbaren Verbraucher.

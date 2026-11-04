@@ -10,6 +10,7 @@ Auswählbare Bezugs-/Einspeisequellen, JSON-URL, HA-Sensor, Festpreis, beobachte
 
 ## Danach — echte Datengrundlage
 
+- Grundmodul und eigene Prognosemodule: [MODULE_KERNEL.md](MODULE_KERNEL.md). Getesteter Versions-/Abhängigkeitskernel vorhanden; konkrete Fachverträge, Provider und HA-Anbindung noch offen.
 - Gemeinsame Grundfunktionen/Datenfluss: [SYSTEM_LOGIC.md](SYSTEM_LOGIC.md). Zentrale TCP-/Gatewayverwaltung und Profil-Lesevertrag implementiert; HA-Anbindung und weitere Transportarten offen.
 - Vorhandene HA-Entitäten und Node-RED-Flows inventarisieren, ohne Zugangsdaten ins Repository zu übernehmen.
 - Vorzeichen/Einheiten und Messstellenbilanz Eastron/Janitza abgleichen.

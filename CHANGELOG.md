@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht — 2026-11-04
 
+- Erste versionierte Modulgrundlage: getrennte Modul-/API-Versionen, explizite Abhängigkeiten, begrenzte Async-Aufrufe, gezielte Fehlerfortpflanzung und Schutz gegen überholte Ergebnisse/Fehler. 18 neue synthetische Tests.
+- Prognose als eigener Fachbaustein vorgesehen. Kernel noch nicht in HA verdrahtet; konkrete Datenverträge, Provider, Migrationen und Moduloberfläche folgen. Getrennte Versionen bedeuten kein unterbrechungsfreies Update oder Prozessisolation; siehe `docs/MODULE_KERNEL.md`.
 - Bedien-/Modulentwurf konkretisiert: zentrale Eingabeorte, Herkunft automatisch/manuell bezogener Werte, wiederverwendbare Gerätebausteine und gemeinsame Messgruppen. Keine neue Laufzeitfunktion; siehe `docs/DEVICE_MODULES_AND_SETUP.md`.
 - Zentrale lesende Verbindungsverwaltung: Geräte-/Profilreferenzen teilen einen nativen TCP-/Gatewayclient und dessen Warteschlange. Geräteeigene Unit-ID und Gatewayroute werden unabhängig vom elektrischen Messort aufgelöst.
 - Gemeinsamer Register-Lesevertrag, geordnetes Beenden und explizite Ablehnung noch nicht implementierter Transportarten. Keine automatische HA-Anbindung oder USB-/RTU-over-TCP-Implementierung. Gesamtdatenfluss: `docs/SYSTEM_LOGIC.md`.
