@@ -1,12 +1,12 @@
 # Bedienkonzept und fachlicher Aufbau
 
-Stand: 03.11.2026. Überarbeiteter Entwurf auf Grundlage der bestätigten Anforderungen. Beschreibt das Zielprodukt, nicht den bereits implementierten Funktionsumfang. Offene Regeln stehen in REQUIREMENTS.md.
+Stand: 04.11.2026. Überarbeiteter Entwurf auf Grundlage der bestätigten Anforderungen. Beschreibt das Zielprodukt, nicht den bereits implementierten Funktionsumfang. Offene Regeln stehen in REQUIREMENTS.md. Konkrete Gerätebausteine, Eingabeorte und automatisch/manuell bezogene Daten: [DEVICE_MODULES_AND_SETUP.md](DEVICE_MODULES_AND_SETUP.md).
 
 ## Navigation
 
-Oben immer sichtbar: Anlagenwahl „Alle Anlagen / Halle 1 / Halle 2“, Betriebsstatus, Hinweise. Einrichtungsassistent bei leerer Installation. Sieben Hauptpunkte; Detailseiten als Reiter statt dauernd aufgeklapptem Menü.
+Oben immer sichtbar: Projektname, Standort-/Bereichsfilter („Alle Standorte / Halle 1 / Halle 2“), tatsächlicher Netzanschluss, Betriebsstatus und Hinweise. Einrichtungsassistent bei leerer Installation. Sieben Hauptpunkte; Detailseiten als Reiter statt dauernd aufgeklapptem Menü.
 
-Oberhalb der Anlagenwahl steht das aktuelle Projekt. Projektmenü: Projektangaben, gesamtes Projekt exportieren, Projekt importieren. Ein Projekt enthält alle Anlagen und ihre gemeinsamen Geräte-/Verbindungsobjekte; keine zusätzliche elektrische Verrechnung durch diese Gruppierung. Import-/Exportentwurf siehe PROJECT_FORMAT.md.
+Oberhalb des Standortfilters steht das aktuelle Projekt. Projektmenü: Projektangaben, gesamtes Projekt exportieren, Projekt importieren. Ein Projekt enthält alle Anlagen und ihre gemeinsamen Geräte-/Verbindungsobjekte; keine zusätzliche elektrische Verrechnung durch diese Gruppierung. Import-/Exportentwurf siehe PROJECT_FORMAT.md.
 
 ```text
 Pohl Solutions Energiemanager
@@ -15,13 +15,13 @@ Pohl Solutions Energiemanager
 │   ├── Aktueller Betrieb und nächste Aktionen
 │   ├── Heutige Energie, Kosten und Erlöse
 │   └── Hinweise und Datenqualität
-├── Anlagen und Geräte
-│   ├── Anlagenübersicht / Anlage hinzufügen
-│   ├── Gewählte Anlage
+├── Standorte und Geräte
+│   ├── Standorte / Standort hinzufügen
+│   ├── Gewählter Standort / Bereich
 │   │   ├── Aufbau und Netzanschluss
 │   │   ├── Geräte und Messstellen
 │   │   ├── PV-Felder und Ausrichtung
-│   │   └── Anlagenangaben und Grenzen
+│   │   └── Netzanschlussgrenzen und Bereichsangaben
 │   ├── Gerät hinzufügen
 │   │   ├── Suchen
 │   │   ├── Manuell verbinden
@@ -65,7 +65,7 @@ Pohl Solutions Energiemanager
     └── Version und Aktualisierungen
 ```
 
-Die Anlagen-/Bereichswahl filtert alle fachlichen Seiten. Mehrere Bereiche können einen Netzanschluss teilen; dann zeigt ein Bereich seinen Anteil, während der Plan zum gemeinsamen Anschluss gehört. „Alle Anlagen“ zeigt Vergleiche und Summen, aber keine gemeinsame elektrische Bilanz über getrennte Netzanschlüsse. Änderungen gelten für eine ausdrücklich benannte Anlage bzw. Gerätegruppe; bei gemeinsamem Anschluss ihre Auswirkungen auf die gemeinsame Planung anzeigen. Gemeinsame Einstellungen und übergreifende Messgeräte kennzeichnen wir gesondert.
+Der Standort-/Bereichsfilter filtert die fachlichen Ansichten; gemeinsame Pläne bleiben eindeutig dem tatsächlichen Netzanschluss zugeordnet. Mehrere Bereiche können einen Netzanschluss teilen; dann zeigt ein Bereich seinen Anteil, während der Plan zum gemeinsamen Anschluss gehört. „Alle Standorte“ zeigt Vergleiche und Summen, aber keine gemeinsame elektrische Bilanz über getrennte Netzanschlüsse. Änderungen gelten für eine ausdrücklich benannte Anlage bzw. Gerätegruppe; bei gemeinsamem Anschluss ihre Auswirkungen auf die gemeinsame Planung anzeigen. Gemeinsame Einstellungen und übergreifende Messgeräte kennzeichnen wir gesondert.
 
 ## Fachliche Hierarchie
 
@@ -73,14 +73,14 @@ Das folgende Beispiel zeigt getrennte Anschlüsse. Für mehrere Bereiche an eine
 
 ```text
 Projekt innerhalb der Installation
-├── Anlage A: eigener Netzanschluss, Tarif, Bilanz und Plan
+├── Netzanschluss A: eigener Tarif, Bilanz und Plan
 │   ├── Netz- und Hausmessung (dreiphasige Gesamtbilanz)
 │   ├── PV-Felder → Prognose, ohne doppelte Erzeugungszählung
 │   ├── Wechselrichter A (ein- oder dreiphasig)
 │   │   └── Batterieanschluss / Batteriegruppe → Türme / Module
 │   ├── Wechselrichter B → eigene Batteriegruppe(n)
 │   └── Verbraucher → Messung, Schaltfreigabe, optional Leistungsvorgabe
-├── Anlage B: davon getrennte Bilanz und Planung
+├── Netzanschluss B: davon getrennte Bilanz und Planung
 └── Physische Geräte und Verbindungen
     └── Messkanäle → eindeutig zugeordnete Messrollen in A oder B
 ```
@@ -93,7 +93,7 @@ Ein Messwert hat Rolle, Einheit, Vorzeichen, Messzeit, Quelle und Qualität. Ein
 
 ## Einrichtung
 
-1. Anlage benennen und Netzanschluss festlegen.
+1. Zuerst nur den Energiemanager/das Projekt benennen. Anschließend Standort/Bereich und tatsächlichen Netzanschluss getrennt zuordnen, siehe PROJECT_HIERARCHY.md. Keine Sensoren beim Namenseinstieg verlangen.
 2. Einfache Vorlage mit einem WR und Batterie oder vorhandene Konfiguration wählen.
 3. Geräte suchen/manuell anbinden/aus HA auswählen; Verbindungen und Profile überprüfen.
 4. Messrollen zuordnen: Netz, PV, Haus, Speicher, Zweig oder Einzelverbraucher. Hauslast direkt messen oder aus vollständiger Bilanz ableiten.
@@ -144,7 +144,7 @@ Für jeden Stellwert Zuständigkeit festlegen: vorhandener Anlagenregler, Energi
 ## Tarife, Kosten und Auswertung
 
 - Tarife enthalten ihre eigene Preisquelle, Einheit, Auf-/Abschläge und Vollständigkeitsstatus. Keine zweite unabhängige Tarifkonfiguration unter Einstellungen.
-- Gemeinsame Anbieterzugänge unter Einstellungen; Tarifzuordnung je Anlage, Geräteeinstellungen am Gerät. Andere Ansichten verlinken diese Stellen statt Kopien zu bearbeiten.
+- Gemeinsame Anbieterzugänge unter Einstellungen; Tarifzuordnung je Netzanschluss, Geräteeinstellungen am Gerät. Andere Ansichten verlinken diese Stellen statt Kopien zu bearbeiten.
 - Investitionsumlage als Auswertung von marginalem Entscheidungsverschleiß trennen. Verluste und entgangene Erlöse jeweils einmal berücksichtigen.
 - Tatsächliche Kosten nur bei geeigneten zeitlich zugeordneten Mess-/Tarifdaten berechnen; Börsenpreisszenarien nicht als tatsächlichen Gewinn anzeigen.
 - Einsparungen sind ein Vergleich mit offengelegter Baseline und Restenergiebehandlung, kein unmittelbar gemessener Zählerwert.
@@ -153,7 +153,7 @@ Für jeden Stellwert Zuständigkeit festlegen: vorhandener Anlagenregler, Energi
 ## Einfache Bedienung und Prüfmaßstab
 
 - Sieben Hauptpunkte, wenige Reiter je Seite; keine Oberfläche voller Registeradressen. Expertenfelder erst bei Bedarf.
-- Einzelanlagenansicht als Standard beim Einstieg; Gesamtübersicht, sobald mehrere Anlagen existieren. Klare Namen statt Protokollbezeichnungen.
+- Einzelstandortansicht als Standard beim Einstieg; Gesamtübersicht, sobald mehrere Standorte existieren. Geteilten Netzanschluss und dessen gemeinsamen Plan deutlich anzeigen. Klare Namen statt Protokollbezeichnungen.
 - Änderungen zeigen betroffene Anlage/Geräte und Konsequenzen; Werte auf Einheit, Widersprüche und Vollständigkeit prüfen. Änderungen an zugeordneten Geräten nicht heimlich laufend auf eine andere Anlage übertragen.
 - Konfiguration und Betriebsfreigabe trennen; Entwürfe dürfen unvollständig sein, aktiver Betrieb benötigt validierte Voraussetzungen.
 - Status nicht allein über Farbe vermitteln. Tastaturbedienung, lesbare Werte, verständliche Fehler und mobile Nutzung prüfen.

@@ -2,6 +2,7 @@
 
 ## Unveröffentlicht — 2026-11-04
 
+- Bedien-/Modulentwurf konkretisiert: zentrale Eingabeorte, Herkunft automatisch/manuell bezogener Werte, wiederverwendbare Gerätebausteine und gemeinsame Messgruppen. Keine neue Laufzeitfunktion; siehe `docs/DEVICE_MODULES_AND_SETUP.md`.
 - Zentrale lesende Verbindungsverwaltung: Geräte-/Profilreferenzen teilen einen nativen TCP-/Gatewayclient und dessen Warteschlange. Geräteeigene Unit-ID und Gatewayroute werden unabhängig vom elektrischen Messort aufgelöst.
 - Gemeinsamer Register-Lesevertrag, geordnetes Beenden und explizite Ablehnung noch nicht implementierter Transportarten. Keine automatische HA-Anbindung oder USB-/RTU-over-TCP-Implementierung. Gesamtdatenfluss: `docs/SYSTEM_LOGIC.md`.
 - Dokumentierten 1-kW-Viertelstundenfall im Planer korrigiert: begrenzte zusätzliche Energiezustände machen kleine Eigenverbrauchs-/Überschussübergänge wählbar, ohne das ursprüngliche Raster oder Endziel zu ändern. Vollständige Ergänzung nur innerhalb der Grenze von 1001 Zuständen, sonst sichtbarer Hinweis.
