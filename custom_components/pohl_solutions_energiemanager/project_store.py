@@ -121,7 +121,7 @@ class ProjectStore:
         persisted = namespace.get("active")
         if persisted is None or validate_project(persisted.data) != project:
             raise OSError("Migrated project could not be confirmed in SQLite")
-        return namespace, persisted.revision, project, "migrated_legacy", True
+        return namespace, persisted.revision, validate_project(persisted.data), "migrated_legacy", True
 
     async def async_load(self) -> None:
         async with self._lock:
