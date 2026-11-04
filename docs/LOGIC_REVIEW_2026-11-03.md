@@ -12,6 +12,8 @@ Aufgabe: Rollierenden Horizont, Mindestreserve und wirtschaftlichen Wert der Res
 
 ### P1: Grobes SOC-Raster übersieht kleine Leistungen
 
+Nachtrag 04.11.2026: Der unten dokumentierte 1-kW-Fall sowie kleine PV-Überschussladung sind im aktuellen Rechenkern durch zusätzliche Kandidatenzustände regressionsgeprüft korrigiert. Die endliche Näherung bleibt allgemein unvollständig; bei ausgeschöpfter Zustandsgrenze entfällt die Erweiterung mit sichtbarem Hinweis. Endzielpolitik unverändert. Details und tatsächlich gemessener Aufwand: [SMALL_POWER_PLANNING.md](SMALL_POWER_PLANNING.md). Die folgende Beschreibung hält den ursprünglichen Befund fest.
+
 Bei 2 kWh Zustandsabstand ist ein üblicher Viertelstundenverbrauch oft kleiner als der nächste mögliche Energieschritt. Beispiel: dieselbe Batterie, 50 % Start, 10 % Endziel, 1 kW Hauslast über 16 Viertelstunden, keine PV, 0,40 EUR/kWh. Ergebnis: 0 kWh Entladung, 1,60 EUR Bezug, obwohl ausreichend nutzbare Energie vorhanden ist. Das Raster verhindert hier die Handlung.
 
 Aufgabe: Verfahren auswählen, das kleine Leistungen korrekt abbildet und auf HA-Hardware schnell bleibt. Nicht lediglich das Raster beliebig verfeinern: Aufwand und Zustandsgrenze beachten. Gegen kontinuierlicher Referenzrechnung und einfachen analytischen Fällen prüfen.

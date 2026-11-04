@@ -66,6 +66,28 @@ def _grid_cost(power_kw: float, duration: float, slot: ForecastSlot) -> float:
     return power_kw * duration * (slot.import_price_eur_kwh if power_kw >= 0 else slot.export_price_eur_kwh)
 
 
+def _self_consumption_states(slots, config, low, high, initial):
+    """Exact candidate path following net demand, not a forced dispatch policy.
+
+    Small quarter-hour powers can move less energy than one regular SOC step.
+    Retain every endpoint of one physically bounded self-consumption path so
+    the finite optimizer can choose that path instead of being forced to idle.
+    Its prices/terminal target are deliberately left to the optimizer to judge.
+    """
+    energy = initial
+    result = {round(energy, 10)}
+    for slot in slots:
+        net = slot.load_kw - slot.pv_kw
+        if net < 0:
+            energy = min(high, energy + min(-net, config.max_charge_kw)
+                         * slot.duration_hours * config.charge_efficiency)
+        else:
+            energy = max(low, energy - min(net, config.max_discharge_kw)
+                         * slot.duration_hours / config.discharge_efficiency)
+        result.add(round(energy, 10))
+    return result
+
+
 def optimize(slots: list[ForecastSlot], config: BatteryConfig) -> Plan:
     """Return an economically minimal plan on a discrete stored-energy grid.
 
@@ -87,6 +109,11 @@ def optimize(slots: list[ForecastSlot], config: BatteryConfig) -> Plan:
     states = sorted({round(low + i * config.soc_step_kwh, 10) for i in range(steps + 1)} | {
         round(low, 10), round(high, 10), round(initial, 10), round(target, 10),
     })
+    augmented = sorted(set(states) | _self_consumption_states(slots, config, low, high, initial))
+    path_included = len(augmented) <= 1001
+    added_states = len(augmented) - len(states) if path_included else 0
+    if path_included:
+        states = augmented
     initial_index = min(range(len(states)), key=lambda j: abs(states[j] - initial))
     # Value pairs use AC throughput as a tie-breaker to avoid pointless cycling.
     current: dict[int, tuple[float, float]] = {initial_index: (0.0, 0.0)}
@@ -154,6 +181,10 @@ def optimize(slots: list[ForecastSlot], config: BatteryConfig) -> Plan:
         "Kosten enthalten Netzbezug minus Einspeiseerlös plus Verschleiß je abgegebener AC-kWh; Investition wird nicht zusätzlich verrechnet.",
         f"Endladezustand mindestens {target_pct:g} %. Vergleich: Batterie bleibt ungenutzt auf dem Anfangsladezustand.",
     ]
+    if path_included:
+        assumptions.append(f"Eigenverbrauchspfad ergänzt {added_states} Energiezustände; insgesamt {len(states)}. Er ist eine wählbare Alternative, keine erzwungene Strategie.")
+    else:
+        assumptions.append("Eigenverbrauchspfad wegen Grenze von 1001 Energiezuständen nicht ergänzt; kleine Leistungen können weiterhin vom Raster begrenzt sein.")
     if abs(target_pct - config.initial_soc_pct) > EPS:
         assumptions.append("Endziel und Anfangsladezustand unterscheiden sich: Baseline-Vergleich ist nicht energiegleich.")
     return Plan(planned, total, baseline, baseline - total, assumptions)

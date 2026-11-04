@@ -6,6 +6,7 @@ import math
 from pathlib import Path
 import sys
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "custom_components" / "pohl_solutions_energiemanager"))
 from core.models import BatteryConfig, ForecastSlot
@@ -82,6 +83,71 @@ class OptimizerTests(unittest.TestCase):
         plan = optimize(slots([0, 0], [5, 5]), cfg)
         self.assertEqual(plan.slots[-1].soc_pct, 50)
         self.assertEqual(plan.savings_eur, 0)
+
+    def test_small_quarterhour_load_is_not_blocked_by_coarse_soc_steps(self):
+        cfg = replace(self.cfg, capacity_kwh=200.704, min_soc_pct=10, max_soc_pct=90,
+                      initial_soc_pct=50, terminal_soc_pct=10, max_discharge_kw=50,
+                      discharge_efficiency=.95, soc_step_kwh=2)
+        forecast = slots([0] * 16, [1] * 16, imports=[.4] * 16, duration=.25)
+        with patch("core.optimizer._self_consumption_states", return_value=set()):
+            coarse = optimize(forecast, cfg)
+        self.assertAlmostEqual(coarse.total_cost_eur, 1.6)
+        plan = optimize(forecast, cfg)
+        self.assertAlmostEqual(plan.total_cost_eur, 0, places=7)
+        self.assertTrue(all(abs(s.battery_power_kw + 1) < 1e-7 for s in plan.slots))
+        self.assert_balanced(plan, cfg)
+        expected_energy = 200.704 * .5 - 4 / .95
+        self.assertAlmostEqual(plan.slots[-1].soc_pct, expected_energy / 200.704 * 100)
+
+    def test_small_surplus_charge_and_later_load_are_both_represented(self):
+        cfg = replace(self.cfg, capacity_kwh=200, initial_soc_pct=10,
+                      min_soc_pct=10, max_soc_pct=90, terminal_soc_pct=10, soc_step_kwh=2)
+        plan = optimize(slots([1] * 8 + [0] * 8, [0] * 8 + [1] * 8, duration=.25), cfg)
+        self.assertTrue(all(abs(s.grid_power_kw) < 1e-7 for s in plan.slots))
+        self.assert_balanced(plan, cfg)
+
+    def test_added_candidate_never_forces_uneconomic_consumption(self):
+        cfg = replace(self.cfg, capacity_kwh=200, initial_soc_pct=50, terminal_soc_pct=0,
+                      soc_step_kwh=2)
+        negative = optimize(slots([0] * 8, [1] * 8, imports=[-.1] * 8, duration=.25), cfg)
+        self.assertTrue(all(s.battery_power_kw == 0 for s in negative.slots))
+        high_export = optimize(slots([1] * 8 + [0] * 8, [0] * 8 + [1] * 8,
+                                     exports=[.5] * 16, duration=.25), replace(cfg, initial_soc_pct=0))
+        self.assertTrue(all(s.battery_power_kw == 0 for s in high_export.slots))
+
+    def test_candidate_path_respects_power_and_energy_limits(self):
+        cfg = replace(self.cfg, capacity_kwh=4, min_soc_pct=10, max_soc_pct=90,
+                      initial_soc_pct=50, terminal_soc_pct=10, max_charge_kw=.7,
+                      max_discharge_kw=.6, charge_efficiency=.9, discharge_efficiency=.8,
+                      soc_step_kwh=2)
+        plan = optimize(slots([0] * 12 + [8] * 12, [8] * 12 + [0] * 12, duration=.25), cfg)
+        self.assert_balanced(plan, cfg)
+
+    def test_state_cap_preserves_original_model_and_reports_fallback(self):
+        cfg = replace(self.cfg, capacity_kwh=99.7, initial_soc_pct=50,
+                      soc_step_kwh=.1, discharge_efficiency=.95)
+        forecast = slots([0] * 16, [.7] * 16, duration=.25)
+        plan = optimize(forecast, cfg)
+        with patch("core.optimizer._self_consumption_states", return_value=set()):
+            base = optimize(forecast, cfg)
+        self.assertAlmostEqual(plan.total_cost_eur, base.total_cost_eur)
+        self.assertTrue(any("nicht ergänzt" in a for a in plan.assumptions))
+        self.assert_balanced(plan, cfg)
+
+    def test_extra_states_do_not_worsen_base_grid_cost_in_synthetic_cases(self):
+        cfg = replace(self.cfg, capacity_kwh=20, initial_soc_pct=50,
+                      terminal_soc_pct=50, soc_step_kwh=2,
+                      charge_efficiency=.9, discharge_efficiency=.85)
+        for seed in range(6):
+            forecast = slots([((i + seed) % 4) * .7 for i in range(8)],
+                             [((i * 3 + seed) % 5) * .4 for i in range(8)],
+                             imports=[.1 + (i % 3) * .1 for i in range(8)], duration=.25)
+            with patch("core.optimizer._self_consumption_states", return_value=set()):
+                base = optimize(forecast, cfg)
+            enhanced = optimize(forecast, cfg)
+            self.assertLessEqual(enhanced.total_cost_eur, base.total_cost_eur + 1e-8)
+            self.assert_balanced(enhanced, cfg)
+            self.assertGreaterEqual(enhanced.slots[-1].soc_pct + 1e-7, cfg.terminal_soc_pct)
 
     def test_unreachable_terminal_target_raises(self):
         with self.assertRaisesRegex(ValueError, "cannot be reached"):

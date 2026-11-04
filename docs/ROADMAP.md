@@ -24,6 +24,7 @@ Auswählbare Bezugs-/Einspeisequellen, JSON-URL, HA-Sensor, Festpreis, beobachte
 - Offen: durchgehend geführte Messquellen-Zuordnung, Kostenmodell und aktive Planung in dieser Oberfläche integrieren.
 - Geräteprofile mit Quellen, Firmware und nachgewiesenen Fähigkeiten.
 - Mehrere Speicher, getrennte Reserveziele und Anschlussleistungsgrenzen.
+- 1-kW-Viertelstundenfehler im bisherigen endlichen Modell mit zusätzlichen Kandidatenzuständen korrigiert; allgemeine kontinuierliche Genauigkeit und Raspberry-Pi-Ressourcennachweis bleiben offen. Siehe [SMALL_POWER_PLANNING.md](SMALL_POWER_PLANNING.md).
 - Sensitivitätsvergleich verschiedener Kapazitäten, SOC-Fenster und Kostenannahmen.
 - Automatisch geplante Restenergieziele und Szenarien bei Prognoseunsicherheit.
 
