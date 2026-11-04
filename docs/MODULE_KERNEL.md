@@ -42,7 +42,7 @@ Wenn sich ein benötigtes Modul während eines laufenden oder wartenden Aufrufs 
 | Ein Geräteadapter fällt aus | Andere unabhängige Geräte/Funktionen | Zugehörige Messungen und davon abhängige Bilanzen/Pläne |
 | Neuer Modulstand passt nicht zur API | Andere kompatible Module | Nur inkompatibles Modul und erforderliche Abnehmer |
 
-Diese Tabelle beschreibt die künftige Produktverdrahtung. Kerneltests belegen die entsprechende Fehler-/Abhängigkeitsbehandlung mit synthetischen Handlern, noch keine Ausfallisolation der derzeitigen HA-Integration. Ein bewusstes Szenario mit manuell gelieferten Prognosen darf einen eigenen, ausdrücklich gekennzeichneten Weg haben; es wird bei fehlenden Echtdaten nicht automatisch als Ersatz aktiviert. Bestehende Pläne dürfen bei Wegfall einer Quelle nicht ohne Alters-/Gültigkeitsprüfung weiter als aktuell gelten.
+Diese Tabelle beschreibt die künftige Produktverdrahtung. Kerneltests belegen die entsprechende Fehler-/Abhängigkeitsbehandlung mit synthetischen Handlern, zusätzlich werden Basis-Speicherfehler und deren abhängige Projektfunktion im HA-Laufzeittest geprüft; allgemeine Fachmodulisolation fehlt noch. Ein bewusstes Szenario mit manuell gelieferten Prognosen darf einen eigenen, ausdrücklich gekennzeichneten Weg haben; es wird bei fehlenden Echtdaten nicht automatisch als Ersatz aktiviert. Bestehende Pläne dürfen bei Wegfall einer Quelle nicht ohne Alters-/Gültigkeitsprüfung weiter als aktuell gelten.
 
 ## Versionen und Weiterentwicklung
 
@@ -57,7 +57,7 @@ Getrennte Modulversionen bedeuten **noch kein unterbrechungsfreies Update** in H
 
 ## Grenzen und nächste Schritte
 
-Die Datenhaltung gehört ebenfalls zum Grundmodul. Eine gemeinsame, projekt-/modulbezogene SQLite-Konfigurationsablage ist nun separat implementiert; Kontextinjektion, HA-Migration und Historien folgen. Siehe [CENTRAL_STORAGE.md](CENTRAL_STORAGE.md). Modulregistrierung erzeugt bislang weiterhin keine automatischen Dateien oder Migrationen.
+Die Datenhaltung gehört ebenfalls zum Grundmodul. Eine gemeinsame, projekt-/modulbezogene SQLite-Konfigurationsablage ist nun separat implementiert; HA-Projektübernahme ist ab 0.5.0 angebunden; allgemeine Kontextinjektion und Historien folgen. Siehe [CENTRAL_STORAGE.md](CENTRAL_STORAGE.md). Modulregistrierung erzeugt bislang weiterhin keine automatischen Dateien oder Migrationen.
 
 Async-Timeouts funktionieren nur kooperativ. CPU-blockierende Module, fremde gemeinsam veränderte Objekte oder Handler, die Abbruch ignorieren, können andere Arbeit im Prozess beeinträchtigen. Der Kernel ist keine Sicherheits- oder Prozessisolationsgrenze. Blockierende Berechnungen gehören später in geeignete Worker; Live-Aktoren sind keine freigegebenen Handler dieses Kernels.
 

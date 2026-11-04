@@ -10,7 +10,7 @@ Das Grundmodul besitzt die Datenhaltung. Fachmodule erhalten einen Speicherzugan
 Energiemanager-Datenhaltung
 ├── Globale Kernangaben und Modulbestand                 (nächste Anbindung)
 ├── Projekt A
-│   ├── Kern: Zuordnungen und gemeinsame Einstellungen  (bestehender HA-Store)
+│   ├── Kern: Zuordnungen und gemeinsame Einstellungen  (SQLite ab 0.5.0)
 │   ├── Prognosemodul: Quellen und Konfiguration        (neue Modulablage)
 │   └── Weitere Module: eigene Konfigurationsbereiche
 └── Projekt B: getrennte Modulbereiche
@@ -37,9 +37,9 @@ Dieser Dienst ist synchron. HA muss Aufrufe später in einem Executor ausführen
 
 | Datengruppe | Geplante Behandlung | Heutiger Stand |
 | --- | --- | --- |
-| Kernprojekt/Zuordnungen | Zentrale Konfigurationsquelle mit Revision | Bestehender HA-Projektspeicher bleibt maßgeblich |
+| Kernprojekt/Zuordnungen | Zentrale Konfigurationsquelle mit Revision | SQLite ab 0.5.0 maßgeblich; Legacy-Datei bleibt Sicherung |
 | Moduleinstellungen | Projekt-/Modulbereich, eigene Konfigurationsversion | Neue SQLite-API separat getestet |
-| Modulversionen/Aktivierung | Kern verwaltet Bestand und kompatible Konfiguration | Kernel bisher nur im Speicher; Kontextanbindung fehlt |
+| Modulversionen/Aktivierung | Kern verwaltet Bestand und kompatible Konfiguration | Basisfunktionen in HA registriert; allgemeine Fachmodulkontexte fehlen |
 | Messhistorie | Zeitreihen mit Quelle, Mess-/Empfangszeit, Einheit und Qualität | Noch kein Historienrepository |
 | Prognosen/Pläne | Versionierte Läufe mit Eingangsrevisionen, Gültigkeit und Herkunft | Noch keine zentrale Laufablage |
 | Cache/Laufzeit | Begrenzte Lebensdauer, nicht automatisch als Ist-Nachweis sichern | Noch kein gemeinsamer Cachevertrag |
