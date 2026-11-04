@@ -24,6 +24,7 @@ def test_hacs_release_layout_and_versions(tmp_path):
         assert {"manifest.json", "__init__.py", "core/project.py", "translations/de.json"} <= set(names)
         assert all(not n.startswith(("custom_components/", "private/", "preview/")) for n in names)
         assert all("__pycache__" not in n and ".." not in Path(n).parts for n in names)
+        assert not any(n.endswith((".sqlite", ".sqlite3", ".db", ".sqlite-wal", ".sqlite-shm")) for n in names)
         assert archive.read("manifest.json") == manifest_path.read_bytes()
         assert len(names) == len(set(names))
     with (ROOT / "pyproject.toml").open("rb") as stream:
@@ -46,3 +47,4 @@ def test_hacs_installs_the_real_panel_and_shared_ui(tmp_path):
             assert archive.read("frontend/" + name) == (ROOT / "preview" / name).read_bytes()
     manifest = json.loads((component / "manifest.json").read_text(encoding="utf-8"))
     assert {"frontend", "http", "websocket_api", "panel_custom"} <= set(manifest["dependencies"])
+    assert f"?ha=1&v={manifest['version']}" in (component / "frontend/pohl-panel.js").read_text(encoding="utf-8")

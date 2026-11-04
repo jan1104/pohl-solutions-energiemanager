@@ -9,6 +9,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
+from .base_runtime import DATA_BASE_RUNTIME, BaseRuntime
 from .const import DOMAIN, SERVICE_REPLAN
 from .coordinator import PohlEnergyCoordinator
 from .panel import async_remove_panel, async_setup_panel
@@ -36,13 +37,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             finally:
                 if not hass.data.get(DOMAIN):
                     try:
-                        _async_remove_shared_resources(hass)
+                        await _async_remove_shared_resources(hass)
                     except Exception:
                         _LOGGER.exception("Could not fully remove partial setup resources")
             raise
 
 
-def _async_remove_shared_resources(hass: HomeAssistant) -> None:
+async def _async_remove_shared_resources(hass: HomeAssistant) -> None:
+    runtime = hass.data.pop(DATA_BASE_RUNTIME, None)
+    if runtime is not None:
+        await runtime.async_stop()
     async_remove_panel(hass)
     for service in (SERVICE_REPLAN, "import_project", "export_project", "project_status"):
         hass.services.async_remove(DOMAIN, service)
@@ -56,6 +60,10 @@ async def _async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.data[DATA_PROJECT_STORE] = ProjectStore(hass)
     await hass.data[DATA_PROJECT_STORE].async_load()
     await hass.data[DATA_PROJECT_STORE].async_ensure_project(entry.title, entry.entry_id)
+    if DATA_BASE_RUNTIME not in hass.data:
+        runtime = BaseRuntime(hass.data[DATA_PROJECT_STORE])
+        hass.data[DATA_BASE_RUNTIME] = runtime
+        await runtime.async_start()
     coordinator = PohlEnergyCoordinator(hass, entry)
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
     await coordinator.async_config_entry_first_refresh()
@@ -111,7 +119,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if coordinator is not None:
             await coordinator.async_shutdown()
         if not hass.data.get(DOMAIN):
-            _async_remove_shared_resources(hass)
+            await _async_remove_shared_resources(hass)
         return True
 
 

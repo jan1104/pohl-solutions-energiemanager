@@ -8,6 +8,7 @@ from homeassistant.components import frontend, panel_custom, websocket_api
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.core import HomeAssistant
 
+from .base_runtime import DATA_BASE_RUNTIME
 from .const import DOMAIN, VERSION
 from .project_store import DATA_PROJECT_STORE, ProjectConflictError
 
@@ -28,6 +29,7 @@ async def async_setup_panel(hass: HomeAssistant) -> None:
     if not hass.data.get(DATA_WEBSOCKETS):
         websocket_api.async_register_command(hass, ws_project_get)
         websocket_api.async_register_command(hass, ws_project_set)
+        websocket_api.async_register_command(hass, ws_system_get)
         hass.data[DATA_WEBSOCKETS] = True
     if not hass.data.get(DATA_PANEL):
         previous = hass.data.get(frontend.DATA_PANELS, {}).get(PANEL_URL)
@@ -69,6 +71,21 @@ async def ws_project_get(hass, connection, msg):
     store = _loaded_store(hass, connection, msg["id"])
     if store is not None:
         connection.send_result(msg["id"], store.snapshot())
+
+
+@websocket_api.websocket_command({vol.Required("type"): "pohl_energy/system/get"})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def ws_system_get(hass, connection, msg):
+    async with hass.data.setdefault(f"{DOMAIN}_setup_lock", asyncio.Lock()):
+        store = _loaded_store(hass, connection, msg["id"])
+        if store is None:
+            return
+        runtime = hass.data.get(DATA_BASE_RUNTIME)
+        if runtime is None:
+            connection.send_error(msg["id"], "not_loaded", "Das Grundmodul ist nicht geladen.")
+            return
+        connection.send_result(msg["id"], await runtime.async_system_status())
 
 
 @websocket_api.websocket_command({

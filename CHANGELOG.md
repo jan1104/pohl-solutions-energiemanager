@@ -1,6 +1,10 @@
 # Änderungen
 
-## Unveröffentlicht — 2026-11-04
+## 0.5.0 — 2026-11-04
+
+- Testbares Grundmodul im HA-Panel: Projekt-/Grundmodulnavigation, echte Produkt-/Modulversionen, Speicherstatus und gezielter Statusabruf ohne Veränderung des Projektentwurfs.
+- Zentraler SQLite-Projektstand mit einmaliger, atomarer Übernahme der bestehenden HA-Projektdatei. Original bleibt bytegleich als Sicherung erhalten; danach keine parallelen Schreibquellen. Inhaltliche SHA-Revisionsprüfung bleibt erhalten.
+- Tatsächliche Basisfunktionen Grundmodul, Konfigurationsspeicher und Projektverwaltung über Modulregistry verfügbar. Eigene Modulversionen unabhängig vom Produktpaket. Umfang und Testschritte: `docs/TESTING_0_5.md`.
 
 - Erste zentrale SQLite-Konfigurationsablage für das Grundmodul: getrennte Projekt-/Modulbereiche, eigene Schemaversionen, Schutz vor veralteten Schreibständen und atomare Mehrdokumentänderungen. 21 neue Datenbanktests.
 - Bestehender HA-Projektspeicher bleibt unverändert maßgeblich. Automatische Modulkontextanbindung, Migration, Historien und Sicherung folgen; siehe `docs/CENTRAL_STORAGE.md`. Keine Datenbankdateien in Git.

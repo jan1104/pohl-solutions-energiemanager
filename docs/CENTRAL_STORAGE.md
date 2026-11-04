@@ -1,6 +1,6 @@
 # Zentrale Datenhaltung im Grundmodul
 
-Stand: 04.11.2026. Erste zentrale SQLite-Ablage für Modulkonfiguration ist implementiert (`core/storage.py`). Noch keine Umstellung der laufenden HA-Integration und keine automatische Speicherung aller Module. Historien, Migration, Sicherung und Anbindung an Modulkontexte sind folgende Schritte.
+Stand: 04.11.2026. Erste zentrale SQLite-Ablage für Modulkonfiguration ist implementiert (`core/storage.py`). Ab 0.5.0 ist der aktive HA-Projektstand angebunden; die alte Projektdatei wird einmalig übernommen und als Sicherung erhalten. Noch keine automatische Speicherung beliebiger neuer Fachmodule. Historien, allgemeine Modulmigration, Sicherung und vollständige Modulkontexte sind folgende Schritte. Aktueller Update-/Prüfablauf: TESTING_0_5.md.
 
 ## Eigentum und Aufteilung
 
@@ -51,7 +51,7 @@ Dieser Dienst ist synchron. HA muss Aufrufe später in einem Executor ausführen
 
 Datenbankformat, Modulcodeversion und Modulkonfigurationsversion sind getrennt. Ein neues Modul legt einen neuen Namensbereich an; eine neue Version eines bestehenden Moduls darf vorhandene Daten erst nach ausdrücklicher, getesteter Migration übernehmen. Der erste Dienst lehnt unterschiedliche Schemaversionen ab; Migrations-Callbacks und Rücksicherung sind noch nicht implementiert.
 
-Der heutige `ProjectStore` wird nicht parallel automatisch in SQLite geschrieben. Erst eine geprüfte Übernahme mit Versions-/Konfliktprüfung, Inhaltsvergleich und Rückfallweg darf die maßgebliche Quelle wechseln. Kein vorhandener Projektname, Import oder Modulregister-Aufruf startet diese Migration als Nebenwirkung.
+Ab 0.5.0 übernimmt ProjectStore beim ausdrücklichen HA-Setup einmalig den validierten Legacy-Projektstand. Migration und Herkunftsmetadaten werden gemeinsam gespeichert; vorhandenes gültiges SQLite-Projekt hat Vorrang. Die Originaldatei bleibt bytegleich erhalten. Danach gibt es keine parallelen Schreibquellen. Allgemeine Fachmodul-Migration und ein automatischer Downgrade bleiben offen; Register-/Importoperationen öffnen keine Geräteverbindungen.
 
 Zentrale Sicherung muss künftig Konfiguration, Modulversionen und gewünschte Historien konsistent aufnehmen. Eine laufende SQLite-Datenbank soll über deren Backup-API gesichert werden, statt nur eine möglicherweise unvollständige Hauptdatei zu kopieren. Eine solche Backup-/Restore-Funktion ist noch zu implementieren. Normale Projekteexporte bleiben ohne Klartextzugangsdaten. Feldnamenprüfungen können nicht jedes Geheimnis in beliebigen Texten erkennen; konkrete Modulschemata und separater Geheimnisdienst bleiben erforderlich.
 

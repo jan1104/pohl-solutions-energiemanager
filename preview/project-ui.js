@@ -5,13 +5,19 @@
   const embedded = new URLSearchParams(window.location.search).get('ha') === '1' && window.parent !== window;
   const $ = id => document.getElementById(id), storageKey = 'pohl-energy-project-v1';
   let project, candidate = null, candidateRevision, baseRevision, view = 'electrical';
-  let initialLoadPending = false;
-  function initialControls(disabled) { document.querySelectorAll('button,input,select,textarea').forEach(control => { control.disabled = disabled; }); if (!disabled) $('project-object-rename').disabled = !$('project-object').value; }
+  let initialLoadPending = false, systemBusy = false, systemLoaded = false;
+  function initialControls(disabled) {
+    document.querySelectorAll('button,input,select,textarea').forEach(control => { control.disabled = disabled; });
+    // Backend diagnostics remain reachable even if loading the project fails.
+    ['section-tab-project', 'section-tab-system', 'system-open-project'].forEach(id => { $(id).disabled = false; });
+    $('system-refresh').disabled = !embedded || systemBusy;
+    if (!disabled) $('project-object-rename').disabled = !$('project-object').value;
+  }
   let requestCounter = 0; const pending = new Map();
   function haRequest(operation, projectJson, revision) {
     return new Promise((resolve, reject) => {
       const id = `project-${Date.now()}-${++requestCounter}`;
-      const timer = setTimeout(() => { pending.delete(id); reject(new Error('Home Assistant antwortet nicht. Ihr Entwurf bleibt erhalten.')); }, 18000);
+      const timer = setTimeout(() => { pending.delete(id); reject(new Error(operation === 'system' ? 'Home Assistant antwortet nicht auf die Statusanfrage. Bitte erneut versuchen.' : 'Home Assistant antwortet nicht. Ihr Entwurf bleibt erhalten.')); }, 18000);
       pending.set(id, {resolve, reject, timer});
       window.parent.postMessage({type: 'pohl-energy-request', id, operation, ...(operation === 'save' ? {project_json: projectJson, expected_revision: revision} : {})}, window.location.origin);
     });
@@ -32,6 +38,62 @@
   const groups = ['grids', 'areas', 'nodes', 'connections', 'devices', 'channels', 'measurements'];
   const groupLabels = {grids: 'Netzanschluss', areas: 'Bereich', nodes: 'Anschlussknoten', connections: 'Verbindung', devices: 'Gerät', channels: 'Messkanal', measurements: 'Messstelle'};
   function el(tag, text, cls) { const n = document.createElement(tag); if (text !== undefined) n.textContent = text; if (cls) n.className = cls; return n; }
+  function renderSystem(data) {
+    // The HA wrapper validates and limits this read-only response before forwarding it.
+    if (!data || data.planning_only !== true || typeof data.product_version !== 'string' || !data.database || data.database.backend !== 'sqlite' || !Array.isArray(data.modules)) throw new Error('Der Systemstatus ist unvollständig. Bitte die Integration aktualisieren und erneut versuchen.');
+    $('system-version').textContent = data.product_version;
+    $('system-database').textContent = 'SQLite';
+    $('system-schema').textContent = `Speicherformat ${data.database.schema_version}`;
+    const storage = data.modules.find(module => module.id === 'storage');
+    $('system-persisted').textContent = storage && storage.status !== 'ready' ? 'Derzeit nicht prüfbar' : data.database.project_persisted ? 'Gespeichert' : 'Noch kein Projekt gespeichert';
+    const migrations = {not_needed: 'Keine Übernahme älterer Projektdaten erforderlich.', migrated_legacy: 'Vorhandene Projektdaten wurden in die SQLite-Projektablage übernommen.', sqlite_existing: 'Die vorhandene SQLite-Projektablage wird weiterverwendet.'};
+    const migration = migrations[data.database.migration_status];
+    $('system-migration').hidden = !migration;
+    $('system-migration').textContent = migration ? migration + (data.database.legacy_retained ? ' Die bisherige Projektdatei bleibt erhalten.' : '') : '';
+    const target = $('system-modules'); target.replaceChildren();
+    const statuses = {ready: 'Verfügbar', blocked: 'Voraussetzung fehlt', disabled: 'Deaktiviert', failed: 'Fehler'};
+    if (!data.modules.length) target.append(el('p', 'Das Backend meldet derzeit keine Module.', 'project-muted'));
+    data.modules.forEach(module => {
+      const row = el('article', undefined, 'system-module-row'), title = el('div', undefined, 'system-module-title');
+      title.append(el('h3', module.name), el('span', statuses[module.status] || 'Unbekannter Status', `system-module-badge system-module-${module.status}`));
+      row.append(title, el('p', `Version ${module.version}`, 'project-muted'));
+      if (module.reasons.length) { const list = el('ul'); module.reasons.forEach(reason => list.append(el('li', reason))); row.append(list); }
+      target.append(row);
+    });
+    $('system-planning-note').textContent = 'Konfiguration und Planung. Es werden keine Geräteschaltbefehle gesendet.';
+    $('system-details').hidden = false; systemLoaded = true;
+  }
+  async function refreshSystem() {
+    if (!embedded) { $('system-message').textContent = 'Der echte Systemstatus ist nur innerhalb von Home Assistant verfügbar. Es wird kein Datenbank- oder Modulstatus simuliert.'; return; }
+    if (systemBusy) return;
+    systemBusy = true; $('system-refresh').disabled = true; $('system-error').hidden = true; $('system-message').textContent = 'Systemstatus wird aus Home Assistant geladen …';
+    try {
+      renderSystem(await haRequest('system'));
+      $('system-message').textContent = `Status aktualisiert um ${new Date().toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})}.`;
+    } catch (err) {
+      $('system-error').textContent = `Systemstatus nicht aktualisiert: ${err.message}`; $('system-error').hidden = false;
+      $('system-message').textContent = systemLoaded ? 'Die angezeigten Angaben stammen vom letzten erfolgreichen Abruf. Bitte erneut versuchen.' : 'Noch kein bestätigter Systemstatus verfügbar. Bitte erneut versuchen.';
+    } finally { systemBusy = false; $('system-refresh').disabled = false; }
+  }
+  function openSection(section, loadStatus = true) {
+    const system = section === 'system';
+    $('project-panel').hidden = system; $('system-panel').hidden = !system;
+    for (const key of ['project', 'system']) { const button = $(`section-tab-${key}`); const active = key === section; button.setAttribute('aria-selected', String(active)); button.tabIndex = active ? 0 : -1; }
+    if (system && loadStatus && !systemLoaded) return refreshSystem();
+  }
+  ['project', 'system'].forEach((key, index) => {
+    const button = $(`section-tab-${key}`);
+    button.addEventListener('click', () => openSection(key));
+    button.addEventListener('keydown', event => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault(); const next = event.key === 'Home' ? 'project' : event.key === 'End' ? 'system' : index === 0 ? 'system' : 'project';
+      openSection(next); $(`section-tab-${next}`).focus();
+    });
+  });
+  $('system-open-project').addEventListener('click', () => { openSection('project'); $('section-tab-project').focus(); });
+  $('system-refresh').addEventListener('click', refreshSystem);
+  $('system-refresh').disabled = !embedded;
+  if (embedded) $('system-mode-note').textContent = 'Bestätigter Systemstatus aus Home Assistant. Die Modulübersicht beschreibt die installierten Basisfunktionen und deren Verfügbarkeit.';
   function message(text) { $('project-message').textContent = text; $('project-error').hidden = true; }
   function guard(fn) { return async function (...args) { try { await fn(...args); } catch (err) { $('project-error').textContent = `Nicht übernommen: ${err.message}`; $('project-error').hidden = false; $('project-message').textContent = ''; } }; }
   function warningList(target, warnings) {

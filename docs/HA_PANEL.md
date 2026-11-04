@@ -1,5 +1,7 @@
 # Eingebaute HA-Oberfläche ab 0.4.0
 
+Ab **0.5.0** gibt es die Bereiche **Projekt** und **Grundmodul**. Grundmodul zeigt tatsächliche Produkt-/Modulversionen und SQLite-Speicherstatus. Ein bestehender Projektstand wird einmalig aus dem alten HA-Speicher übernommen, dessen Datei als Sicherung erhalten bleibt. Test-/Updateablauf und Grenzen: [TESTING_0_5.md](TESTING_0_5.md).
+
 Nach Installation/Update über HACS Home Assistant neu starten. Eine vorhandene Integration muss nicht gelöscht werden. Anschließend als Administrator links „Energiemanager“ öffnen; Browser gegebenenfalls neu laden. URL innerhalb HA: `/pohl-energiemanager`.
 
 ## Benutzbar

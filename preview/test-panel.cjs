@@ -20,7 +20,7 @@ function setup(handler) {
 }
 test('HA updates create one iframe and theme messages never contain authentication', () => {
   const t = setup(); t.panel.hass = t.hass; t.panel.hass = {...t.hass};
-  assert.equal(t.panel.children.length, 2); assert.equal(t.panel._frame.src, '/pohl-energy-assets/project.html?ha=1&v=0.4.0');
+  assert.equal(t.panel.children.length, 2); assert.equal(t.panel._frame.src, '/pohl-energy-assets/project.html?ha=1&v=0.5.0');
   assert.equal(t.calls.length, 0); assert.ok(t.sent.length > 0); assert.ok(!JSON.stringify(t.sent).includes('never-send-this'));
   assert.ok(t.sent.every(s => s.origin === 'https://ha.example'));
   t.panel.disconnectedCallback(); assert.equal(t.listeners.size, 0);
@@ -39,11 +39,56 @@ test('ignores messages from another origin, window or protocol', async () => {
   }
   assert.equal(t.calls.length, 0);
 });
-test('whitelists load/save only and prevents replay', async () => {
+test('whitelists approved operations only and prevents replay', async () => {
   const t = setup(); await t.request('device/write'); assert.equal(t.calls.length, 0);
   await t.request('load', {}, 'load-1'); await t.request('load', {}, 'load-1');
   assert.equal(t.calls.length, 1); assert.equal(t.calls[0].type, 'pohl_energy/project/get');
   assert.match(t.sent.at(-1).data.error, /bereits/);
+});
+
+function systemFixture() {
+  return {product_version: '0.5.0', database: {backend: 'sqlite', schema_version: 1, project_persisted: true, migration_status: 'migrated_legacy', legacy_retained: true},
+    modules: [{id: 'core', name: 'Grundmodul', version: '0.5.0', status: 'ready', reasons: []}, {id: 'storage', name: 'Konfigurationsspeicher', version: '0.5.0', status: 'ready', reasons: []}, {id: 'project', name: 'Projektverwaltung', version: '0.5.0', status: 'ready', reasons: []}], planning_only: true};
+}
+
+test('system read is whitelisted and does not load, replace or authorize a project revision', async () => {
+  const t = setup(req => req.type === 'pohl_energy/system/get' ? {...systemFixture(), revision: 'must-not-adopt', secret: 'must-not-forward'} : {project_json: '{}', revision: 'project-r1'});
+  await t.request('system', {project_json: '{"ignore":true}', expected_revision: 'ignore', actuator_enabled: true}, 'status-first');
+  assert.deepEqual(JSON.parse(JSON.stringify(t.calls[0])), {type: 'pohl_energy/system/get'});
+  assert.equal(t.panel._loaded, false); assert.equal(t.panel._revision, null);
+  const status = t.sent.at(-1).data.data;
+  assert.equal(status.product_version, '0.5.0'); assert.equal(status.database.migration_status, 'migrated_legacy');
+  assert.equal(Object.hasOwn(status, 'revision'), false); assert.equal(Object.hasOwn(status, 'secret'), false);
+  await t.request('save', {project_json: '{}', expected_revision: 'made-up'}, 'save-without-load'); assert.equal(t.calls.length, 1);
+  await t.request('load', {}, 'project-load'); await t.request('system', {}, 'status-after-load');
+  assert.equal(t.panel._revision, 'project-r1'); assert.equal(t.panel._loaded, true);
+});
+
+test('system responses reject malformed module/database payloads without altering loaded project state', async () => {
+  const mutations = [s => {s.planning_only = false;}, s => {s.database.backend = 'unknown';}, s => {s.database.schema_version = 1.5;}, s => {s.database.project_persisted = 'yes';}, s => {s.database.migration_status = 'assumed';}, s => {s.database.legacy_retained = 1;}, s => {s.modules.push({...s.modules[0]});}, s => {s.modules[0].status = 'future-enabled';}, s => {s.modules[0].reasons = ['valid', null];}, s => {s.modules[0].version = null;}];
+  for (const mutate of mutations) {
+    const status = systemFixture(); mutate(status);
+    const t = setup(req => req.type.endsWith('/system/get') ? status : {project_json: '{}', revision: 'keep'});
+    await t.request('load', {}, 'load'); await t.request('system', {}, 'system');
+    assert.equal(t.sent.at(-1).data.ok, false); assert.equal(t.panel._revision, 'keep'); assert.equal(t.panel._loaded, true);
+  }
+});
+
+test('status requests can run during a project read but duplicate status reads are rejected', async () => {
+  let resolveProject; const t = setup(req => req.type === 'pohl_energy/system/get' ? systemFixture() : new Promise(resolve => {resolveProject = resolve;}));
+  const loading = t.request('load', {}, 'load'); await t.request('system', {}, 'status');
+  assert.equal(t.calls.length, 2); assert.equal(t.panel._busy, true); assert.equal(t.panel._systemBusy, false);
+  resolveProject({project_json: '{}', revision: 'r1'}); await loading; assert.equal(t.panel._revision, 'r1');
+  let resolveStatus; t.panel.hass = {callWS: () => new Promise(resolve => {resolveStatus = resolve;})};
+  const reading = t.request('system', {}, 'first-status'); await t.request('system', {}, 'second-status');
+  assert.match(t.sent.at(-1).data.error, /Statusanfrage läuft bereits/);
+  resolveStatus(systemFixture()); await reading; assert.equal(t.panel._revision, 'r1'); assert.equal(t.panel._systemBusy, false);
+});
+
+test('failed system read can be retried without changing the project revision', async () => {
+  let fail = true; const t = setup(req => req.type !== 'pohl_energy/system/get' ? {project_json: '{}', revision: 'r1'} : fail ? Promise.reject(new Error('Datenbank nicht erreichbar')) : systemFixture());
+  await t.request('load', {}, 'load'); await t.request('system', {}, 'failed-status'); assert.equal(t.sent.at(-1).data.ok, false);
+  fail = false; await t.request('system', {}, 'retry-status'); assert.equal(t.sent.at(-1).data.ok, true); assert.equal(t.panel._revision, 'r1');
 });
 test('save requires loaded revision and forwards only permitted fields', async () => {
   let revision = 'r1'; const t = setup(req => ({project_json: req.project_json || null, revision, has_project: req.type.endsWith('/set')}));
@@ -120,4 +165,41 @@ test('iframe reload/discard preserves old draft revision; explicit adoption chan
   saving = t.click('project-save'); assert.equal(t.outgoing.at(-1).expected_revision, 'r2');
   t.reply(t.outgoing.at(-1), {project_json: JSON.stringify(newer), revision: 'r3'}); await saving;
   assert.match(t.elements.get('project-message').textContent, /gespeichert/);
+});
+
+test('iframe basic-module status uses real backend fields, renders safely and preserves the project draft', async () => {
+  const t = editorSetup(), fixture = JSON.parse(fs.readFileSync(require('node:path').join(__dirname, '../examples/simple-project.json'), 'utf8'));
+  t.reply(t.outgoing.at(-1), {project_json: JSON.stringify(fixture), revision: 'r1'}); await Promise.resolve(); await Promise.resolve();
+  const draft = t.elements.get('project-json').value;
+  const reading = t.click('section-tab-system'); assert.equal(t.outgoing.at(-1).operation, 'system');
+  const status = systemFixture(); status.modules[0].name = '<img src=x onerror=alert(1)>'; status.modules[0].reasons = ['<script>bad()</script>'];
+  t.reply(t.outgoing.at(-1), status); await reading;
+  assert.equal(t.elements.get('project-panel').hidden, true); assert.equal(t.elements.get('system-panel').hidden, false);
+  assert.equal(t.elements.get('system-version').textContent, '0.5.0'); assert.equal(t.elements.get('system-database').textContent, 'SQLite');
+  assert.equal(t.elements.get('system-persisted').textContent, 'Gespeichert'); assert.match(t.elements.get('system-migration').textContent, /bisherige Projektdatei bleibt/);
+  const module = t.elements.get('system-modules').children[0];
+  assert.equal(module.children[0].children[0].textContent, '<img src=x onerror=alert(1)>'); assert.equal(module.children[0].children[0].children.length, 0);
+  assert.equal(t.elements.get('project-json').value, draft);
+  t.click('system-open-project'); assert.equal(t.elements.get('project-panel').hidden, false);
+  const saving = t.click('project-save'); assert.equal(t.outgoing.at(-1).expected_revision, 'r1');
+  t.reply(t.outgoing.at(-1), {project_json: JSON.stringify(fixture), revision: 'r2'}); await saving;
+});
+
+test('iframe basic-module errors support retry while keeping stale status explicitly marked', async () => {
+  const t = editorSetup(), fixture = JSON.parse(fs.readFileSync(require('node:path').join(__dirname, '../examples/simple-project.json'), 'utf8'));
+  t.reply(t.outgoing.at(-1), {project_json: JSON.stringify(fixture), revision: 'r1'}); await Promise.resolve(); await Promise.resolve();
+  let reading = t.click('section-tab-system'); t.reply(t.outgoing.at(-1), 'Nicht erreichbar', false); await reading;
+  assert.equal(t.elements.get('system-error').hidden, false); assert.equal(t.elements.get('system-refresh').disabled, false);
+  assert.match(t.elements.get('system-message').textContent, /Noch kein bestätigter/);
+  reading = t.click('system-refresh'); const status = systemFixture(); status.modules[1].status = 'failed'; status.modules[1].reasons = ['Speicher ist nicht erreichbar.']; t.reply(t.outgoing.at(-1), status); await reading;
+  assert.equal(t.elements.get('system-error').hidden, true); assert.equal(t.elements.get('system-persisted').textContent, 'Derzeit nicht prüfbar');
+  reading = t.click('system-refresh'); t.reply(t.outgoing.at(-1), 'Erneut nicht erreichbar', false); await reading;
+  assert.match(t.elements.get('system-message').textContent, /letzten erfolgreichen Abruf/); assert.equal(t.elements.get('system-details').hidden, false);
+});
+
+test('basic-module navigation remains available when initial project loading fails', async () => {
+  const t = editorSetup(); t.reply(t.outgoing.at(-1), 'Projekt kann nicht geladen werden', false); await Promise.resolve(); await Promise.resolve();
+  assert.equal(t.elements.get('section-tab-system').disabled, false); assert.equal(t.elements.get('system-refresh').disabled, false);
+  const reading = t.click('section-tab-system'); t.reply(t.outgoing.at(-1), systemFixture()); await reading;
+  assert.equal(t.elements.get('system-version').textContent, '0.5.0');
 });

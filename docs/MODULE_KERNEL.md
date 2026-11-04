@@ -1,6 +1,6 @@
 # Grundmodul, Prognosen und Modulversionen
 
-Stand: 04.11.2026. Die erste reine Laufzeitgrundlage ist in `core/modules.py` implementiert und separat getestet. Bestehende HA-Funktionen laufen noch nicht über diesen Kernel; Modulverwaltung, konkrete Prognoseanbieter und Aktualisierungsoberfläche sind weitere Schritte. Kein neuer HACS-Release und keine Live-Steuerung.
+Stand: 04.11.2026. Die erste reine Laufzeitgrundlage ist in `core/modules.py` implementiert und separat getestet. Ab 0.5.0 sind Grundmodul, Konfigurationsspeicher und Projektverwaltung als tatsächliche Basisfunktionen in HA registriert und im Panel sichtbar. Allgemeine Modulverwaltung, konkrete Prognoseanbieter und unabhängige Aktualisierung bleiben weitere Schritte. Keine Live-Steuerung. Aktueller Testablauf: TESTING_0_5.md.
 
 ## Aufteilung des Produkts
 
@@ -46,7 +46,7 @@ Diese Tabelle beschreibt die künftige Produktverdrahtung. Kerneltests belegen d
 
 ## Versionen und Weiterentwicklung
 
-1. **Produkt-/HACS-Version:** identifiziert ein gemeinsam geprüftes Installationspaket, derzeit weiterhin 0.4.0 als letztes Release.
+1. **Produkt-/HACS-Version:** identifiziert ein gemeinsam geprüftes Installationspaket, ab dem Grundmodul-Testpaket 0.5.0.
 2. **Modulversion:** identifiziert den konkreten Implementierungsstand eines Fachmoduls.
 3. **Schnittstellenversion:** bestimmt, welche Daten und Aufrufe kompatibel sind; im ersten Kernel API-Hauptversion 1. Konkrete Prognose-/Mess-/Plan-Datenverträge müssen zusätzlich festgelegt werden.
 4. **Konfigurationsschema:** beschreibt gespeicherte Daten. Es ist nicht dieselbe Versionsnummer; Migration vor Versionswechsel ist ausdrücklich zu entwickeln. Bestehendes Projektformat 1 wird durch bloßes Hinzufügen des Kernels nicht verändert.

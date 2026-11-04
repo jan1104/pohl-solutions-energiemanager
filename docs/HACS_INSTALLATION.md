@@ -1,5 +1,7 @@
 # Installation und Updates über HACS
 
+Aktueller Grundmodul-Teststand **0.5.0**: nach Update HA neu starten, Browser neu laden und links Energiemanager → Grundmodul öffnen. Bestehenden Integrationseintrag behalten. Siehe [TESTING_0_5.md](TESTING_0_5.md) für Speicherübernahme und Prüfschritte.
+
 HACS verwendet öffentliche GitHub-Repositories. Das Repository wurde vom Nutzer öffentlich gestellt; Sichtbarkeit am 03.11.2026 bestätigt. Persönliche Konfiguration bleibt außerhalb des Repositorys. [Offizielle HACS-Einschränkung](https://hacs.xyz/docs/faq/private_repositories/), geprüft am 03.11.2026.
 
 ## Nach öffentlicher Freigabe

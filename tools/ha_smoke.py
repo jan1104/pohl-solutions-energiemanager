@@ -4,6 +4,7 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 import json
 import logging
+import sqlite3
 from pathlib import Path
 import sys
 import tempfile
@@ -12,6 +13,135 @@ from unittest.mock import AsyncMock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+
+
+async def sqlite_migration_checks(hass):
+    """Use real HA executor and real SQLite, isolated from the integration project."""
+    from threading import Event
+
+    from custom_components.pohl_solutions_energiemanager.base_runtime import BaseRuntime
+    from custom_components.pohl_solutions_energiemanager.const import DOMAIN
+    from custom_components.pohl_solutions_energiemanager.core.storage import ModuleStorage
+    from custom_components.pohl_solutions_energiemanager.project_store import ProjectConflictError, ProjectStore
+
+    fixture = {"format": "pohl-energy-project", "schema_version": 1,
+               "id": "migration-fixture", "name": "Legacy fixture", "mode": "planning_only",
+               "grids": [], "areas": [], "nodes": [], "connections": [],
+               "devices": [], "channels": [], "measurements": [], "settings": {}}
+    envelope = {"version": 1, "minor_version": 1, "key": f"{DOMAIN}.project", "data": fixture}
+    with tempfile.TemporaryDirectory() as isolated:
+        root = Path(isolated)
+        # Only the config path is isolated; persistence and HA's executor are real.
+        with patch.object(hass.config, "path", side_effect=lambda *parts: str(root.joinpath(*parts))):
+            legacy = root / ".storage" / f"{DOMAIN}.project"
+            legacy.parent.mkdir()
+            raw = json.dumps(envelope, ensure_ascii=False).encode("utf-8")
+            legacy.write_bytes(raw)
+            with patch.object(ModuleStorage, "put_many", side_effect=sqlite3.OperationalError("CI disk full during migration")):
+                try:
+                    await ProjectStore(hass).async_load()
+                except OSError:
+                    pass
+                else:
+                    raise AssertionError("Failed migration was silently accepted")
+            assert legacy.read_bytes() == raw
+            first = ProjectStore(hass)
+            await first.async_load()
+            assert json.loads(first.export()["project_json"]) == fixture
+            assert (await first.async_storage_health())["migration_status"] == "migrated_legacy"
+            assert legacy.read_bytes() == raw
+            other = ProjectStore(hass)
+            await other.async_load()
+            assert other.snapshot() == first.snapshot()
+            # Existing SQLite is authoritative; a later damaged backup is not imported.
+            legacy.write_bytes(b"intentionally damaged CI backup")
+            reopened = ProjectStore(hass)
+            await reopened.async_load()
+            assert reopened.snapshot() == first.snapshot()
+            changed = {**fixture, "name": "New SQLite revision"}
+            old_sha = first.revision
+            await first.async_import(json.dumps(changed), expected_revision=old_sha)
+            try:
+                await other.async_import(json.dumps(fixture), expected_revision=old_sha)
+            except ProjectConflictError:
+                pass
+            else:
+                raise AssertionError("Competing SQLite store bypassed CAS")
+            assert other.snapshot() == first.snapshot()
+            # Cancellation must drain the commit and update the local revision.
+            started, release = Event(), Event()
+            original_commit = first._sync_commit
+
+            def delayed_commit(*args):
+                started.set()
+                if not release.wait(5):
+                    raise OSError("CI release timeout")
+                return original_commit(*args)
+
+            cancelled_project = {**changed, "name": "Durable cancelled write"}
+            with patch.object(first, "_sync_commit", side_effect=delayed_commit):
+                task = asyncio.create_task(first.async_import(json.dumps(cancelled_project), expected_revision=first.revision))
+                assert await hass.async_add_executor_job(started.wait, 5)
+                task.cancel()
+                await asyncio.sleep(0)
+                assert not task.done()
+                release.set()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+                else:
+                    raise AssertionError("Cancellation was swallowed")
+            after_cancel = ProjectStore(hass)
+            await after_cancel.async_load()
+            assert after_cancel.snapshot() == first.snapshot()
+            assert json.loads(first.export()["project_json"])["name"] == "Durable cancelled write"
+            runtime = BaseRuntime(first)
+            await runtime.async_start()
+            assert all(m["status"] == "ready" for m in (await runtime.async_system_status())["modules"])
+            with patch.object(first, "async_storage_health", new=AsyncMock(side_effect=OSError("CI database unavailable"))):
+                unhealthy = await runtime.async_system_status()
+                states = {m["id"]: m["status"] for m in unhealthy["modules"]}
+                assert states == {"core": "ready", "storage": "failed", "project": "blocked"}
+                assert unhealthy["database"]["project_persisted"] is False
+            assert all(m["status"] == "ready" for m in (await runtime.async_system_status())["modules"])
+            await runtime.async_stop()
+    # Invalid legacy input must never become an empty successful migration.
+    bad_payloads = [b"{broken", b'{"version":1,"version":1,"data":{}}',
+                    json.dumps({**envelope, "version": 2}).encode(),
+                    json.dumps({**envelope, "minor_version": 2}).encode(),
+                    json.dumps({**envelope, "key": "foreign.project"}).encode(),
+                    json.dumps({**envelope, "data": {**fixture, "settings": {"x": float("nan")}}}).encode()]
+    for raw in bad_payloads:
+        with tempfile.TemporaryDirectory() as isolated:
+            root = Path(isolated)
+            with patch.object(hass.config, "path", side_effect=lambda *parts: str(root.joinpath(*parts))):
+                legacy = root / ".storage" / f"{DOMAIN}.project"
+                legacy.parent.mkdir()
+                legacy.write_bytes(raw)
+                store = ProjectStore(hass)
+                try:
+                    await store.async_load()
+                except ValueError:
+                    pass
+                else:
+                    raise AssertionError("Invalid legacy storage was silently replaced")
+                assert legacy.read_bytes() == raw
+                assert store.export()["project_json"] is None
+    # HA's pretty indentation must not reject an otherwise valid large project.
+    with tempfile.TemporaryDirectory() as isolated:
+        root = Path(isolated)
+        with patch.object(hass.config, "path", side_effect=lambda *parts: str(root.joinpath(*parts))):
+            legacy = root / ".storage" / f"{DOMAIN}.project"
+            legacy.parent.mkdir()
+            large = {**fixture, "settings": {"items": ["x" * 25] * 60000}}
+            pretty = json.dumps({**envelope, "data": large}, indent=2).encode()
+            assert len(pretty) > 2 * 1024 * 1024 + 65536
+            legacy.write_bytes(pretty)
+            store = ProjectStore(hass)
+            await store.async_load()
+            assert json.loads(store.export()["project_json"]) == large
+            assert legacy.read_bytes() == pretty
 
 
 async def main() -> None:
@@ -26,14 +156,14 @@ async def main() -> None:
     from homeassistant.exceptions import ServiceValidationError
     from homeassistant.helpers import device_registry, entity_registry
     from homeassistant.helpers.storage import get_internal_store_manager
-    from homeassistant.util.file import WriteError
 
     from custom_components.pohl_solutions_energiemanager import async_setup_entry, async_unload_entry
     from custom_components.pohl_solutions_energiemanager.config_flow import (
         PohlSolutionsConfigFlow,
         PohlSolutionsOptionsFlow,
     )
-    from custom_components.pohl_solutions_energiemanager.const import BATTERY_DEFAULTS, DOMAIN
+    from custom_components.pohl_solutions_energiemanager.base_runtime import DATA_BASE_RUNTIME
+    from custom_components.pohl_solutions_energiemanager.const import BATTERY_DEFAULTS, DOMAIN, VERSION
     from custom_components.pohl_solutions_energiemanager.coordinator import PohlEnergyCoordinator
     from custom_components.pohl_solutions_energiemanager.price_sources import PriceSourceLoader
     from custom_components.pohl_solutions_energiemanager.panel import PANEL_URL
@@ -87,6 +217,7 @@ async def main() -> None:
         extra_coordinators = []
         runner = None
         try:
+            await sqlite_migration_checks(hass)
             now = datetime.now(timezone.utc)
             start = now.replace(minute=now.minute // 15 * 15, second=0, microsecond=0)
             rows = [{
@@ -263,6 +394,7 @@ async def main() -> None:
                     await async_setup_sensors(hass, project_entry, lambda entities: list(entities))
                     assert registry.async_get(legacy_rows["schedule"]).disabled_by == entity_registry.RegistryEntryDisabler.INTEGRATION
                     for command, args in (
+                        ("pohl_energy/system/get", {}),
                         ("pohl_energy/project/get", {}),
                         ("pohl_energy/project/set", {"project_json": "{}", "expected_revision": "irrelevant"}),
                     ):
@@ -278,6 +410,13 @@ async def main() -> None:
                             pass
                         else:
                             raise AssertionError(f"Non-admin accessed {service}")
+                    system = (await admin_ws("pohl_energy/system/get"))["result"]
+                    assert system["product_version"] == VERSION and system["planning_only"] is True
+                    assert system["database"]["backend"] == "sqlite" and system["database"]["project_persisted"] is True
+                    assert {module["id"] for module in system["modules"]} == {"core", "storage", "project"}
+                    assert all(module["version"] == "0.1.0" for module in system["modules"])
+                    assert all(module["status"] == "ready" for module in system["modules"])
+                    assert DATA_BASE_RUNTIME in hass.data
                     empty = await hass.services.async_call(DOMAIN, "project_status", {}, blocking=True, return_response=True)
                     assert empty["has_project"] is True
                     assert empty["summary"]["name"] == "Project CI"
@@ -330,27 +469,26 @@ async def main() -> None:
                         raise AssertionError("Invalid import was accepted")
                     assert hass.data[DATA_PROJECT_STORE].export() == exported
                     altered = {**fixture, "name": "Must not become active"}
-                    # HA Store itself suppresses WriteError. The integration's
-                    # on-disk confirmation must still reject this candidate.
-                    with patch.object(hass.data[DATA_PROJECT_STORE]._store, "_async_write_data", new=AsyncMock(side_effect=WriteError("CI simulated suppressed write failure"))):
+                    # SQLite errors must preserve the previously active project.
+                    with patch.object(hass.data[DATA_PROJECT_STORE], "_sync_commit", side_effect=sqlite3.OperationalError("CI simulated database write failure")):
                         try:
                             await hass.data[DATA_PROJECT_STORE].async_import(json.dumps(altered))
                         except OSError:
                             pass
                         else:
-                            raise AssertionError("Suppressed Store write failure activated the project")
+                            raise AssertionError("SQLite write failure was ignored")
                     assert hass.data[DATA_PROJECT_STORE].export() == exported
                     disk_check = ProjectStore(hass)
                     await disk_check.async_load()
                     assert disk_check.export() == exported
-                    # Saving must succeed before replacing active in-memory data.
-                    with patch.object(hass.data[DATA_PROJECT_STORE]._store, "async_save", new=AsyncMock(side_effect=OSError("CI simulated disk failure"))):
+                    # Read-back must confirm a successful transaction before activation.
+                    with patch.object(hass.data[DATA_PROJECT_STORE], "_sync_commit", side_effect=OSError("CI simulated verification failure")):
                         try:
                             await hass.data[DATA_PROJECT_STORE].async_import(json.dumps(altered))
                         except OSError:
                             pass
                         else:
-                            raise AssertionError("Disk failure was ignored")
+                            raise AssertionError("Verification failure was ignored")
                     assert hass.data[DATA_PROJECT_STORE].export() == exported
                     # An additional entry shares the same panel and project.
                     other_entry = ConfigEntry(
@@ -366,11 +504,15 @@ async def main() -> None:
                 finally:
                     assert await async_unload_entry(hass, project_entry)
                 assert DATA_PROJECT_STORE not in hass.data
+                assert DATA_BASE_RUNTIME not in hass.data
                 assert not hass.services.has_service(DOMAIN, "import_project")
                 assert not hass.services.has_service(DOMAIN, "export_project")
                 assert not hass.services.has_service(DOMAIN, "project_status")
                 assert not hass.services.has_service(DOMAIN, "replan")
                 assert PANEL_URL not in hass.data[frontend.DATA_PANELS]
+                unloaded_system = await admin_ws("pohl_energy/system/get")
+                assert unloaded_system["error"]["code"] == "not_loaded"
+                assert DATA_BASE_RUNTIME not in hass.data
                 unloaded = await admin_ws("pohl_energy/project/get")
                 assert unloaded["error"]["code"] == "not_loaded"
                 unloaded_set = await admin_ws(
