@@ -29,7 +29,8 @@
       safeWalk(v[k], `${p}.${k}`, depth + 1);
     }
   }
-  function validateProject(data) {
+  function validateProject(data) { return validateProjectV1(data); }
+  function validateProjectV1(data, requireGridMeasurement = true) {
     safeWalk(data);
     if (new TextEncoder().encode(JSON.stringify(data)).length > LIMIT) fail('$', 'Projekt darf höchstens 2 MiB groß sein');
     shape(data, '$', ['format', 'schema_version', 'id', 'name', 'mode', ...collections, 'settings']);
@@ -126,8 +127,80 @@
         if (!at) fail(p, 'Enthaltenes Gerät liegt nicht am Messknoten oder einem nachgeordneten Zweig');
       }
     });
-    for (const grid of data.grids) if (data.measurements.filter(m => m.role === 'grid' && maps.nodes.get(m.node_id).grid_id === grid.id).length !== 1) fail('$.measurements', `Netz ${grid.id} benötigt genau eine primäre Netzmessung`);
+    for (const grid of data.grids) if (requireGridMeasurement && data.measurements.filter(m => m.role === 'grid' && maps.nodes.get(m.node_id).grid_id === grid.id).length !== 1) fail('$.measurements', `Netz ${grid.id} benötigt genau eine primäre Netzmessung`);
     return JSON.parse(JSON.stringify(data));
+  }
+  // Development API only: the deployed UI and import/export remain strict v1.
+  function validateProjectV2(data) {
+    safeWalk(data);
+    if (new TextEncoder().encode(JSON.stringify(data)).length > LIMIT) fail('$', 'Projekt darf höchstens 2 MiB groß sein');
+    shape(data, '$', ['format', 'schema_version', 'id', 'name', 'mode', 'plants', ...collections, 'settings']);
+    if (data.schema_version !== 2) fail('$', 'Projektformat 2 erwartet');
+    if (!Array.isArray(data.plants) || data.plants.length > 500) fail('$.plants', 'höchstens 500 Anlagen erlaubt');
+    for (const c of collections) if (!Array.isArray(data[c])) fail(`$.${c}`, 'Liste erwartet');
+    if (collections.reduce((sum, c) => sum + data[c].length, data.plants.length) > 2500) fail('$', 'höchstens 2500 Objekte erlaubt');
+    const clone = v => JSON.parse(JSON.stringify(v));
+    const base = clone(data), plants = new Map();
+    delete base.plants; base.schema_version = 1;
+    const optionalText = (row, key, limit, path) => {
+      if (row[key] != null && (typeof row[key] !== 'string' || [...row[key]].length > limit)) fail(`${path}.${key}`, `Text bis ${limit} Zeichen erwartet`);
+    };
+    data.plants.forEach((plant, i) => {
+      const p = `$.plants[${i}]`;
+      shape(plant, p, ['id', 'name', 'grid_ids'], ['description', 'location', 'assignment_confirmed']);
+      if (typeof plant.id !== 'string' || !idPattern.test(plant.id) || plants.has(plant.id)) fail(p, 'ungültige oder doppelte Anlagenkennung');
+      text(plant.name, `${p}.name`);
+      optionalText(plant, 'description', 2048, p); optionalText(plant, 'location', 512, p);
+      if (Object.hasOwn(plant, 'assignment_confirmed') && typeof plant.assignment_confirmed !== 'boolean') fail(p, 'Anlagenbestätigung muss boolesch sein');
+      plants.set(plant.id, plant);
+    });
+    base.areas.forEach((area, i) => {
+      const p = `$.areas[${i}]`;
+      shape(area, p, ['id', 'name', 'grid_id', 'plant_id']);
+      if (typeof area.plant_id !== 'string' || !plants.has(area.plant_id)) fail(p, 'unbekannte Anlage');
+      delete area.plant_id;
+    });
+    base.nodes.forEach((node, i) => {
+      const p = `$.nodes[${i}]`;
+      shape(node, p, ['id', 'name', 'grid_id', 'parent_id'], ['description', 'location', 'fuse_a', 'phases']);
+      optionalText(node, 'description', 2048, p); optionalText(node, 'location', 512, p);
+      if (node.fuse_a != null) { number(node.fuse_a, `${p}.fuse_a`, 0, Number.MAX_VALUE); if (node.fuse_a === 0) fail(p, 'Absicherung muss positiv sein'); }
+      if (node.phases != null) choose(node.phases, `${p}.phases`, [1, 3]);
+      for (const key of ['description', 'location', 'fuse_a', 'phases']) delete node[key];
+    });
+    validateProjectV1(base, false);
+    const grids = new Set(data.grids.map(g => g.id)), linked = new Set();
+    for (const plant of plants.values()) {
+      if (!Array.isArray(plant.grid_ids)) fail('$.plants.grid_ids', 'Liste erwartet');
+      const seen = new Set();
+      for (const id of plant.grid_ids) {
+        if (typeof id !== 'string' || !grids.has(id) || seen.has(id)) fail('$.plants.grid_ids', 'unbekannter oder doppelter Netzanschluss');
+        seen.add(id); linked.add(id);
+      }
+    }
+    if (linked.size !== grids.size) fail('$.plants', 'Jeder Netzanschluss benötigt eine Anlage');
+    for (const area of data.areas) if (!plants.get(area.plant_id).grid_ids.includes(area.grid_id)) fail('$.areas', 'Bereich und Anlage müssen den Netzanschluss gemeinsam referenzieren');
+    return clone(data);
+  }
+  function migrateProjectV1ToV2(data) {
+    const result = validateProject(data);
+    result.schema_version = 2; result.plants = [];
+    if (collections.some(c => result[c].length)) {
+      result.plants = [{id: 'imported_plant', name: 'Importierte Anlage', grid_ids: result.grids.map(g => g.id), assignment_confirmed: false,
+        description: 'Organisatorische Zuordnung nach Import bitte prüfen.'}];
+      result.areas.forEach(area => { area.plant_id = 'imported_plant'; });
+    }
+    return validateProjectV2(result);
+  }
+  function configurationIssuesV2(data) {
+    const project = validateProjectV2(data), issues = [];
+    for (const plant of project.plants) if (plant.assignment_confirmed === false) issues.push({code: 'plant_assignment_unconfirmed', plant_id: plant.id});
+    const nodes = new Map(project.nodes.map(n => [n.id, n]));
+    const measured = new Set(project.measurements.filter(m => m.role === 'grid').map(m => nodes.get(m.node_id).grid_id));
+    for (const grid of project.grids) if (!measured.has(grid.id)) issues.push({code: 'grid_measurement_missing', grid_id: grid.id});
+    const channels = new Map(project.channels.map(c => [c.id, c]));
+    for (const m of project.measurements) if (channels.get(m.channel_id).source.kind === 'unconfigured') issues.push({code: 'measurement_source_unconfigured', measurement_id: m.id, channel_id: m.channel_id});
+    return issues;
   }
   function loadProjectJson(input) {
     if (typeof input !== 'string' || new TextEncoder().encode(input).length > LIMIT) fail('$', 'JSON-Datei darf höchstens 2 MiB groß sein');
@@ -173,7 +246,7 @@
     data.channels.filter(c => c.source.kind === 'unconfigured').forEach(c => warnings.push(`channels.${c.id}.source: Messquelle noch nicht eingerichtet`));
     return {id: data.id, name: data.name, mode: data.mode, counts: Object.fromEntries(collections.map(c => [c, data[c].length])), warnings};
   }
-  const api = {validateProject, loadProjectJson, exportProjectJson, projectSummary, sourceChain, MAX_BYTES: LIMIT};
+  const api = {validateProjectV2, migrateProjectV1ToV2, configurationIssuesV2, validateProject, loadProjectJson, exportProjectJson, projectSummary, sourceChain, MAX_BYTES: LIMIT};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) root.PohlProjectModel = api;
 })(typeof window !== 'undefined' ? window : null);

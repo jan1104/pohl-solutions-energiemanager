@@ -77,3 +77,31 @@ test('warnings identify draft connections and unconfigured channels', () => {
   assert.ok(warnings.some(w => w.includes('connections.lan.host'))); assert.ok(warnings.some(w => w.includes('Messquelle')));
 });
 module.exports.fixture = fixture;
+
+
+test('staged v2 API does not activate legacy UI imports or share draft objects', () => {
+  const original = fixture(), before = JSON.stringify(original);
+  const migrated = M.migrateProjectV1ToV2(original);
+  assert.equal(JSON.stringify(original), before);
+  assert.throws(() => M.loadProjectJson(JSON.stringify(migrated)), /unbekanntes Feld/);
+  assert.throws(() => M.exportProjectJson(migrated), /unbekanntes Feld/);
+  migrated.measurements = [];
+  assert.equal(M.validateProjectV2(migrated).measurements.length, 0);
+  assert.deepEqual(M.configurationIssuesV2(migrated), [
+    {code: 'plant_assignment_unconfirmed', plant_id: 'imported_plant'},
+    {code: 'grid_measurement_missing', grid_id: 'g'}
+  ]);
+  const copy = M.validateProjectV2(migrated);
+  copy.plants[0].grid_ids.length = 0;
+  assert.deepEqual(migrated.plants[0].grid_ids, ['g']);
+});
+test('staged v2 API rejects non-JSON values and oversized objects before cloning', () => {
+  for (const value of [NaN, Infinity, undefined, () => 1, new Date()]) {
+    const p = M.migrateProjectV1ToV2(fixture());
+    p.settings.invalid = value;
+    assert.throws(() => M.validateProjectV2(p));
+  }
+  const oversized = M.migrateProjectV1ToV2(fixture());
+  oversized.settings.padding = 'x'.repeat(M.MAX_BYTES);
+  assert.throws(() => M.validateProjectV2(oversized), /MiB/);
+});

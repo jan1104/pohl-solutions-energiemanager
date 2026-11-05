@@ -1,6 +1,6 @@
 # Arbeitsplan
 
-Stand: 2026-11-05. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
+Stand: 2026-11-06. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
 
 ## Auftrag und Grenzen
 
@@ -35,7 +35,9 @@ V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberf
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
 
-Priorität nach Nutzerklärung 05.11.2026: Projekt beim Integrationsstart, danach Anlage vor Anschlüssen/Geräten. Entwicklungsformat 2 mit Anlagenreferenzen, optionalen HAK-Metadaten und noch ungemessenen Anschlüssen implementiert; bestehende Format-1-Importe bleiben unverändert streng. Explizite Vorschau-Migration erhält elektrische IDs/Beziehungen, errät keine Standorte und ändert keine Dateien. 23 neue Tests; lokal insgesamt 315 Python-Tests plus 18 Untertests erfolgreich. Noch keine UI-/HA-Aktivierung und kein Release. Nächster Schritt: JS-Parität, Persistenzmigration und schrittweise minimale Bedienung samt Messgerätemodul. Details PROJECT_SCHEMA_V2_DRAFT.md.
+Entwicklungsschritt 06.11.2026: explizite JS-API für Format-2-Prüfung, Vorschau-Migration und Konfigurationshinweise ergänzt; aktive UI und Import/Export bleiben Format 1. Migrationsergebnisse und Struktur-/Hinweiscodes mit Python verglichen, getrennte elektrische Grenzen erhalten. Lokal 316 Python-Tests plus 18 Untertests und 43 JavaScript-Tests erfolgreich. Noch vor Aktivierung gemeinsamen JSON-Grenzvertrag (Größenberechnung, Zahlen/Unicode) klären; danach Persistenz und geführte Anlage-/Messgerätebedienung. Keine automatische Datenübernahme, keine Gerätezugriffe, kein Release.
+
+Priorität nach Nutzerklärung 05.11.2026: Projekt beim Integrationsstart, danach Anlage vor Anschlüssen/Geräten. Entwicklungsformat 2 mit Anlagenreferenzen, optionalen HAK-Metadaten und noch ungemessenen Anschlüssen implementiert; bestehende Format-1-Importe bleiben unverändert streng. Explizite Vorschau-Migration erhält elektrische IDs/Beziehungen, errät keine Standorte und ändert keine Dateien. 23 neue Tests; lokal insgesamt 315 Python-Tests plus 18 Untertests erfolgreich. Noch keine UI-/HA-Aktivierung und kein Release. Nächster Schritt: JSON-Grenzvertrag, Persistenzmigration und schrittweise minimale Bedienung samt Messgerätemodul. Details PROJECT_SCHEMA_V2_DRAFT.md.
 
 Bedienkorrektur 0.5.1 (Nutzerfeedback 04.11.2026): ruhige Projektübersicht und geführter nächster Schritt statt gleichzeitig sichtbarer Toolbars/Formulare/Nullzähler. Seltene Optionen und JSON gezielt öffnen; Speichern, Fehler und Importvorschau müssen klar erreichbar bleiben. Keine Änderung an Datenformat oder zentraler Speicherlogik. Desktop-/Mobilansicht, fokussiertes Anlegen/Speichern und sichtbare Importvorschau geprüft. Lokal 292 Python-Tests plus 18 Untertests und 41 JavaScript-Tests erfolgreich; Revisionsschutz erhalten.
 

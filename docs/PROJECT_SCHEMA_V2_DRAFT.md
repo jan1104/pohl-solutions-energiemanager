@@ -1,6 +1,6 @@
 # Entwicklungsformat 2: Anlage vor Anschluss und Messgerät
 
-Stand: 05.11.2026. Reiner Modell-/Migrationsbaustein in `core/project_v2.py`, noch nicht in HA, SQLite-Projektübernahme oder Oberfläche aktiviert. Version 0.5.1 verwendet weiterhin Format 1. Kein Release, keine Geräteabfrage und keine automatische Umschreibung bestehender Daten.
+Stand: 06.11.2026. Reiner Modell-/Migrationsbaustein in `core/project_v2.py` und als explizite Entwicklungs-API in `preview/project-model.js`, noch nicht in HA, SQLite-Projektübernahme oder Oberfläche aktiviert. Version 0.5.1 verwendet weiterhin Format 1. Kein Release, keine Geräteabfrage und keine automatische Umschreibung bestehender Daten.
 
 ## Bestätigter Bedienablauf
 
@@ -37,4 +37,8 @@ Die Kopie wird gegen Format 2 geprüft. Wenn zusätzliche Metadaten die 2-MiB-Gr
 
 23 neue synthetische Tests prüfen die getrennten Schritte Projekt → leere Anlage → ungemessener Anschluss, Metadaten, gemeinsame/getrennte Anschlüsse, Gatewayzuordnungen über Anlagenbereiche, Migration beider öffentlichen Beispiele, unveränderte Identitäten, Fehlzuordnungen und unveränderte Originale. Bestehende Format-1- und Python/JS-Paritätsprüfungen bleiben erfolgreich.
 
-Nächster zusammenhängender Schritt: JavaScript-Prüfung/Vorschau ergänzen, versionierten Persistenzwechsel mit Konflikt-/Neustarttests entwickeln und danach die minimale UI samt Messgerätezuordnung anbinden. Erst nach durchgehender Prüfung ein testbares Paket anbieten. Kein Vorziehen der Modellaktivierung.
+Die JavaScript-Entwicklungsfunktionen `validateProjectV2`, `migrateProjectV1ToV2` und `configurationIssuesV2` teilen die bestehenden elektrischen Prüfungen, sind aber nicht mit Oberfläche oder Import/Export verbunden. Laufzeitübergreifende Vertragstests vergleichen Migration beider öffentlicher Beispiele und des leeren Projekts, 26 gültige/ungültige Entwürfe sowie Hinweiscodes. Zusätzliche Browserlogiktests prüfen unabhängige Kopien, ungültige JSON-Werte und die weiterhin strikte Format-1-Importschranke.
+
+Noch offen vor Aktivierung: Die historische Größenprüfung serialisiert in Python mit Leerzeichen und in JavaScript kompakt. Nahe 2 MiB kann deshalb die Annahme abweichen; auch beliebig große Ganzzahlen und einzelne Unicode-Surrogate brauchen einen gemeinsamen JSON-Vertrag. Die Tests belegen die beschriebenen Struktur-/Migrationsfälle, keine vollständige Gleichheit aller möglichen JSON-Grenzfälle. Der Backend-Import bleibt maßgeblich; das Entwicklungsformat wird bis zur Klärung nicht aktiviert.
+
+Nächster zusammenhängender Schritt: gemeinsamen JSON-Grenzvertrag festlegen, versionierten Persistenzwechsel mit Konflikt-/Neustarttests entwickeln und danach die minimale UI samt Messgerätezuordnung anbinden. Erst nach durchgehender Prüfung ein testbares Paket anbieten. Kein Vorziehen der Modellaktivierung.

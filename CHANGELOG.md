@@ -1,7 +1,8 @@
 # Änderungen
 
-## Unveröffentlicht — 2026-11-05
+## Unveröffentlicht — 2026-11-06
 
+- Format-2-Entwicklungsmodell auch in JavaScript validierbar: explizite Vorschau-Migration und strukturierte Konfigurationshinweise mit Python-Vertragstests. Aktive Oberfläche, Import/Export und gespeicherte Projekte bleiben Format 1; JSON-Grenzfälle vor Aktivierung separat zu vereinheitlichen.
 - Entwicklungsmodell für Projekt → Anlage → Anschluss/Messgerät ergänzt: leere Anlagen, ungemessene Anschlussentwürfe und optionale Anschlussmetadaten. Organisatorische Zuordnung und elektrische Grenzen bleiben getrennt.
 - Explizite Vorschau-Migration erhält vorhandene IDs/Verbindungen und markiert Anlagenzuordnung als unbestätigt. 23 neue synthetische Tests. Noch keine Aktivierung in HA/Oberfläche, keine Umschreibung gespeicherter Projekte und kein Release; siehe `docs/PROJECT_SCHEMA_V2_DRAFT.md`.
 
