@@ -92,6 +92,11 @@ def _acyclic(mapping, field, path):
 
 def validate_project(data):
     """Validate complete v1 data and return an independent deep copy."""
+    return _validate_project_v1(data)
+
+
+def _validate_project_v1(data, *, require_grid_measurement=True):
+    """Shared structural checks; only the separate v2 draft permits no meter."""
     try:
         _json_tree(data)
         encoded = json.dumps(data, ensure_ascii=False, allow_nan=False).encode("utf-8")
@@ -286,7 +291,7 @@ def validate_project(data):
                 _fail(path + ".includes_device_ids", "Gerät liegt außerhalb des gemessenen Teilbaums")
             seen.add(device)
     for grid, count in grid_measurements.items():
-        if count != 1:
+        if require_grid_measurement and count != 1:
             _fail(f"$.grids.{grid}", "Genau eine primäre Netzmessung erforderlich")
     return deepcopy(data)
 

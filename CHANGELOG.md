@@ -1,5 +1,10 @@
 # Änderungen
 
+## Unveröffentlicht — 2026-11-05
+
+- Entwicklungsmodell für Projekt → Anlage → Anschluss/Messgerät ergänzt: leere Anlagen, ungemessene Anschlussentwürfe und optionale Anschlussmetadaten. Organisatorische Zuordnung und elektrische Grenzen bleiben getrennt.
+- Explizite Vorschau-Migration erhält vorhandene IDs/Verbindungen und markiert Anlagenzuordnung als unbestätigt. 23 neue synthetische Tests. Noch keine Aktivierung in HA/Oberfläche, keine Umschreibung gespeicherter Projekte und kein Release; siehe `docs/PROJECT_SCHEMA_V2_DRAFT.md`.
+
 ## 0.5.1 — 2026-11-04
 
 - Projektoberfläche vereinfacht: fokussierter Einstieg für leere Projekte, kompakte Hauptaktionen und schrittweises Öffnen von Hinzufügen, Projektoptionen und Expertenfunktionen.

@@ -2,6 +2,8 @@
 
 Einrichtung zuerst nur mit einem frei gewählten Namen des Energiemanagers. Keine vorhandenen HA-Sensoren voraussetzen. Projektverwaltung und später direkte Geräteanbindung müssen unabhängig von der optionalen sensorbasierten Simulation zugänglich sein.
 
+Nutzerpräzisierung 05.11.2026: zuerst **Anlage**, danach Anschlüsse/Abgänge und Geräte anlegen. Ort ist optional, keine weitere Pflichtstufe. Anschlüsse dürfen ohne zugeordneten Messwert als Entwurf bestehen; ein vorhandenes oder neues Messgerät liefert später den gewählten Kanal. Implementierter Entwicklungsbaustein und Grenzen: [PROJECT_SCHEMA_V2_DRAFT.md](PROJECT_SCHEMA_V2_DRAFT.md). Die ausgelieferte Oberfläche ist noch nicht umgestellt.
+
 ## Empfohlene Bedienhierarchie
 
 ```text
