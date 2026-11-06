@@ -40,6 +40,19 @@ def _encode(data):
     return encoded
 
 
+def _prepare_changes(changes, *, max_documents=128):
+    if (not isinstance(changes, dict) or not changes
+            or (max_documents is not None and len(changes) > max_documents)):
+        raise ValueError("Provide a nonempty document batch within the supported limit")
+    prepared = {}
+    for key, (expected, data) in changes.items():
+        _identifier(key)
+        if expected is not None and (type(expected) is not int or expected < 1):
+            raise ValueError("Expected revision must be positive or None for create-only")
+        prepared[key] = (expected, _encode(data))
+    return prepared
+
+
 @dataclass(frozen=True, slots=True)
 class StoredDocument:
     revision: int
@@ -155,14 +168,7 @@ class ModuleStorage:
 
     def put_many(self, changes):
         """Commit all documents or none. None revision means create-only."""
-        if not isinstance(changes, dict) or not 1 <= len(changes) <= 128:
-            raise ValueError("Provide between 1 and 128 document changes")
-        prepared = {}
-        for key, (expected, data) in changes.items():
-            _identifier(key)
-            if expected is not None and (type(expected) is not int or expected < 1):
-                raise ValueError("Expected revision must be positive or None for create-only")
-            prepared[key] = (expected, _encode(data))
+        prepared = _prepare_changes(changes)
         revisions = {}
         with self._repository._transaction() as connection:
             self._check_schema(connection)
@@ -175,3 +181,34 @@ class ModuleStorage:
                 connection.execute("INSERT INTO module_documents VALUES (?,?,?,?,?) ON CONFLICT(project_id,module_id,document_key) DO UPDATE SET revision=excluded.revision,body=excluded.body", (self.project_id, self.module_id, key, revision, encoded))
                 revisions[key] = StoredDocument(revision, json.loads(encoded))
         return revisions
+
+    def migrate(self, target_schema_version, changes):
+        """Explicit atomic schema replacement, preserving every document key.
+
+        Supply a revision-checked replacement for every current document and
+        optionally create new ones. No callbacks or implicit transforms execute.
+        Old handles become unusable after commit. No automatic downgrade.
+        """
+        if (type(target_schema_version) is not int
+                or not self.schema_version < target_schema_version <= 999999):
+            raise ValueError("Migration target must be a newer supported schema")
+        prepared = _prepare_changes(changes, max_documents=None)
+        with self._repository._transaction() as connection:
+            self._check_schema(connection)
+            rows = dict(connection.execute(
+                "SELECT document_key,revision FROM module_documents WHERE project_id=? AND module_id=?",
+                (self.project_id, self.module_id)).fetchall())
+            if not rows.keys() <= prepared.keys():
+                raise StorageConflict("Migration must preserve every existing document")
+            for key, (expected, _) in prepared.items():
+                if rows.get(key) != expected:
+                    raise StorageConflict(f"Document changed: {key}")
+            for key, (expected, encoded) in prepared.items():
+                revision = 1 if expected is None else expected + 1
+                connection.execute(
+                    "INSERT INTO module_documents VALUES (?,?,?,?,?) ON CONFLICT(project_id,module_id,document_key) DO UPDATE SET revision=excluded.revision,body=excluded.body",
+                    (self.project_id, self.module_id, key, revision, encoded))
+            connection.execute(
+                "UPDATE module_namespaces SET schema_version=? WHERE project_id=? AND module_id=?",
+                (target_schema_version, self.project_id, self.module_id))
+        return ModuleStorage(self._repository, self.project_id, self.module_id, target_schema_version)

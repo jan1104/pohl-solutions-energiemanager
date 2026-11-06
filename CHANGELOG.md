@@ -2,6 +2,7 @@
 
 ## Unveröffentlicht — 2026-11-06
 
+- Explizite atomare Schema-Migration im Grundspeicher und vorbereiteter Projekt-Formatwechsel: Vorschau mit SHA/Revision, geschützter Originalstand, vollständiger Rollback und Erhalt der Herkunftsmetadaten. Nur Entwicklungs-API; aktueller HA-ProjectStore und Oberfläche weiter unverändert.
 - Gemeinsames JSON-Budget für Entwicklungsformat 2: Zahlenbereich und Unicode prüfen, gleiche Größenentscheidung in Python/JavaScript; keine stille Rundung oder verlorenen JS-Felder. Grenztests und unveränderte Originale bei abgelehnter Migration. Aktives Format 1 unverändert.
 - Format-2-Entwicklungsmodell auch in JavaScript validierbar: explizite Vorschau-Migration und strukturierte Konfigurationshinweise mit Python-Vertragstests. Aktive Oberfläche, Import/Export und gespeicherte Projekte bleiben Format 1; JSON-Grenzvertrag im Folgeschritt vereinheitlicht.
 - Entwicklungsmodell für Projekt → Anlage → Anschluss/Messgerät ergänzt: leere Anlagen, ungemessene Anschlussentwürfe und optionale Anschlussmetadaten. Organisatorische Zuordnung und elektrische Grenzen bleiben getrennt.
