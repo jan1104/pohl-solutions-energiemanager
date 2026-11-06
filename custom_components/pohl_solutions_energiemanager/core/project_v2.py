@@ -11,10 +11,38 @@ from .project import (COLLECTIONS, MAX_BYTES, _fields, _id, _json_tree, _number,
                       _ref, _text, _validate_project_v1, validate_project)
 
 
+MAX_SAFE_NUMBER = 9007199254740991
+
+
+def _json_budget(value):
+    """Stable upper bound on spaced UTF-8 JSON, independent of float spelling.
+
+    Call _json_tree first for depth, secrets and ordinary JSON types. Numbers
+    reserve 32 bytes; no persisted numerical value may exceed binary64's exact
+    integer range. Unicode must consist of scalar values, including object keys.
+    """
+    if isinstance(value, str):
+        if any(0xD800 <= ord(char) <= 0xDFFF for char in value):
+            raise ValueError("JSON enthält einzelne Unicode-Surrogate")
+        return len(json.dumps(value, ensure_ascii=False).encode("utf-8"))
+    if value is None:
+        return 4
+    if type(value) is bool:
+        return 4 if value else 5
+    if type(value) in (int, float):
+        if abs(value) > MAX_SAFE_NUMBER:
+            raise ValueError("JSON-Zahl überschreitet den sicheren Wertebereich")
+        return 32
+    if isinstance(value, list):
+        return 2 + max(0, len(value) - 1) * 2 + sum(_json_budget(v) for v in value)
+    return (2 + max(0, len(value) - 1) * 2
+            + sum(_json_budget(key) + 2 + _json_budget(child) for key, child in value.items()))
+
+
 def validate_project_v2(data):
     _json_tree(data)
-    if len(json.dumps(data, ensure_ascii=False, allow_nan=False).encode("utf-8")) > MAX_BYTES:
-        raise ValueError("Projekt überschreitet 2 MiB")
+    if _json_budget(data) > MAX_BYTES:
+        raise ValueError("Projektbudget überschreitet 2 MiB")
     _fields(data, ("format", "schema_version", "id", "name", "mode", "plants", *COLLECTIONS, "settings"), (), "$")
     if type(data["schema_version"]) not in (int, float) or data["schema_version"] != 2:
         raise ValueError("Projektformat 2 erwartet")
@@ -24,6 +52,11 @@ def validate_project_v2(data):
         raise ValueError("Projektobjekte müssen Listen sein")
     if sum(len(data[key]) for key in COLLECTIONS) + len(data["plants"]) > 2500:
         raise ValueError("Höchstens 2500 Objekte einschließlich Anlagen erlaubt")
+    # Both runtimes agree on whitespace-only display names (JS also trims BOM).
+    for row in [data, *data["plants"], *(r for key in COLLECTIONS for r in data[key])]:
+        if isinstance(row, dict) and isinstance(row.get("name"), str):
+            if all(ch.isspace() or ch == "\ufeff" for ch in row["name"]):
+                raise ValueError("Name darf nicht nur aus Leerraum bestehen")
     base = deepcopy(data)
     base.pop("plants")
     base["schema_version"] = 1

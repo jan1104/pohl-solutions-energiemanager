@@ -10,7 +10,7 @@ Auswählbare Bezugs-/Einspeisequellen, JSON-URL, HA-Sensor, Festpreis, beobachte
 
 ## Danach — echte Datengrundlage
 
-- Zuerst Anlage, dann Anschluss und Messgerät: [PROJECT_SCHEMA_V2_DRAFT.md](PROJECT_SCHEMA_V2_DRAFT.md). Entwicklungsmodell und explizite Migrationsvorschau geprüft; JS-Struktur-/Migrationsvertrag geprüft; gemeinsamer JSON-Grenzvertrag, HA-Persistenzwechsel und minimale Bedienung folgen vor weiteren Fachmodulen.
+- Zuerst Anlage, dann Anschluss und Messgerät: [PROJECT_SCHEMA_V2_DRAFT.md](PROJECT_SCHEMA_V2_DRAFT.md). Entwicklungsmodell und explizite Migrationsvorschau geprüft; JS-Struktur-/Migrationsvertrag und gemeinsamer JSON-Grenzvertrag geprüft; HA-Persistenzwechsel und minimale Bedienung folgen vor weiteren Fachmodulen.
 - Zentrale Datenspeicherung im Grundmodul: [CENTRAL_STORAGE.md](CENTRAL_STORAGE.md). HA-Projektablage seit 0.5.0 an SQLite angeschlossen; allgemeine Modulkontexte und Historien noch offen.
 - Grundmodul und eigene Prognosemodule: [MODULE_KERNEL.md](MODULE_KERNEL.md). Basisfunktionen in HA angebunden; konkrete Prognose-/Fachverträge und Provider noch offen.
 - Gemeinsame Grundfunktionen/Datenfluss: [SYSTEM_LOGIC.md](SYSTEM_LOGIC.md). Zentrale TCP-/Gatewayverwaltung und Profil-Lesevertrag implementiert; HA-Anbindung und weitere Transportarten offen.

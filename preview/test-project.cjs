@@ -105,3 +105,19 @@ test('staged v2 API rejects non-JSON values and oversized objects before cloning
   oversized.settings.padding = 'x'.repeat(M.MAX_BYTES);
   assert.throws(() => M.validateProjectV2(oversized), /MiB/);
 });
+
+test('v2 rejects sparse arrays and JS-only properties instead of losing data', () => {
+  for (const invalid of [new Array(1), Object.defineProperty({}, 'hidden', {value: 1}), {[Symbol('key')]: 1}]) {
+    const p = M.migrateProjectV1ToV2(fixture());
+    p.settings.invalid = invalid;
+    assert.throws(() => M.validateProjectV2(p));
+  }
+});
+
+test('v2 migration rejects unsafe legacy numbers without changing the original', () => {
+  const p = fixture(); p.settings.too_large = Number.MAX_SAFE_INTEGER + 1;
+  const before = JSON.stringify(p);
+  assert.deepEqual(M.validateProject(p), p);
+  assert.throws(() => M.migrateProjectV1ToV2(p), /Wertebereich/);
+  assert.equal(JSON.stringify(p), before);
+});

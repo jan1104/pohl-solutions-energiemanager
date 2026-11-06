@@ -130,15 +130,45 @@
     for (const grid of data.grids) if (requireGridMeasurement && data.measurements.filter(m => m.role === 'grid' && maps.nodes.get(m.node_id).grid_id === grid.id).length !== 1) fail('$.measurements', `Netz ${grid.id} benötigt genau eine primäre Netzmessung`);
     return JSON.parse(JSON.stringify(data));
   }
+  // Same conservative JSON budget as project_v2.py; v1 stays unchanged.
+  function jsonBudgetV2(value) {
+    if (typeof value === 'string') {
+      for (const char of value) {
+        const cp = char.codePointAt(0);
+        if (cp >= 0xD800 && cp <= 0xDFFF) fail('$', 'JSON enthält einzelne Unicode-Surrogate');
+      }
+      return new TextEncoder().encode(JSON.stringify(value)).length;
+    }
+    if (value === null) return 4;
+    if (typeof value === 'boolean') return value ? 4 : 5;
+    if (typeof value === 'number') {
+      if (Math.abs(value) > Number.MAX_SAFE_INTEGER) fail('$', 'JSON-Zahl überschreitet den sicheren Wertebereich');
+      return 32;
+    }
+    // Reject JS-only properties/holes rather than dropping them during cloning.
+    const keys = Object.keys(value), ownKeys = Reflect.ownKeys(value);
+    if (ownKeys.length !== keys.length + (Array.isArray(value) ? 1 : 0)) fail('$', 'Nur aufzählbare JSON-Felder erlaubt');
+    if (Array.isArray(value) && (keys.length !== value.length || keys.some((key, i) => key !== String(i)))) fail('$', 'Dichte JSON-Liste erwartet');
+    // ASCII aliases produced by Unicode casefold in the Python secret-key check.
+    if (!Array.isArray(value)) for (const key of keys) {
+      if (forbidden.has(key.toLowerCase().replace(/ß/g, 'ss').replace(/ſ/g, 's'))) fail('$', 'Zugangsdaten sind nicht erlaubt');
+    }
+    const entries = Array.isArray(value) ? value : Object.entries(value);
+    return 2 + Math.max(0, entries.length - 1) * 2 + entries.reduce((sum, entry) =>
+      sum + (Array.isArray(value) ? jsonBudgetV2(entry) : jsonBudgetV2(entry[0]) + 2 + jsonBudgetV2(entry[1])), 0);
+  }
   // Development API only: the deployed UI and import/export remain strict v1.
   function validateProjectV2(data) {
     safeWalk(data);
-    if (new TextEncoder().encode(JSON.stringify(data)).length > LIMIT) fail('$', 'Projekt darf höchstens 2 MiB groß sein');
+    if (jsonBudgetV2(data) > LIMIT) fail('$', 'Projektbudget darf höchstens 2 MiB groß sein');
     shape(data, '$', ['format', 'schema_version', 'id', 'name', 'mode', 'plants', ...collections, 'settings']);
     if (data.schema_version !== 2) fail('$', 'Projektformat 2 erwartet');
     if (!Array.isArray(data.plants) || data.plants.length > 500) fail('$.plants', 'höchstens 500 Anlagen erlaubt');
     for (const c of collections) if (!Array.isArray(data[c])) fail(`$.${c}`, 'Liste erwartet');
     if (collections.reduce((sum, c) => sum + data[c].length, data.plants.length) > 2500) fail('$', 'höchstens 2500 Objekte erlaubt');
+    for (const row of [data, ...data.plants, ...collections.flatMap(c => data[c])]) {
+      if (row && typeof row.name === 'string' && /^[\s\u001c-\u001f\u0085]*$/u.test(row.name)) fail('$', 'Name darf nicht nur aus Leerraum bestehen');
+    }
     const clone = v => JSON.parse(JSON.stringify(v));
     const base = clone(data), plants = new Map();
     delete base.plants; base.schema_version = 1;

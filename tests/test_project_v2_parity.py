@@ -8,7 +8,8 @@ import subprocess
 
 import pytest
 
-from core.project_v2 import (configuration_issues_v2, migrate_project_v1_to_v2,
+from core.project import MAX_BYTES
+from core.project_v2 import (_json_budget, configuration_issues_v2, migrate_project_v1_to_v2,
                              validate_project_v2)
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -115,3 +116,48 @@ def test_staged_browser_migration_validation_and_issues_match_backend():
                 validate_project_v2(data)
             assert result == {"valid": False}
         assert data == before
+
+
+def test_v2_json_encoding_boundaries_agree_between_runtimes():
+    empty = {"format": "pohl-energy-project", "schema_version": 2, "id": "test",
+             "name": "Test", "mode": "planning_only", "settings": {}, "plants": [],
+             **{k: [] for k in ("grids", "areas", "nodes", "connections", "devices", "channels", "measurements")}}
+    cases = []
+    for value in (None, True, False, 0, -0.0, 1.0, 1e-7, 5e-324,
+                  9007199254740991, -9007199254740991,
+                  {"📍": "ä\n\t\b\f\r\\\"📍"}):
+        p = deepcopy(empty)
+        p["settings"]["value"] = value
+        cases.append((p, True))
+    for value in (9007199254740992, -9007199254740992, 1e100,
+                  "\ud800", "\udfff", {"\ud800": "invalid key"}):
+        p = deepcopy(empty)
+        p["settings"]["value"] = value
+        cases.append((p, False))
+    for value in ("\u001c", "\ufeff", " \u0085\ufeff"):
+        p = deepcopy(empty)
+        p["name"] = value
+        cases.append((p, False))
+    for key in ("paſſword", "paßword", "ſecret"):
+        p = deepcopy(empty)
+        p["settings"][key] = "synthetic"
+        cases.append((p, False))
+    at_limit = deepcopy(empty)
+    at_limit["settings"]["padding"] = ""
+    at_limit["settings"]["padding"] = "x" * (MAX_BYTES - _json_budget(at_limit))
+    assert _json_budget(at_limit) == MAX_BYTES
+    cases.append((at_limit, True))
+    over_limit = deepcopy(at_limit)
+    over_limit["settings"]["padding"] += "x"
+    cases.append((over_limit, False))
+    # Reserve equal space for numbers regardless of 1 vs 1.0 serialization.
+    assert _json_budget({"n": 1}) == _json_budget({"n": 1.0}) == _json_budget({"n": 5e-324})
+    browser = run_browser({"legacy": [], "cases": [p for p, _ in cases]})
+    for (p, valid), result in zip(cases, browser["cases"], strict=True):
+        assert result["valid"] is valid
+        if valid:
+            assert validate_project_v2(p) == p
+            assert len(json.dumps(p, ensure_ascii=False).encode("utf-8")) <= _json_budget(p)
+        else:
+            with pytest.raises(ValueError):
+                validate_project_v2(p)

@@ -147,3 +147,13 @@ def test_validation_returns_detached_copy_and_does_not_interpret_descriptions():
     assert "fuse_a" not in copied["nodes"][0]
     copied["plants"][0]["name"] = "Geändert"
     assert project["plants"][0]["name"] == "Anlage A"
+
+
+def test_migration_rejects_unrepresentable_legacy_values_without_mutation():
+    original = legacy()
+    original["settings"]["too_large"] = 9007199254740992
+    before = deepcopy(original)
+    assert validate_project(original) == before  # deployed v1 behavior unchanged
+    with pytest.raises(ValueError, match="Wertebereich"):
+        migrate_project_v1_to_v2(original)
+    assert original == before
