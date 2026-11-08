@@ -144,6 +144,126 @@ async def sqlite_migration_checks(hass):
             assert legacy.read_bytes() == pretty
 
 
+async def sqlite_project_version_checks(hass):
+    """Exercise v1 and v2 ProjectStore persistence without migrating on setup."""
+    from custom_components.pohl_solutions_energiemanager.const import DOMAIN
+    from custom_components.pohl_solutions_energiemanager.core.project_migration import (
+        commit_project_v2,
+        preview_project_v2,
+    )
+    from custom_components.pohl_solutions_energiemanager.core.project_v2 import migrate_project_v1_to_v2
+    from custom_components.pohl_solutions_energiemanager.core.storage import SQLiteStorage, StorageSchemaError
+    from custom_components.pohl_solutions_energiemanager.project_store import ProjectConflictError, ProjectStore
+
+    with tempfile.TemporaryDirectory() as isolated:
+        root = Path(isolated)
+        with patch.object(hass.config, "path", side_effect=lambda *parts: str(root.joinpath(*parts))):
+            first = ProjectStore(hass)
+            await first.async_load()
+            await first.async_ensure_project("CI Versionspruefung", "version_fixture")
+            original = first.export()["project_json"]
+            source = json.loads(original)
+            assert source["schema_version"] == 1
+            old_revision = first.revision
+            draft = migrate_project_v1_to_v2(source)
+            try:
+                await first.async_import(json.dumps(draft), expected_revision=old_revision)
+            except ValueError:
+                pass
+            else:
+                raise AssertionError("A v2 import implicitly migrated v1 storage")
+
+            stale = ProjectStore(hass)
+            await stale.async_load()
+            assert stale.snapshot() == first.snapshot()
+            assert (await stale.async_storage_health())["schema_version"] == 1
+            assert stale.revision == old_revision
+
+            def explicit_migration():
+                repository = SQLiteStorage(root / ".storage" / f"{DOMAIN}.sqlite3")
+                namespace = repository.for_module("global", "project", schema_version=1)
+                assert namespace.get("original_v1") is None
+                preview = preview_project_v2(namespace)
+                commit_project_v2(namespace, expected_revision=preview.source_revision,
+                                  expected_sha256=preview.source_sha256)
+
+            await hass.async_add_executor_job(explicit_migration)
+            reopened = ProjectStore(hass)
+            await reopened.async_load()
+            assert (await reopened.async_storage_health())["schema_version"] == 2
+            assert json.loads(reopened.export()["project_json"]) == draft
+
+            try:
+                await stale.async_import(original, expected_revision=old_revision)
+            except ProjectConflictError:
+                pass
+            else:
+                raise AssertionError("A stale v1 writer overwrote the migrated project")
+            assert stale.snapshot() == reopened.snapshot()
+            assert (await stale.async_storage_health())["schema_version"] == 2
+
+            before = reopened.snapshot()
+            revision = reopened.revision
+            exported = reopened.export()["project_json"]
+            assert exported == json.dumps(json.loads(exported), ensure_ascii=False, separators=(",", ":"))
+            duplicate = exported.replace('"schema_version":2', '"schema_version":1,"schema_version":2', 1)
+            assert duplicate != exported
+            for invalid in (original, duplicate):
+                try:
+                    await reopened.async_import(invalid, expected_revision=revision)
+                except ValueError:
+                    pass
+                else:
+                    raise AssertionError("A wrong-version or malformed v2 import was accepted")
+                assert reopened.snapshot() == before
+
+            await reopened.async_import(exported, expected_revision=revision)
+            assert reopened.snapshot() == before
+            edited = {
+                **draft, "name": "Anlagenprojekt \u00e4",
+                "plants": [{"id": "plant", "name": "CI Anlage", "grid_ids": ["grid"]}],
+                "grids": [{"id": "grid", "name": "CI Netzanschluss"}],
+                "nodes": [{"id": "root", "name": "CI HAK", "grid_id": "grid", "parent_id": None}],
+            }
+            await reopened.async_import(json.dumps(edited), expected_revision=revision)
+            try:
+                await reopened.async_import(exported, expected_revision=revision)
+            except ProjectConflictError:
+                pass
+            else:
+                raise AssertionError("A stale v2 content revision overwrote a newer edit")
+            after_edit = ProjectStore(hass)
+            await after_edit.async_load()
+            assert after_edit.snapshot() == reopened.snapshot()
+            assert json.loads(after_edit.export()["project_json"]) == edited
+            summary = after_edit.status()["summary"]
+            assert summary["schema_version"] == 2 and summary["counts"]["plants"] == 1
+            assert summary["issues"] == [{"code": "grid_measurement_missing", "grid_id": "grid"}]
+
+    # A broken v2 namespace must not restore legacy data over the active schema.
+    with tempfile.TemporaryDirectory() as isolated:
+        root = Path(isolated)
+        with patch.object(hass.config, "path", side_effect=lambda *parts: str(root.joinpath(*parts))):
+            legacy = root / ".storage" / f"{DOMAIN}.project"
+            legacy.parent.mkdir()
+            raw = json.dumps({"version": 1, "key": f"{DOMAIN}.project", "data": source}).encode("utf-8")
+            legacy.write_bytes(raw)
+            repository = SQLiteStorage(root / ".storage" / f"{DOMAIN}.sqlite3")
+            await hass.async_add_executor_job(repository.initialize)
+            namespace = await hass.async_add_executor_job(
+                lambda: repository.for_module("global", "project", schema_version=2))
+            invalid_store = ProjectStore(hass)
+            try:
+                await invalid_store.async_load()
+            except StorageSchemaError:
+                pass
+            else:
+                raise AssertionError("A broken v2 namespace silently restored the legacy project")
+            assert invalid_store.export()["project_json"] is None
+            assert await hass.async_add_executor_job(namespace.get, "active") is None
+            assert legacy.read_bytes() == raw
+
+
 async def main() -> None:
     from aiohttp import web
     from homeassistant.auth import auth_manager_from_config
@@ -218,6 +338,7 @@ async def main() -> None:
         runner = None
         try:
             await sqlite_migration_checks(hass)
+            await sqlite_project_version_checks(hass)
             now = datetime.now(timezone.utc)
             start = now.replace(minute=now.minute // 15 * 15, second=0, microsecond=0)
             rows = [{
@@ -626,7 +747,7 @@ async def main() -> None:
                 await runner.cleanup()
             # HA owns the shared HTTP session and closes it on its close event.
             await hass.async_stop(force=True)
-        print("Real HA smoke passed: project-only setup, atomic project persistence/services/unload, config flow, forecast migration, fixed/entity/HTTP prices, sensors, missing source/SOC; planning only.")
+        print("Real HA smoke passed: project-only setup, versioned project persistence/services/unload, config flow, forecast migration, fixed/entity/HTTP prices, sensors, missing source/SOC; planning only.")
 
 
 if __name__ == "__main__":

@@ -12,7 +12,8 @@ from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
 from .core.project import COLLECTIONS, MAX_BYTES, export_project_json, load_project_json, project_summary, validate_project
-from .core.storage import SQLiteStorage, StorageConflict
+from .core.project_v2 import export_project_v2_json, load_project_v2_json, project_summary_v2, validate_project_v2
+from .core.storage import SQLiteStorage, StorageConflict, StorageSchemaError
 
 DATA_PROJECT_STORE = f"{DOMAIN}_project_store"
 # Old HA Store envelopes use indentation. At the supported JSON depth (24),
@@ -36,6 +37,11 @@ def _legacy_object(pairs):
 
 def _legacy_constant(value):
     raise ValueError("Legacy project storage contains a non-finite number")
+
+
+def _validate_stored(data, namespace):
+    validator = validate_project_v2 if namespace.schema_version == 2 else validate_project
+    return validator(data)
 
 
 class ProjectStore:
@@ -70,13 +76,15 @@ class ProjectStore:
     def _sync_load(self):
         self._repository.path.parent.mkdir(parents=True, exist_ok=True)
         self._repository.initialize()
-        namespace = self._repository.for_module("global", "project", schema_version=1)
+        namespace = self._repository.for_module("global", "project", schema_version=1, compatible_versions=(2,))
         current = namespace.get("active")
         if current is not None:
-            project = validate_project(current.data)
+            project = _validate_stored(current.data, namespace)
             metadata = namespace.get("migration")
             status = "migrated_legacy" if metadata and metadata.data.get("status") == "migrated_legacy" else "sqlite_existing"
             return namespace, current.revision, project, status, self._legacy_path.exists()
+        if namespace.schema_version == 2:
+            raise StorageSchemaError("Projektformat 2 ohne aktives Projekt")
         if not self._legacy_path.exists():
             return namespace, None, None, "not_needed", False
         # Do not use Store.async_load: corrupt/unsupported files can become None.
@@ -128,18 +136,22 @@ class ProjectStore:
             if self._loaded:
                 return
             loaded, cancelled = await self._async_durable_call(self._sync_load)
-            self._namespace, self._document_revision, self._project, self._migration_status, self._legacy_retained = loaded
+            self._apply_loaded(loaded)
             self._loaded = True
             if cancelled:
                 raise asyncio.CancelledError
 
+    def _apply_loaded(self, loaded):
+        self._namespace, self._document_revision, self._project, self._migration_status, self._legacy_retained = loaded
+
     async def async_import(self, project_json: str, expected_revision: str | None = None) -> dict[str, Any]:
-        candidate = await self._hass.async_add_executor_job(load_project_json, project_json)
         async with self._lock:
             if not self._loaded:
                 raise RuntimeError("Project storage must be loaded before importing")
             if expected_revision is not None and expected_revision != self.revision:
                 raise ProjectConflictError("Das Projekt wurde zwischenzeitlich geändert. Neu laden und Änderungen erneut prüfen.")
+            loader = load_project_v2_json if self._namespace.schema_version == 2 else load_project_json
+            candidate = await self._hass.async_add_executor_job(loader, project_json)
             await self._async_commit(candidate)
             return self.status()
 
@@ -166,22 +178,20 @@ class ProjectStore:
     def _sync_commit(self, candidate, expected):
         stored = self._namespace.put("active", candidate, expected_revision=expected)
         persisted = self._namespace.get("active")
-        if persisted is None or persisted.revision != stored.revision or validate_project(persisted.data) != candidate:
+        if persisted is None or persisted.revision != stored.revision or _validate_stored(persisted.data, self._namespace) != candidate:
             raise OSError("Project could not be confirmed in persistent SQLite storage")
         return persisted
 
     async def _async_commit(self, candidate: dict[str, Any]) -> None:
         try:
             persisted, cancelled = await self._async_durable_call(self._sync_commit, candidate, self._document_revision)
-        except StorageConflict as err:
-            current, cancelled = await self._async_durable_call(self._namespace.get, "active")
-            if current is not None:
-                self._project = validate_project(current.data)
-                self._document_revision = current.revision
+        except (StorageConflict, StorageSchemaError) as err:
+            loaded, cancelled = await self._async_durable_call(self._sync_load)
+            self._apply_loaded(loaded)
             if cancelled:
                 raise asyncio.CancelledError from err
             raise ProjectConflictError("Das dauerhaft gespeicherte Projekt wurde geändert. Neu laden und erneut prüfen.") from err
-        self._project = validate_project(persisted.data)
+        self._project = _validate_stored(persisted.data, self._namespace)
         self._document_revision = persisted.revision
         if cancelled:
             raise asyncio.CancelledError
@@ -192,19 +202,21 @@ class ProjectStore:
                 raise RuntimeError("Project storage is not loaded")
             current, cancelled = await self._async_durable_call(self._namespace.get, "active")
             if current is not None:
-                validate_project(current.data)
+                _validate_stored(current.data, self._namespace)
             if cancelled:
                 raise asyncio.CancelledError
-            return {"backend": "sqlite", "schema_version": 1,
+            return {"backend": "sqlite", "schema_version": self._namespace.schema_version,
                     "project_persisted": current is not None,
                     "migration_status": self._migration_status,
                     "legacy_retained": self._legacy_retained}
 
     def export(self) -> dict[str, Any]:
+        export = export_project_v2_json if self._project and self._project["schema_version"] == 2 else export_project_json
         return {"planning_only": True, "revision": self.revision,
-                "project_json": export_project_json(self._project) if self._project is not None else None}
+                "project_json": export(self._project) if self._project is not None else None}
 
     def status(self) -> dict[str, Any]:
+        summarize = project_summary_v2 if self._project and self._project["schema_version"] == 2 else project_summary
         return {"planning_only": True, "revision": self.revision,
                 "has_project": self._project is not None,
-                "summary": project_summary(self._project) if self._project is not None else None}
+                "summary": summarize(self._project) if self._project is not None else None}

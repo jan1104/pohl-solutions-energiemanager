@@ -121,18 +121,23 @@ class SQLiteStorage:
                 connection.rollback()
                 raise
 
-    def for_module(self, project_id, module_id, *, schema_version):
-        """Explicitly register a namespace; no arbitrary module SQL or code runs."""
+    def for_module(self, project_id, module_id, *, schema_version, compatible_versions=()):
+        """Create the requested schema or open an explicitly supported existing one."""
         _identifier(project_id)
         _identifier(module_id)
         if type(schema_version) is not int or not 1 <= schema_version <= 999999:
             raise ValueError("Module configuration schema version is required")
+        compatible_versions = tuple(compatible_versions)
+        if any(type(v) is not int or not 1 <= v <= 999999 for v in compatible_versions):
+            raise ValueError("Compatible schema versions must be positive integers")
         with self._transaction() as connection:
             row = connection.execute("SELECT schema_version FROM module_namespaces WHERE project_id=? AND module_id=?", (project_id, module_id)).fetchone()
             if row is None:
                 connection.execute("INSERT INTO module_namespaces VALUES (?,?,?)", (project_id, module_id, schema_version))
             elif row[0] != schema_version:
-                raise StorageSchemaError("Module configuration requires an explicit migration")
+                if row[0] not in compatible_versions:
+                    raise StorageSchemaError("Module configuration requires an explicit migration")
+                schema_version = row[0]
         return ModuleStorage(self, project_id, module_id, schema_version)
 
 

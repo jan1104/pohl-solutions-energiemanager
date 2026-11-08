@@ -1,6 +1,6 @@
 # Arbeitsplan
 
-Stand: 2026-11-06. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
+Stand: 2026-11-08. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
 
 ## Auftrag und Grenzen
 
@@ -35,7 +35,9 @@ V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberf
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
 
-Persistenzvorbereitung 06.11.2026: explizite atomare Namespace-Migration und Projekt-Formatwechsel als Entwicklungs-API implementiert. Lesende Vorschau, Quell-SHA/Revision, erneute Ableitung beim Commit, geschützte Originaldaten und Legacy-Herkunft; kein stilles Überschreiben. 19 neue Konflikt-/ABA-/Neustart-/Rollbacktests mit temporären Datenbanken. Lokal insgesamt 337 Python-Tests plus 18 Untertests und 45 JavaScript-Tests erfolgreich. Keine Anbindung an aktuellen HA-ProjectStore (dieser erwartet noch Format/Schema 1), keine Oberflächenänderung und kein Release. Nächster Schritt: versionsbewusster HA-Lese-/Schreibvertrag samt Import/Export, danach durchgehende minimale Anlage-/Messgerätebedienung.
+Am 08.11.2026 hat der ProjectStore das Lesen, Speichern und Exportieren vorhandener Format-2-Projekte übernommen. Die Namespace-Version bestimmt den zulässigen Import. Konflikte nach einem externen Schemawechsel aktualisieren die lokale Ansicht. Format-2-Exporte bleiben im Rohtextlimit und Statusantworten zeigen offene Messungen. Neue Projekte beginnen in Format 1. Lokal bestanden 342 Python-Tests, 18 Untertests und 45 JavaScript-Tests. Der nächste Schritt verbindet die geführte Anlagenoberfläche mit einer ausdrücklichen Migrationsbestätigung.
+
+Persistenzvorbereitung 06.11.2026: explizite atomare Namespace-Migration und Projekt-Formatwechsel als Entwicklungs-API implementiert. Lesende Vorschau, Quell-SHA/Revision, erneute Ableitung beim Commit, geschützte Originaldaten und Legacy-Herkunft; kein stilles Überschreiben. 19 neue Konflikt-/ABA-/Neustart-/Rollbacktests mit temporären Datenbanken. Lokal insgesamt 337 Python-Tests plus 18 Untertests und 45 JavaScript-Tests erfolgreich. Die versionsbewusste HA-Speicherung folgte am 08.11.2026. Die geführte Anlage-/Messgerätebedienung bleibt der nächste Schritt.
 
 JSON-Grenzvertrag 06.11.2026: identisches konservatives 2-MiB-Budget für Entwicklungsformat 2, begrenzter gemeinsamer Zahlenbereich und Unicode-Skalarwerte implementiert. Unterschiede durch Float-Schreibweise/Leerzeichen geschlossen; ungültige oder verlustbehaftete JS-Objekte abweisen. Bereichs-/Budgetgrenzen und migrationsbedingte Ablehnung erhalten Originaldaten; Format 1 unverändert. Expliziter Persistenzwechsel anschließend vorbereitet (siehe oben); aktive HA-Übernahme und minimale Anlage-/Messgerätebedienung bleiben offen. Lokal 318 Python-Tests plus 18 Untertests und 45 JavaScript-Tests erfolgreich. Keine Änderung der Oberfläche, keine Aktivierung, kein Release.
 

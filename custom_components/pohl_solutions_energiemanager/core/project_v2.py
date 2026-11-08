@@ -8,7 +8,8 @@ from copy import deepcopy
 import json
 
 from .project import (COLLECTIONS, MAX_BYTES, _fields, _id, _json_tree, _number,
-                      _ref, _text, _validate_project_v1, validate_project)
+                      _parse_project_json, _project_summary, _ref, _text, _validate_project_v1,
+                      validate_project)
 
 
 MAX_SAFE_NUMBER = 9007199254740991
@@ -138,7 +139,10 @@ def migrate_project_v1_to_v2(data):
 
 def configuration_issues_v2(data):
     """Describe unfinished setup, without asserting planning/data readiness."""
-    project = validate_project_v2(data)
+    return _configuration_issues(validate_project_v2(data))
+
+
+def _configuration_issues(project):
     issues = []
     for plant in project["plants"]:
         if plant.get("assignment_confirmed") is False:
@@ -155,3 +159,19 @@ def configuration_issues_v2(data):
                            "measurement_id": measurement["id"],
                            "channel_id": measurement["channel_id"]})
     return issues
+
+
+def load_project_v2_json(text):
+    return validate_project_v2(_parse_project_json(text))
+
+
+def export_project_v2_json(data):
+    """Compact encoding fits the same raw text limit as the import."""
+    return json.dumps(validate_project_v2(data), ensure_ascii=False,
+                      separators=(",", ":"), allow_nan=False)
+
+
+def project_summary_v2(data):
+    project = validate_project_v2(data)
+    return {**_project_summary(project, ("plants", *COLLECTIONS)),
+            "schema_version": 2, "issues": _configuration_issues(project)}

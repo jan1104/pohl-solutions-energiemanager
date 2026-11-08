@@ -1,6 +1,6 @@
 # Entwicklungsformat 2: Anlage vor Anschluss und Messgerät
 
-Stand: 06.11.2026. Reiner Modell-/Migrationsbaustein in `core/project_v2.py` und als explizite Entwicklungs-API in `preview/project-model.js`, noch nicht in HA, SQLite-Projektübernahme oder Oberfläche aktiviert. Version 0.5.1 verwendet weiterhin Format 1. Kein Release, keine Geräteabfrage und keine automatische Umschreibung bestehender Daten.
+Stand 08.11.2026. Der Entwicklungsstand kann vorhandene SQLite-Projekte in Format 1 und 2 lesen und im jeweiligen Format speichern. Neue Projekte starten in Format 1. Beim Setup behält ein vorhandenes Projekt seine Version. Version 0.5.1 und die Projektoberfläche unterstützen Format 1.
 
 ## Bestätigter Bedienablauf
 
@@ -31,7 +31,7 @@ Root entspricht Format 1 mit `schema_version: 2` und zusätzlicher Sammlung `pla
 
 Alle bisherigen elektrischen IDs, Grenzen, Messungen, Gateway-/Verbindungspfade, Batterie-WR-Beziehungen und Einstellungen bleiben erhalten. Bereiche erhalten nur die Anlagenreferenz. Mehrere ursprüngliche Netzanschlüsse werden nicht zu einem Anschluss zusammengeführt.
 
-Die Kopie wird gegen Format 2 geprüft. Wenn zusätzliche Metadaten die 2-MiB-Grenze überschreiten oder ungültig sind, bricht die Vorschau ab, ohne das Original zu ändern. Keine automatische Speicherung oder Downgrade-Konvertierung. Der bisherige `validate_project` und alle HA-/Browserimporte bleiben strikt Format 1 einschließlich seiner bisherigen Netzmesspflicht.
+Die Kopie wird gegen Format 2 geprüft. Wenn zusätzliche Metadaten die 2-MiB-Grenze überschreiten oder ungültig sind, bricht die Vorschau ab, ohne das Original zu ändern. Keine automatische Speicherung oder Downgrade-Konvertierung. `validate_project` und Browserimporte prüfen Format 1 einschließlich seiner Netzmesspflicht. Die HA-Speicherschicht prüft Importe gegen die vorhandene SQLite-Schemaversion.
 
 ## Nachweis und nächster Schritt
 
@@ -41,11 +41,11 @@ Die JavaScript-Entwicklungsfunktionen `validateProjectV2`, `migrateProjectV1ToV2
 
 ## Gemeinsamer JSON-Grenzvertrag (06.11.2026)
 
-Format 2 verwendet ein identisches konservatives **2-MiB-Strukturbudget** in Python und JavaScript. Strings und Schlüssel zählen als UTF-8-JSON inklusive Anführungszeichen/Escapes; Komma und Doppelpunkt zählen je zwei Bytes, Klammern je ein Byte. Jeder Zahlenwert reserviert 32 Bytes unabhängig von `1`/`1.0` oder Exponentialschreibweise. Boolesche Werte und null zählen ihre tatsächliche JSON-Länge. Damit liegt die kompakte beziehungsweise mit Standard-Leerzeichen serialisierte Ausgabe unter dem Budget; dies ist ausdrücklich keine Größe für eingerückte Exporte. Ein späterer Dateiimport braucht zusätzlich eine separate Begrenzung des rohen Eingabetexts (auch Leerzeichen und Unicode-Escapes können diesen vergrößern).
+Format 2 verwendet ein identisches konservatives **2-MiB-Strukturbudget** in Python und JavaScript. Strings und Schlüssel zählen als UTF-8-JSON inklusive Anführungszeichen/Escapes; Komma und Doppelpunkt zählen je zwei Bytes, Klammern je ein Byte. Jeder Zahlenwert reserviert 32 Bytes unabhängig von `1`/`1.0` oder Exponentialschreibweise. Boolesche Werte und null zählen ihre tatsächliche JSON-Länge. Damit liegt die kompakte beziehungsweise mit Standard-Leerzeichen serialisierte Ausgabe unter dem Budget; dies ist ausdrücklich keine Größe für eingerückte Exporte. Der Dateiimport begrenzt zusätzlich den rohen Eingabetext, den auch Leerzeichen und Unicode-Escapes vergrößern können.
 
 Alle Zahlen müssen endlich und betragsmäßig höchstens `9007199254740991` sein; beliebig große Python-Ganzzahlen werden nicht still in JavaScript gerundet. Einzelne Unicode-Surrogate in Schlüsseln/Werten werden abgelehnt; Unicode-Skalarwerte einschließlich Emoji bleiben erlaubt. JavaScript-spezifische Sparse-Arrays, Symbole und nicht aufzählbare Felder werden abgelehnt statt beim Kopieren verloren. Reine Leerraumnamen einschließlich BOM und Unicode-Aliase verbotener Geheimnisfelder werden konsistent abgelehnt.
 
-Grenztests vergleichen exakt 2 MiB und ein Byte darüber, Zahlenbereich, Unterlauf-Minimalwert, negative Null, bool/null, Steuerzeichen/Escapes, Emoji-Schlüssel, einzelne Surrogate und unveränderte Originale. Format 1 behält sein bisheriges Verhalten. Eine Migration außerhalb des neuen Wertebereichs bricht mit Fehler ab; sie rundet oder entfernt keine Nutzerdaten. Noch keine automatische Migration, aktive Format-2-Speicherung oder Importfunktion.
+Grenztests vergleichen exakt 2 MiB und ein Byte darüber, Zahlenbereich, Unterlauf-Minimalwert, negative Null, bool/null, Steuerzeichen/Escapes, Emoji-Schlüssel, einzelne Surrogate und unveränderte Originale. Format 1 behält sein bisheriges Verhalten. Eine Migration außerhalb des neuen Wertebereichs bricht mit Fehler ab; sie rundet oder entfernt keine Nutzerdaten. Der versionsbewusste Speichervertrag ist unten beschrieben.
 
 ## Expliziter Persistenzwechsel (Entwicklungs-API)
 
@@ -53,4 +53,10 @@ Grenztests vergleichen exakt 2 MiB und ein Byte darüber, Zahlenbereich, Unterla
 
 Der Wechsel speichert in einer Transaktion den neuen aktiven Stand, die ursprünglichen Format-1-Projektdaten unter `original_v1`, die bisherigen Legacy-Herkunftsmetadaten unverändert und einen separaten Formatwechselnachweis. Die Namespace-Schemaversion wechselt auf 2; alte Handles können danach weder lesen noch schreiben. Vorhandene Backup-/Nachweisdokumente werden nie überschrieben. Unbekannte zusätzliche Dokumente führen zu einem Konflikt, statt still verloren zu gehen. Fehler, konkurrierende Änderungen und zwischenzeitliches Ändern/Zurücksetzen (ABA) lassen das ursprüngliche Schema erhalten. Wiederöffnen unter Schema 2 ist getestet; dies ist keine vollständige Dateisicherung oder Downgradefunktion.
 
-**Weiterhin nicht in HA, Setup, Import oder Oberfläche aufrufen:** Der ausgelieferte ProjectStore erwartet Schema 1 und könnte einen migrierten Bestand noch nicht öffnen. Die API wird nur mit temporären Testdatenbanken ausgeführt. Nächster zusammenhängender Schritt: versionsbewussten HA-Lese-/Schreibvertrag und Import/Export vorbereiten; erst gemeinsam mit der minimalen Anlage-/Messgerätebedienung aktivieren. Erst nach durchgehender Prüfung ein testbares Paket anbieten. Kein Vorziehen der Modellaktivierung.
+## Versionsbewusste Speicherung in Home Assistant
+
+Der ProjectStore öffnet die vorhandene Namespace-Version 1 oder 2 und prüft den Dokumentinhalt gegen dieselbe Version. Ein frischer Namespace startet in Version 1. Der Formatwechsel bleibt eine separate Entwicklungsoperation. Ein leerer Namespace in Version 2 führt zu einem Fehler, auch bei vorhandener Legacy-Datei.
+
+Für Projekte in Format 2 verwendet die HA-Speicherschicht kompaktes UTF-8-JSON. Die Exportdatei passt dadurch in das Rohtextlimit des Imports. Beide Formate teilen die Prüfung auf doppelte JSON-Schlüssel und nicht endliche Zahlen. Import und Speichern übernehmen ausschließlich Dokumente in der aktuellen Namespace-Version. Die Statusantwort zu Format 2 enthält die Anlagenanzahl und strukturierte Hinweise zu offenen Zuordnungen und Messungen. Ein veralteter Schreibzugriff nach einem Schemawechsel lädt den aktuellen Stand und meldet einen Konflikt.
+
+Die CI-Prüfung nutzt eine temporäre SQLite-Datenbank mit Home Assistants Executor. Sie deckt expliziten Wechsel, Wiederöffnen, gleichformatigen Import, Schutz vor veralteten Schreibständen und Ablehnung unpassender Formate ab. Der nächste Schritt ist die geführte Projektoberfläche für Anlage, Netzanschluss und Messgerät samt ausdrücklicher Migrationsbestätigung.

@@ -174,3 +174,17 @@ def test_wrong_preview_digest_cannot_approve_current_project(tmp_path):
         commit_project_v2(module, expected_revision=1, expected_sha256="wrong")
     assert module.get("active").revision == 1
     assert module.get("original_v1") is None
+
+
+def test_compatible_open_uses_existing_version_and_default_for_new_namespace(tmp_path):
+    store, source = setup(tmp_path)
+    source.put("active", {"data": "v1"}, expected_revision=None)
+    source.migrate(2, {"active": (1, {"data": "v2"})})
+    before = store.path.read_bytes()
+    opened = store.for_module("global", "project", schema_version=1, compatible_versions=(2,))
+    assert opened.schema_version == 2 and opened.get("active").data == {"data": "v2"}
+    assert store.path.read_bytes() == before
+    with pytest.raises(StorageSchemaError):
+        store.for_module("global", "project", schema_version=1, compatible_versions=(3,))
+    fresh = store.for_module("other", "project", schema_version=1, compatible_versions=(2,))
+    assert fresh.schema_version == 1

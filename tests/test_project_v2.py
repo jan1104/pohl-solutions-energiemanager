@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from core.project import validate_project
-from core.project_v2 import (configuration_issues_v2, migrate_project_v1_to_v2,
-                             validate_project_v2)
+from core.project import MAX_BYTES, load_project_json, validate_project
+from core.project_v2 import (configuration_issues_v2, export_project_v2_json,
+                             load_project_v2_json, migrate_project_v1_to_v2, validate_project_v2)
 
 
 def empty():
@@ -157,3 +157,25 @@ def test_migration_rejects_unrepresentable_legacy_values_without_mutation():
     with pytest.raises(ValueError, match="Wertebereich"):
         migrate_project_v1_to_v2(original)
     assert original == before
+
+
+def test_v2_file_roundtrip_fits_raw_limit_and_v1_parser_stays_strict():
+    project = draft()
+    project["settings"]["text"] = "📍\n" + "x" * (MAX_BYTES - 4096)
+    exported = export_project_v2_json(project)
+    assert len(exported.encode("utf-8")) <= MAX_BYTES
+    assert load_project_v2_json(exported) == project
+    with pytest.raises(ValueError):
+        load_project_json(exported)
+    with pytest.raises(ValueError, match="2 MiB"):
+        load_project_v2_json(exported + " " * (MAX_BYTES - len(exported.encode("utf-8")) + 1))
+
+
+@pytest.mark.parametrize("text", [
+    '{"schema_version":1,"schema_version":2}',
+    '{"settings":{"x":NaN}}',
+    '{"settings":{"x":Infinity}}',
+])
+def test_v2_file_parser_rejects_ambiguous_or_nonfinite_json(text):
+    with pytest.raises(ValueError, match="Doppelter|NaN/Infinity"):
+        load_project_v2_json(text)

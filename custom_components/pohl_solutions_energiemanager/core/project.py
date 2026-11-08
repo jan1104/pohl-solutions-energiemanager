@@ -296,7 +296,7 @@ def _validate_project_v1(data, *, require_grid_measurement=True):
     return deepcopy(data)
 
 
-def load_project_json(text):
+def _parse_project_json(text):
     """Parse bounded strict JSON; duplicate keys and non-finite constants fail."""
     if not isinstance(text, str):
         _fail("$", "JSON-Text erwartet")
@@ -318,7 +318,11 @@ def load_project_json(text):
         data = json.loads(text, object_pairs_hook=pairs, parse_constant=constant)
     except (json.JSONDecodeError, RecursionError, UnicodeError) as err:
         raise ValueError("$: Ungültiger JSON-Text") from err
-    return validate_project(data)
+    return data
+
+
+def load_project_json(text):
+    return validate_project(_parse_project_json(text))
 
 
 def export_project_json(data):
@@ -328,7 +332,10 @@ def export_project_json(data):
 
 def project_summary(data):
     """Summarize a validated project without creating values or connections."""
-    project = validate_project(data)
+    return _project_summary(validate_project(data), COLLECTIONS)
+
+
+def _project_summary(project, collections):
     warnings = []
     for connection in project["connections"]:
         endpoint = "serial_port" if connection["kind"] == "modbus_rtu_usb" else "host"
@@ -338,4 +345,4 @@ def project_summary(data):
         if channel["source"]["kind"] == "unconfigured":
             warnings.append(f"channels.{channel['id']}.source: Messquelle noch nicht eingerichtet")
     return {"id": project["id"], "name": project["name"], "mode": project["mode"],
-            "counts": {key: len(project[key]) for key in COLLECTIONS}, "warnings": warnings}
+            "counts": {key: len(project[key]) for key in collections}, "warnings": warnings}

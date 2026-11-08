@@ -1,6 +1,6 @@
 """Explicit development-only project persistence transition; no HA activation.
 
-Never invoke during current HA setup: deployed ProjectStore still requires v1.
+Call only from an explicit migration workflow with a format-2-capable UI.
 No storage is created by import, and preview performs reads only.
 """
 
