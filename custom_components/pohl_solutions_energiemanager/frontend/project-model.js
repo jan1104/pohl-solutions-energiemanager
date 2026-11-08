@@ -1,4 +1,4 @@
-/* Offline project format 1. No network, device commands or optimization. */
+/* Offline project validation and migration preview. */
 (function (root) {
   'use strict';
   const LIMIT = 2 * 1024 * 1024;
@@ -157,7 +157,7 @@
     return 2 + Math.max(0, entries.length - 1) * 2 + entries.reduce((sum, entry) =>
       sum + (Array.isArray(value) ? jsonBudgetV2(entry) : jsonBudgetV2(entry[0]) + 2 + jsonBudgetV2(entry[1])), 0);
   }
-  // Development API only: the deployed UI and import/export remain strict v1.
+  // Format 2 keeps organization separate from electrical validation.
   function validateProjectV2(data) {
     safeWalk(data);
     if (jsonBudgetV2(data) > LIMIT) fail('$', 'Projektbudget darf höchstens 2 MiB groß sein');
@@ -232,7 +232,7 @@
     for (const m of project.measurements) if (channels.get(m.channel_id).source.kind === 'unconfigured') issues.push({code: 'measurement_source_unconfigured', measurement_id: m.id, channel_id: m.channel_id});
     return issues;
   }
-  function loadProjectJson(input) {
+  function parseProjectJson(input) {
     if (typeof input !== 'string' || new TextEncoder().encode(input).length > LIMIT) fail('$', 'JSON-Datei darf höchstens 2 MiB groß sein');
     // Parse independently to reject duplicate keys before JSON.parse could overwrite them.
     let pos = 0; const whitespace = () => { while (/\s/.test(input[pos] || '') && pos < input.length) pos++; };
@@ -258,7 +258,12 @@
       const match = input.slice(pos).match(/^(?:true|false|null|-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?)/); if (!match) fail('$', 'ungültiger JSON-Wert'); pos += match[0].length;
     }
     value(0); whitespace(); if (pos !== input.length) fail('$', 'Zeichen nach dem JSON-Dokument');
-    return validateProject(JSON.parse(input));
+    return JSON.parse(input);
+  }
+  function loadProjectJson(input) { return validateProject(parseProjectJson(input)); }
+  function loadProjectDocument(input) {
+    const data = parseProjectJson(input);
+    return data?.schema_version === 2 ? validateProjectV2(data) : validateProject(data);
   }
   function exportProjectJson(data) { return JSON.stringify(validateProject(data), null, 2); }
   function sourceChain(data, channelId) {
@@ -268,15 +273,22 @@
     return result;
   }
   function projectSummary(input) {
-    const data = validateProject(input); const warnings = [];
+    const v2 = input?.schema_version === 2;
+    const data = v2 ? validateProjectV2(input) : validateProject(input), warnings = [];
     data.connections.forEach(c => {
       const endpoint = c.kind === 'modbus_rtu_usb' ? 'serial_port' : 'host';
       if (c.kind !== 'ha' && !c[endpoint]) warnings.push(`connections.${c.id}.${endpoint}: Verbindung noch nicht eingerichtet`);
     });
     data.channels.filter(c => c.source.kind === 'unconfigured').forEach(c => warnings.push(`channels.${c.id}.source: Messquelle noch nicht eingerichtet`));
-    return {id: data.id, name: data.name, mode: data.mode, counts: Object.fromEntries(collections.map(c => [c, data[c].length])), warnings};
+    if (v2) {
+      const gridIds = new Set(data.measurements.filter(m => m.role === 'grid').map(m => data.nodes.find(n => n.id === m.node_id).grid_id));
+      data.grids.filter(g => !gridIds.has(g.id)).forEach(g => warnings.push(`${g.name} · Netzmessung fehlt`));
+      data.plants.filter(p => p.assignment_confirmed === false).forEach(p => warnings.push(`${p.name} · Anlagenzuordnung prüfen`));
+    }
+    const groups = v2 ? ['plants', ...collections] : collections;
+    return {id: data.id, name: data.name, mode: data.mode, counts: Object.fromEntries(groups.map(c => [c, data[c].length])), warnings};
   }
-  const api = {validateProjectV2, migrateProjectV1ToV2, configurationIssuesV2, validateProject, loadProjectJson, exportProjectJson, projectSummary, sourceChain, MAX_BYTES: LIMIT};
+  const api = {validateProjectV2, migrateProjectV1ToV2, configurationIssuesV2, validateProject, loadProjectJson, loadProjectDocument, exportProjectJson, projectSummary, sourceChain, MAX_BYTES: LIMIT};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) root.PohlProjectModel = api;
 })(typeof window !== 'undefined' ? window : null);

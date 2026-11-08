@@ -233,3 +233,49 @@ test('focused first-grid flow reveals topology, closes the form and saves with o
   const edited = JSON.parse(request.project_json); assert.equal(edited.grids.length, 1); assert.equal(edited.grids[0].name, 'Hauptanschluss');
   t.reply(request, {project_json: request.project_json, revision: 'r2'}); await saving; assert.match(t.elements.get('project-message').textContent, /gespeichert/);
 });
+
+
+test('v2 guided setup saves the plant and unmetered HAK with the loaded revision', async () => {
+  const t = editorSetup(), source = {...emptyProject(), schema_version: 2, plants: []};
+  t.reply(t.outgoing.at(-1), {project_json: JSON.stringify(source), revision: 'v2-original'});
+  await Promise.resolve(); await Promise.resolve();
+  const field = id => t.elements.get(id);
+  const submit = () => field('project-add-form').handlers.get('submit')({preventDefault() {}});
+  assert.equal(field('project-start-add').textContent, 'Anlage hinzufügen');
+  await t.click('project-start-add');
+  assert.equal(field('add-action').value, 'plant');
+  assert.equal(field('add-details').open, false);
+  field('add-name').value = 'Werkstatt';
+  await submit();
+  assert.equal(field('project-start-add').textContent, 'Netzanschluss hinzufügen');
+  assert.match(field('project-empty-copy').textContent, /Werkstatt/);
+  await t.click('project-start-add');
+  field('add-name').value = 'HAK'; field('add-location').value = 'Technikraum';
+  field('add-fuse').value = '63'; field('add-phases').value = '3';
+  await submit();
+  assert.equal(field('project-overview').hidden, false);
+  assert.equal(field('project-add-panel').hidden, true);
+  assert.equal(field('project-warnings-section').hidden, false);
+  const saving = t.click('project-save'), request = t.outgoing.at(-1);
+  assert.equal(request.expected_revision, 'v2-original');
+  const saved = JSON.parse(request.project_json);
+  assert.equal(saved.schema_version, 2);
+  assert.equal(saved.plants[0].name, 'Werkstatt');
+  assert.deepEqual(saved.plants[0].grid_ids, [saved.grids[0].id]);
+  assert.deepEqual(saved.nodes[0], {id: saved.nodes[0].id, name: 'HAK', grid_id: saved.grids[0].id, parent_id: null, location: 'Technikraum', fuse_a: 63, phases: 3});
+  for (const key of ['areas', 'devices', 'channels', 'measurements']) assert.deepEqual(saved[key], []);
+  t.reply(request, {project_json: request.project_json, revision: 'v2-saved'}); await saving;
+});
+
+test('HA editor rejects changing persisted format through JSON or templates', async () => {
+  const t = editorSetup(), source = {...emptyProject(), schema_version: 2, plants: []};
+  t.reply(t.outgoing.at(-1), {project_json: JSON.stringify(source), revision: 'v2-original'});
+  await Promise.resolve(); await Promise.resolve();
+  t.elements.get('project-json').value = JSON.stringify(emptyProject());
+  await t.click('project-validate');
+  assert.match(t.elements.get('project-error').textContent, /Importformat/);
+  assert.equal(t.outgoing.length, 1);
+  await t.click('project-new');
+  assert.equal(JSON.parse(t.elements.get('project-json').value).schema_version, 2);
+  assert.equal(t.elements.get('project-candidate').hidden, false);
+});

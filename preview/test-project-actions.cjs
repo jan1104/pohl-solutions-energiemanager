@@ -117,3 +117,79 @@ test('browser API works on local HTTP with secure random bytes and no Node depen
   assert.equal(model.validateProject(project).grids.length, 1);
   assert.equal(project.channels[0].source.kind, 'unconfigured');
 });
+
+function emptyV2() {
+  return model.migrateProjectV1ToV2(empty());
+}
+
+test('v2 plant can be saved before a grid or device exists', () => {
+  const original = emptyV2();
+  const plantDetails = {name: 'Anlage A', location: 'Gebäude A', description: 'Testanlage'};
+  const project = actions.addPlant(original, plantDetails);
+  assert.deepEqual(original, emptyV2());
+  const [plant] = project.plants;
+  assert.deepEqual(plant, {id: plant.id, ...plantDetails, grid_ids: []});
+  assert.deepEqual(project.grids, []);
+  assert.deepEqual(project.devices, []);
+  assert.throws(() => actions.addPlant(empty(), plantDetails));
+});
+
+test('v2 grid creates a root and plant link without inventing metering', () => {
+  const plantOnly = actions.addPlant(emptyV2(), {name: 'Anlage A'});
+  const plantId = plantOnly.plants[0].id;
+  const project = actions.addGrid(plantOnly, {
+    plantId, name: 'HAK', location: 'Technikraum', description: 'Hauptanschluss', fuseA: 63, phases: 3,
+  });
+  const [grid] = project.grids;
+  const [node] = project.nodes;
+  assert.deepEqual(plantOnly.plants[0].grid_ids, []);
+  assert.deepEqual(project.plants[0].grid_ids, [grid.id]);
+  assert.equal(grid.name, 'HAK');
+  assert.deepEqual(node, {
+    id: node.id, name: 'HAK', grid_id: grid.id, parent_id: null,
+    location: 'Technikraum', description: 'Hauptanschluss', fuse_a: 63, phases: 3,
+  });
+  for (const key of ['areas', 'devices', 'channels', 'measurements']) assert.deepEqual(project[key], []);
+  assert.deepEqual(model.configurationIssuesV2(project), [{code: 'grid_measurement_missing', grid_id: grid.id}]);
+});
+
+test('v2 area and device edits retain plant and electrical boundaries', () => {
+  let project = actions.addPlant(actions.addPlant(emptyV2(), {name: 'Anlage A'}), {name: 'Anlage B'});
+  const [plantA, plantB] = project.plants.map(plant => plant.id);
+  project = actions.addGrid(project, {plantId: plantA, name: 'HAK A'});
+  project = actions.addGrid(project, {plantId: plantB, name: 'HAK B'});
+  const gridId = project.grids[0].id;
+  const before = JSON.stringify(project);
+  assert.throws(() => actions.addArea(project, {plantId: plantB, gridId, name: 'Fehlzuordnung'}), /nicht zugeordnet/);
+  assert.equal(JSON.stringify(project), before);
+  project = actions.addArea(project, {plantId: plantA, gridId, name: 'Technikraum'});
+  const [area] = project.areas;
+  assert.equal(area.plant_id, plantA);
+  assert.equal(area.grid_id, gridId);
+  project = actions.addConnection(project, {name: 'Gateway', kind: 'modbus_tcp_rtu_gateway'});
+  const connectionId = project.connections[0].id;
+  project = actions.addDevice(project, {name: 'Zähler', kind: 'meter', areaId: area.id,
+    nodeId: project.nodes[0].id, connectionId, unitId: 2});
+  assert.equal(project.devices[0].connection_id, connectionId);
+  assert.deepEqual(project.measurements, []);
+  assert.throws(() => actions.addDevice(project, {name: 'Zähler am falschen Anschluss', kind: 'meter',
+    areaId: area.id, nodeId: project.nodes[1].id}));
+  assert.deepEqual(model.validateProjectV2(project), project);
+});
+
+test('v2 invalid grid or plant metadata cannot mutate a valid draft', () => {
+  const project = actions.addPlant(emptyV2(), {name: 'Anlage A'});
+  const plantId = project.plants[0].id;
+  const before = JSON.stringify(project);
+  const invalid = [
+    () => actions.addGrid(project, {name: 'HAK'}),
+    () => actions.addGrid(project, {plantId: 'missing', name: 'HAK'}),
+    () => actions.addGrid(project, {plantId, name: 'HAK', phases: 2}),
+    () => actions.addGrid(project, {plantId, name: 'HAK', fuseA: '63'}),
+    () => actions.addPlant(project, {name: 'Anlage B', location: 17}),
+  ];
+  for (const edit of invalid) {
+    assert.throws(edit);
+    assert.equal(JSON.stringify(project), before);
+  }
+});

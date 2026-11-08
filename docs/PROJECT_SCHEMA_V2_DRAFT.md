@@ -1,6 +1,6 @@
 # Entwicklungsformat 2: Anlage vor Anschluss und Messgerät
 
-Stand 08.11.2026. Der Entwicklungsstand kann vorhandene SQLite-Projekte in Format 1 und 2 lesen und im jeweiligen Format speichern. Neue Projekte starten in Format 1. Beim Setup behält ein vorhandenes Projekt seine Version. Version 0.5.1 und die Projektoberfläche unterstützen Format 1.
+Stand 08.11.2026. Der Entwicklungsstand kann vorhandene SQLite-Projekte in Format 1 und 2 lesen und im jeweiligen Format speichern. Neue Projekte starten in Format 1. Beim Setup behält ein vorhandenes Projekt seine Version. Version 0.5.1 verwendet Format 1. Die Projektoberfläche im Entwicklungsstand unterstützt beide Formate. Die lokale Vorschau startet mit einem leeren Projekt in Format 2.
 
 ## Bestätigter Bedienablauf
 
@@ -10,7 +10,7 @@ Stand 08.11.2026. Der Entwicklungsstand kann vorhandene SQLite-Projekte in Forma
 4. Messgerät hinzufügen oder vorhandenes auswählen. Dessen Kanal ausdrücklich dem Anschluss zuordnen. Fehlende Messung als unvollständigen Entwurf erhalten, ohne Platzhalter-Hardware oder Istwerte zu erfinden.
 5. Weitere Geräte und gemeinsame Verbindungen referenzieren statt duplizieren.
 
-Dieser Modellschritt ersetzt den aktuellen UI-Startknopf noch nicht. Als Nächstes muss die durchgehende Bedienung „Anlage hinzufügen“ umgesetzt werden.
+Für Format 2 zeigt die Projektansicht zunächst „Anlage hinzufügen“. Sobald eine Anlage besteht, folgt „Netzanschluss hinzufügen“. Ort, Beschreibung, Absicherung in Ampere und Phasen stehen bei Bedarf unter „Optionale Angaben“. Ein Anschluss ohne Messung erscheint im Aufbau mit „Netzmessung offen“. Die Anlage und der Anschluss lassen sich speichern, bevor ein Messgerät zugeordnet ist.
 
 ## Modell
 
@@ -31,13 +31,13 @@ Root entspricht Format 1 mit `schema_version: 2` und zusätzlicher Sammlung `pla
 
 Alle bisherigen elektrischen IDs, Grenzen, Messungen, Gateway-/Verbindungspfade, Batterie-WR-Beziehungen und Einstellungen bleiben erhalten. Bereiche erhalten nur die Anlagenreferenz. Mehrere ursprüngliche Netzanschlüsse werden nicht zu einem Anschluss zusammengeführt.
 
-Die Kopie wird gegen Format 2 geprüft. Wenn zusätzliche Metadaten die 2-MiB-Grenze überschreiten oder ungültig sind, bricht die Vorschau ab, ohne das Original zu ändern. Keine automatische Speicherung oder Downgrade-Konvertierung. `validate_project` und Browserimporte prüfen Format 1 einschließlich seiner Netzmesspflicht. Die HA-Speicherschicht prüft Importe gegen die vorhandene SQLite-Schemaversion.
+Die Kopie wird gegen Format 2 geprüft. Wenn zusätzliche Metadaten die 2-MiB-Grenze überschreiten oder ungültig sind, bricht die Vorschau ab, ohne das Original zu ändern. Keine automatische Speicherung oder Downgrade-Konvertierung. `validate_project` prüft Format 1 einschließlich seiner Netzmesspflicht. Der Browser erkennt beide Formate. Im HA-Panel muss das Importformat zum geladenen Projekt passen, und der Speicher prüft zusätzlich gegen die SQLite-Schemaversion.
 
 ## Nachweis und nächster Schritt
 
 23 neue synthetische Tests prüfen die getrennten Schritte Projekt → leere Anlage → ungemessener Anschluss, Metadaten, gemeinsame/getrennte Anschlüsse, Gatewayzuordnungen über Anlagenbereiche, Migration beider öffentlichen Beispiele, unveränderte Identitäten, Fehlzuordnungen und unveränderte Originale. Bestehende Format-1- und Python/JS-Paritätsprüfungen bleiben erfolgreich.
 
-Die JavaScript-Entwicklungsfunktionen `validateProjectV2`, `migrateProjectV1ToV2` und `configurationIssuesV2` teilen die bestehenden elektrischen Prüfungen, sind aber nicht mit Oberfläche oder Import/Export verbunden. Laufzeitübergreifende Vertragstests vergleichen Migration beider öffentlicher Beispiele und des leeren Projekts, 26 gültige/ungültige Entwürfe sowie Hinweiscodes. Zusätzliche Browserlogiktests prüfen unabhängige Kopien, ungültige JSON-Werte und die weiterhin strikte Format-1-Importschranke.
+Die JavaScript-Entwicklungsfunktionen `validateProjectV2`, `migrateProjectV1ToV2` und `configurationIssuesV2` teilen die bestehenden elektrischen Prüfungen. Die Oberfläche verwendet die Prüfung beim Bearbeiten und nutzt einen gemeinsamen strikten Parser für beide Formate. Laufzeitübergreifende Vertragstests vergleichen Migration beider öffentlicher Beispiele und des leeren Projekts, 26 gültige/ungültige Entwürfe sowie Hinweiscodes. Zusätzliche Browserlogiktests prüfen unabhängige Kopien, ungültige JSON-Werte und die strikte Prüfung des jeweiligen Projektformats.
 
 ## Gemeinsamer JSON-Grenzvertrag (06.11.2026)
 
@@ -59,4 +59,4 @@ Der ProjectStore öffnet die vorhandene Namespace-Version 1 oder 2 und prüft de
 
 Für Projekte in Format 2 verwendet die HA-Speicherschicht kompaktes UTF-8-JSON. Die Exportdatei passt dadurch in das Rohtextlimit des Imports. Beide Formate teilen die Prüfung auf doppelte JSON-Schlüssel und nicht endliche Zahlen. Import und Speichern übernehmen ausschließlich Dokumente in der aktuellen Namespace-Version. Die Statusantwort zu Format 2 enthält die Anlagenanzahl und strukturierte Hinweise zu offenen Zuordnungen und Messungen. Ein veralteter Schreibzugriff nach einem Schemawechsel lädt den aktuellen Stand und meldet einen Konflikt.
 
-Die CI-Prüfung nutzt eine temporäre SQLite-Datenbank mit Home Assistants Executor. Sie deckt expliziten Wechsel, Wiederöffnen, gleichformatigen Import, Schutz vor veralteten Schreibständen und Ablehnung unpassender Formate ab. Der nächste Schritt ist die geführte Projektoberfläche für Anlage, Netzanschluss und Messgerät samt ausdrücklicher Migrationsbestätigung.
+Die CI-Prüfung nutzt eine temporäre SQLite-Datenbank mit Home Assistants Executor. Sie deckt expliziten Wechsel, Wiederöffnen, gleichformatigen Import, Schutz vor veralteten Schreibständen und Ablehnung unpassender Formate ab. Die Oberfläche für Anlage und Netzanschluss ist im Entwicklungsstand verfügbar. Im nächsten Schritt folgen die ausdrückliche Migrationsbestätigung für bestehende HA-Projekte und die geführte Zuordnung eines Messkanals zum Anschluss.

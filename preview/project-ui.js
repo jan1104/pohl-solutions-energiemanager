@@ -35,8 +35,8 @@
     if (msg.ok === true) task.resolve(msg.data); else task.reject(new Error(typeof msg.error === 'string' ? msg.error : 'Projektanfrage fehlgeschlagen.'));
   });
   const labels = {gateway: 'Gateway', meter: 'Messgerät', pv_inverter: 'PV-Wechselrichter', hybrid_inverter: 'Hybrid-Wechselrichter', storage_inverter: 'Speicher-Wechselrichter', battery: 'Batterie', ev_charger: 'Ladestation', heater: 'Heizstab', grid: 'Netzanschluss', branch: 'Zweig', pv_generation: 'PV-Erzeugung', battery_power: 'Batterieleistung', consumer: 'Einzelverbraucher', load: 'Verbrauch'};
-  const groups = ['grids', 'areas', 'nodes', 'connections', 'devices', 'channels', 'measurements'];
-  const groupLabels = {grids: 'Netzanschluss', areas: 'Bereich', nodes: 'Anschlussknoten', connections: 'Verbindung', devices: 'Gerät', channels: 'Messkanal', measurements: 'Messstelle'};
+  const groups = ['plants', 'grids', 'areas', 'nodes', 'connections', 'devices', 'channels', 'measurements'];
+  const groupLabels = {plants: 'Anlage', grids: 'Netzanschluss', areas: 'Bereich', nodes: 'Anschlussknoten', connections: 'Verbindung', devices: 'Gerät', channels: 'Messkanal', measurements: 'Messstelle'};
   function el(tag, text, cls) { const n = document.createElement(tag); if (text !== undefined) n.textContent = text; if (cls) n.className = cls; return n; }
   function renderSystem(data) {
     // The HA wrapper validates and limits this read-only response before forwarding it.
@@ -100,15 +100,21 @@
     target.replaceChildren(); if (!warnings.length) { target.append(el('p', 'Keine zusätzlichen Hinweise aus der Strukturprüfung.', 'project-muted')); return; }
     const list = el('ul'); warnings.forEach(w => list.append(el('li', w))); target.append(list);
   }
+  const isV2 = value => value?.schema_version === 2;
+  const validate = value => isV2(value) ? M.validateProjectV2(value) : M.validateProject(value);
+  const exportDraft = value => isV2(value) ? JSON.stringify(M.validateProjectV2(value)) : M.exportProjectJson(value);
   function stage(value, origin, revision) {
-    const checked = M.validateProject(value), summary = M.projectSummary(checked);
+    if (embedded && revision === undefined && value.schema_version !== project.schema_version) {
+      throw new Error('Das Importformat muss zum gespeicherten Projekt passen.');
+    }
+    const checked = validate(value), summary = M.projectSummary(checked);
     candidate = checked; candidateRevision = revision; $('project-candidate').hidden = false;
-    $('candidate-summary').textContent = `${origin}: „${checked.name}“ · ${summary.counts.grids} Netzanschlüsse · ${summary.counts.devices} Geräte · ${summary.counts.measurements} Bilanzmessungen. Noch nicht übernommen.`;
-    warningList($('candidate-warnings'), summary.warnings); $('project-json').value = M.exportProjectJson(checked);
+    $('candidate-summary').textContent = `${origin}: „${checked.name}“ · ${isV2(checked) ? `${summary.counts.plants} Anlagen · ` : ''}${summary.counts.grids} Netzanschlüsse · ${summary.counts.devices} Geräte · ${summary.counts.measurements} Bilanzmessungen. Noch nicht übernommen.`;
+    warningList($('candidate-warnings'), summary.warnings); $('project-json').value = exportDraft(checked);
     message('Vorschau geprüft. Bitte prüfen und ausdrücklich übernehmen.');
     $('project-apply').focus();
   }
-  function accept(value, note, revision) { project = M.validateProject(value); if (revision !== undefined) baseRevision = revision; candidate = null; candidateRevision = undefined; $('project-candidate').hidden = true; render(); message(note); }
+  function accept(value, note, revision) { project = validate(value); addPanelOpen = false; if (revision !== undefined) baseRevision = revision; candidate = null; candidateRevision = undefined; $('project-candidate').hidden = true; render(); message(note); }
   function currentArea() { return $('project-area').value; }
   function devicesForArea() { return project.devices.filter(d => !currentArea() || d.area_id === currentArea()); }
   function chip(text) { return el('span', text, 'project-chip'); }
@@ -131,7 +137,27 @@
       const children = project.nodes.filter(n => n.parent_id === node.id); if (children.length) { const list = el('ul', undefined, 'project-tree'); children.forEach(n => list.append(renderNode(n))); item.append(list); }
       return item;
     }
-    grids.forEach(g => { target.append(el('h2', g.name)); const tree = el('ul', undefined, 'project-tree'); tree.append(renderNode(project.nodes.find(n => n.grid_id === g.id && n.parent_id === null))); target.append(tree); });
+    if (isV2(project) && !area) {
+      for (const plant of project.plants.filter(p => !p.grid_ids.length)) {
+        const row = el('article', undefined, 'project-row');
+        row.append(el('strong', plant.name), chip('Netzanschluss offen'));
+        target.append(row);
+      }
+    }
+    grids.forEach(g => {
+      target.append(el('h2', g.name));
+      const root = project.nodes.find(n => n.grid_id === g.id && n.parent_id === null);
+      if (isV2(project)) {
+        const owners = project.plants.filter(p => p.grid_ids.includes(g.id));
+        target.append(el('p', owners.map(p => p.name).join(' · '), 'project-muted'));
+        const details = [root.location, root.fuse_a && `${root.fuse_a} A`, root.phases && `${root.phases} ${root.phases === 1 ? 'Phase' : 'Phasen'}`].filter(Boolean);
+        if (details.length) target.append(el('p', details.join(' · '), 'project-muted'));
+        if (root.description) target.append(el('p', root.description, 'project-muted'));
+        if (!project.measurements.some(m => m.node_id === root.id && m.role === 'grid')) target.append(chip('Netzmessung offen'));
+      }
+      const tree = el('ul', undefined, 'project-tree');
+      tree.append(renderNode(root)); target.append(tree);
+    });
     if (!grids.length) target.append(el('p', 'Noch kein Netzanschluss angelegt.'));
   }
   function renderCommunication(target) {
@@ -173,50 +199,74 @@
     project.areas.forEach(a => $('project-area').append(new Option(`${a.name} · ${byId('grids', a.grid_id).name}`, a.id)));
     $('project-area').value = project.areas.some(a => a.id === previousArea) ? previousArea : '';
     const summary = M.projectSummary(project), counts = $('project-counts'); counts.replaceChildren();
-    for (const [key, singular, plural] of [['grids', 'Netzanschluss', 'Netzanschlüsse'], ['areas', 'Bereich', 'Bereiche'], ['devices', 'Gerät', 'Geräte'], ['measurements', 'Messstelle', 'Messstellen']]) { if (!summary.counts[key]) continue; const card = el('article'); card.append(el('strong', summary.counts[key]), el('span', summary.counts[key] === 1 ? singular : plural)); counts.append(card); }
-    warningList($('project-warnings'), summary.warnings); $('project-json').value = M.exportProjectJson(project);
+    for (const [key, singular, plural] of [['plants', 'Anlage', 'Anlagen'], ['grids', 'Netzanschluss', 'Netzanschlüsse'], ['areas', 'Bereich', 'Bereiche'], ['devices', 'Gerät', 'Geräte'], ['measurements', 'Messstelle', 'Messstellen']]) { if (!summary.counts[key]) continue; const card = el('article'); card.append(el('strong', summary.counts[key]), el('span', summary.counts[key] === 1 ? singular : plural)); counts.append(card); }
+    warningList($('project-warnings'), summary.warnings); $('project-json').value = exportDraft(project);
     $('project-warnings-section').hidden = !summary.warnings.length;
     $('project-warnings-count').textContent = summary.warnings.length ? `(${summary.warnings.length})` : '';
-    $('project-object').replaceChildren(); groups.forEach(g => project[g].forEach(o => $('project-object').append(new Option(`${o.name} (${groupLabels[g]})`, `${g}:${o.id}`))));
+    $('project-object').replaceChildren(); groups.forEach(g => (project[g] || []).forEach(o => $('project-object').append(new Option(`${o.name} (${groupLabels[g]})`, `${g}:${o.id}`))));
     $('project-object-name').value = selectedObject().value?.name || ''; $('project-object-rename').disabled = !$('project-object').value;
     $('project-object-options').hidden = !$('project-object').value;
     $('project-area-filter').hidden = project.areas.length < 2;
     renderProjectLayout();
     renderAddForm(); renderView();
   }
-  function renderProjectLayout() {
-    const empty = project.grids.length === 0;
-    $('project-empty').hidden = !empty || addPanelOpen;
-    $('project-overview').hidden = empty;
-    $('project-add-panel').hidden = !addPanelOpen;
+  function firstAction() {
+    if (isV2(project) && !project.plants.length) return 'plant';
+    return project.grids.length ? null : 'grid';
   }
-  function openAdd(first = false) {
+  function renderProjectLayout() {
+    const first = firstAction();
+    $('project-empty').hidden = !first || addPanelOpen;
+    $('project-overview').hidden = Boolean(first);
+    $('project-add-panel').hidden = !addPanelOpen;
+    $('project-start-add').textContent = first === 'plant' ? 'Anlage hinzufügen' : 'Netzanschluss hinzufügen';
+    $('empty-heading').textContent = first === 'plant' ? 'Erste Anlage einrichten' : 'Netzanschluss einrichten';
+    const onlyPlant = project.plants?.length === 1 ? project.plants[0] : null;
+    $('project-empty-copy').textContent = first === 'plant' ? 'Geben Sie Ihrer Anlage einen Namen.'
+      : onlyPlant ? `Legen Sie den Netzanschluss für „${onlyPlant.name}“ an.`
+      : 'Legen Sie einen Anschluss an. Danach können Sie Geräte und Messstellen ergänzen.';
+  }
+  function openAdd() {
     if (candidate) throw new Error('Offene Vorschau zuerst übernehmen oder verwerfen.');
     addPanelOpen = true;
-    $('add-action').value = first || !project.grids.length ? 'grid' : project.areas.length ? 'device' : 'area';
+    $('add-action').value = firstAction() || (project.areas.length ? 'device' : 'area');
+    $('add-details').open = false;
     renderProjectLayout(); renderAddForm(); $('add-name').focus();
   }
-  $('project-start-add').addEventListener('click', guard(() => openAdd(true)));
-  $('project-open-add').addEventListener('click', guard(() => openAdd()));
-  $('project-add-cancel').addEventListener('click', () => { addPanelOpen = false; renderProjectLayout(); $(project.grids.length ? 'project-open-add' : 'project-start-add').focus(); });
+  $('project-start-add').addEventListener('click', guard(openAdd));
+  $('project-open-add').addEventListener('click', guard(openAdd));
+  $('project-add-cancel').addEventListener('click', () => { addPanelOpen = false; renderProjectLayout(); $(firstAction() ? 'project-start-add' : 'project-open-add').focus(); });
   function renderAddForm() {
     const fill = (id, rows, empty) => { const prior = $(id).value; $(id).replaceChildren(); if (empty) $(id).append(new Option(empty, '')); rows.forEach(row => $(id).append(new Option(row.name, row.id))); if ([...$(id).options].some(o => o.value === prior)) $(id).value = prior; };
-    fill('add-grid', project.grids); fill('add-area', project.areas); fill('add-device-connection', project.connections, 'Noch nicht zuordnen');
+    const action = $('add-action').value, v2 = isV2(project);
+    fill('add-plant', (project.plants || []).filter(p => action !== 'area' || p.grid_ids.length));
+    const plant = byId('plants', $('add-plant').value);
+    fill('add-grid', v2 ? project.grids.filter(g => plant?.grid_ids.includes(g.id)) : project.grids);
+    fill('add-area', project.areas); fill('add-device-connection', project.connections, 'Noch nicht zuordnen');
     const area = byId('areas', $('add-area').value), grid = area?.grid_id;
     fill('add-node', project.nodes.filter(n => n.grid_id === grid));
     fill('add-parent', project.devices.filter(d => ['hybrid_inverter', 'storage_inverter'].includes(d.kind) && byId('nodes', d.node_id).grid_id === grid));
-    const action = $('add-action').value; document.querySelectorAll('[data-add]').forEach(field => { field.hidden = field.dataset.add !== action; });
-    $('add-action-field').hidden = !project.grids.length;
-    $('project-add-heading').textContent = ({grid: 'Netzanschluss hinzufügen', area: 'Bereich hinzufügen', connection: 'Verbindung hinzufügen', device: 'Gerät hinzufügen'})[action] || 'Projekt ergänzen';
+    document.querySelectorAll('[data-add]').forEach(field => { field.hidden = field.dataset.add !== action; });
+    $('add-action-field').hidden = Boolean(firstAction());
+    $('add-plant-option').hidden = !v2;
+    $('add-plant-option').disabled = !v2;
+    $('add-plant-field').hidden = !v2 || !['area', 'grid'].includes(action);
+    $('add-details').hidden = !v2 || !['plant', 'grid'].includes(action);
+    $('add-fuse-field').hidden = $('add-phases-field').hidden = !v2 || action !== 'grid';
+    $('add-fuse').disabled = !v2 || action !== 'grid';
+    $('add-name').placeholder = action === 'plant' ? 'Zum Beispiel Werkstatt' : action === 'grid' ? 'Zum Beispiel HAK' : '';
+
+    $('project-add-heading').textContent = ({plant: 'Anlage hinzufügen', grid: 'Netzanschluss hinzufügen', area: 'Bereich hinzufügen', connection: 'Verbindung hinzufügen', device: 'Gerät hinzufügen'})[action] || 'Projekt ergänzen';
     $('add-parent-field').hidden = action !== 'device' || $('add-device-kind').value !== 'battery';
   }
-  $('project-new').addEventListener('click', guard(() => stage(examples.simple, 'Neue einfache Vorlage')));
-  $('project-reference').addEventListener('click', guard(() => stage(examples.reference, 'Anonymisiertes Referenzbeispiel')));
-  $('project-validate').addEventListener('click', guard(() => stage(M.loadProjectJson($('project-json').value), 'JSON-Änderungen')));
+  const template = value => isV2(project) ? M.migrateProjectV1ToV2(value) : value;
+  $('project-new').addEventListener('click', guard(() => stage(template(examples.simple), 'Neue einfache Vorlage')));
+  $('project-reference').addEventListener('click', guard(() => stage(template(examples.reference), 'Anonymisiertes Referenzbeispiel')));
+  $('project-validate').addEventListener('click', guard(() => stage(M.loadProjectDocument($('project-json').value), 'JSON-Änderungen')));
   $('project-json').addEventListener('input', () => { if (candidate) { candidate = null; $('project-candidate').hidden = true; message('Editor geändert. Vor der Übernahme bitte erneut prüfen.'); } });
   $('project-apply').addEventListener('click', guard(() => { if (!candidate) throw new Error('Keine geprüfte Vorschau vorhanden.'); accept(candidate, embedded ? 'Projektentwurf übernommen. Noch nicht in Home Assistant gespeichert.' : 'Projekt übernommen. Noch nicht lokal gespeichert.', candidateRevision); }));
-  $('project-discard').addEventListener('click', () => { candidate = null; $('project-candidate').hidden = true; $('project-json').value = M.exportProjectJson(project); message('Vorschau verworfen. Projekt unverändert.'); });
-  $('project-reset-editor').addEventListener('click', () => { candidate = null; $('project-candidate').hidden = true; $('project-json').value = M.exportProjectJson(project); message('Editor zurückgesetzt.'); });
+  $('project-discard').addEventListener('click', () => { candidate = null; $('project-candidate').hidden = true; $('project-json').value = exportDraft(project); message('Vorschau verworfen. Projekt unverändert.'); });
+  $('project-reset-editor').addEventListener('click', () => { candidate = null; $('project-candidate').hidden = true; $('project-json').value = exportDraft(project); message('Editor zurückgesetzt.'); });
   $('project-area').addEventListener('change', renderView);
   document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => { view = b.dataset.view; renderView(); }));
   document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('keydown', event => {
@@ -225,29 +275,41 @@
     const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : (index + (event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length;
     view = buttons[next].dataset.view; renderView(); buttons[next].focus();
   }));
-  $('project-rename').addEventListener('click', guard(() => { const next = M.validateProject(project); next.name = $('project-name').value; accept(next, embedded ? 'Projektname geändert. Noch nicht in Home Assistant gespeichert.' : 'Projektname geändert. Noch nicht lokal gespeichert.'); }));
+  $('project-rename').addEventListener('click', guard(() => { const next = validate(project); next.name = $('project-name').value; accept(next, embedded ? 'Projektname geändert. Noch nicht in Home Assistant gespeichert.' : 'Projektname geändert. Noch nicht lokal gespeichert.'); }));
   $('project-object').addEventListener('change', () => { $('project-object-name').value = selectedObject().value?.name || ''; });
-  $('project-object-rename').addEventListener('click', guard(() => { const {group, value} = selectedObject(); if (!value) throw new Error('Objekt auswählen.'); const next = M.validateProject(project); next[group].find(v => v.id === value.id).name = $('project-object-name').value; accept(next, embedded ? 'Objektname geändert. Noch nicht in Home Assistant gespeichert.' : 'Objektname geändert. Noch nicht lokal gespeichert.'); }));
+  $('project-object-rename').addEventListener('click', guard(() => { const {group, value} = selectedObject(); if (!value) throw new Error('Objekt auswählen.'); const next = validate(project); next[group].find(v => v.id === value.id).name = $('project-object-name').value; accept(next, embedded ? 'Objektname geändert. Noch nicht in Home Assistant gespeichert.' : 'Objektname geändert. Noch nicht lokal gespeichert.'); }));
   $('project-import').addEventListener('click', () => $('project-file').click());
-  $('project-file').addEventListener('change', guard(async event => { const file = event.target.files[0]; event.target.value = ''; if (!file) return; if (file.size > M.MAX_BYTES) throw new Error('Datei überschreitet 2 MiB.'); stage(M.loadProjectJson(await file.text()), `Import ${file.name}`); }));
-  $('project-export').addEventListener('click', guard(() => { const blob = new Blob([M.exportProjectJson(project)], {type: 'application/json'}), url = URL.createObjectURL(blob), a = el('a'); a.href = url; a.download = `${project.id}.json`; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); message('Übernommenes Projekt exportiert; eine offene Vorschau wird nicht exportiert.'); }));
+  $('project-file').addEventListener('change', guard(async event => { const file = event.target.files[0]; event.target.value = ''; if (!file) return; if (file.size > M.MAX_BYTES) throw new Error('Datei überschreitet 2 MiB.'); stage(M.loadProjectDocument(await file.text()), `Import ${file.name}`); }));
+  $('project-export').addEventListener('click', guard(() => { const blob = new Blob([exportDraft(project)], {type: 'application/json'}), url = URL.createObjectURL(blob), a = el('a'); a.href = url; a.download = `${project.id}.json`; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); message('Übernommenes Projekt exportiert; eine offene Vorschau wird nicht exportiert.'); }));
   $('project-save').addEventListener('click', guard(async () => {
     if (candidate) throw new Error('Offene Vorschau zuerst übernehmen oder verwerfen.');
-    const text = M.exportProjectJson(project);
-    if (embedded) { $('project-save').disabled = true; try { const data = await haRequest('save', text, baseRevision); baseRevision = data.revision; message(M.exportProjectJson(project) === text ? 'Projekt in Home Assistant gespeichert. Keine Gerätesteuerung aktiviert.' : 'Vorherigen Entwurf gespeichert. Neuere Änderungen in dieser Ansicht sind noch nicht gespeichert.'); } finally { $('project-save').disabled = false; } }
+    const text = exportDraft(project);
+    if (embedded) { $('project-save').disabled = true; try { const data = await haRequest('save', text, baseRevision); baseRevision = data.revision; message(exportDraft(project) === text ? 'Projekt in Home Assistant gespeichert. Keine Gerätesteuerung aktiviert.' : 'Vorherigen Entwurf gespeichert. Neuere Änderungen in dieser Ansicht sind noch nicht gespeichert.'); } finally { $('project-save').disabled = false; } }
     else { window.localStorage.setItem(storageKey, text); message('Übernommenes Projekt in diesem Browser gespeichert.'); }
   }));
   $('project-reload').addEventListener('click', guard(async () => {
-    if (embedded) { const data = await haRequest('load'); if (initialLoadPending) { initialLoadPending = false; baseRevision = data.revision; initialControls(false); } if (!data.project_json) { message('In Home Assistant ist noch kein Projekt gespeichert. Ihr Entwurf bleibt erhalten.'); return; } stage(M.loadProjectJson(data.project_json), 'Aktueller Home-Assistant-Speicherstand', data.revision); }
-    else { const raw = window.localStorage.getItem(storageKey); if (!raw) throw new Error('Kein lokaler Stand vorhanden.'); stage(M.loadProjectJson(raw), 'Lokaler Speicherstand'); }
+    if (embedded) { const data = await haRequest('load'); if (initialLoadPending) { initialLoadPending = false; baseRevision = data.revision; initialControls(false); } if (!data.project_json) { message('In Home Assistant ist noch kein Projekt gespeichert. Ihr Entwurf bleibt erhalten.'); return; } stage(M.loadProjectDocument(data.project_json), 'Aktueller Home-Assistant-Speicherstand', data.revision); }
+    else { const raw = window.localStorage.getItem(storageKey); if (!raw) throw new Error('Kein lokaler Stand vorhanden.'); stage(M.loadProjectDocument(raw), 'Lokaler Speicherstand'); }
   }));
-  ['add-action', 'add-area', 'add-device-kind'].forEach(id => $(id).addEventListener('change', renderAddForm));
+  ['add-action', 'add-plant', 'add-area', 'add-device-kind'].forEach(id => $(id).addEventListener('change', renderAddForm));
   $('project-add-form').addEventListener('submit', guard(event => {
     event.preventDefault(); if (candidate) throw new Error('Offene Vorschau zuerst übernehmen oder verwerfen.');
     const A = window.PohlProjectActions; if (!A) throw new Error('Projektfunktionen sind noch nicht verfügbar.');
     const name = $('add-name').value, action = $('add-action').value; let next;
-    if (action === 'grid') next = A.addGrid(project, {name});
-    if (action === 'area') next = A.addArea(project, {name, gridId: $('add-grid').value});
+    const v2 = isV2(project), plantId = $('add-plant').value;
+    const optional = {};
+    for (const key of ['location', 'description']) {
+      const value = $(`add-${key}`).value.trim();
+      if (value) optional[key] = value;
+    }
+    if (action === 'plant') next = A.addPlant(project, {name, ...optional});
+    if (action === 'grid') {
+      const values = v2 ? {name, plantId, ...optional} : {name};
+      if (v2 && $('add-fuse').value) values.fuseA = Number($('add-fuse').value);
+      if (v2 && $('add-phases').value) values.phases = Number($('add-phases').value);
+      next = A.addGrid(project, values);
+    }
+    if (action === 'area') next = A.addArea(project, {name, gridId: $('add-grid').value, ...(v2 ? {plantId} : {})});
     if (action === 'connection') {
       const values = {name, kind: $('add-connection-kind').value};
       if ($('add-host').value.trim()) values.host = $('add-host').value.trim(); if ($('add-port').value) values.port = Number($('add-port').value); if ($('add-serial').value.trim()) values.serialPort = $('add-serial').value.trim();
@@ -259,19 +321,21 @@
       if (values.kind === 'battery') values.parentId = $('add-parent').value;
       next = A.addDevice(project, values);
     }
-    addPanelOpen = false; accept(next, 'Hinzugefügt. Änderungen noch nicht gespeichert.'); $('add-name').value = '';
-    $('project-open-add').focus();
+    addPanelOpen = false;
+    accept(next, 'Hinzugefügt. Änderungen noch nicht gespeichert.');
+    for (const id of ['add-name', 'add-location', 'add-description', 'add-fuse', 'add-phases']) $(id).value = '';
+    $(firstAction() ? 'project-start-add' : 'project-open-add').focus();
   }));
   try {
     if (!M || !examples?.simple) throw new Error('Lokale Projektdateien fehlen. Bitte Projektdateien vollständig bereitstellen.');
+    const empty = {format: 'pohl-energy-project', schema_version: 1, id: 'energy-project', name: 'Mein Energieprojekt', mode: 'planning_only', grids: [], areas: [], nodes: [], connections: [], devices: [], channels: [], measurements: [], settings: {}};
     if (embedded) {
       document.body.classList.add('ha-embedded'); $('project-save').textContent = 'Speichern'; $('project-reload').textContent = 'Gespeicherten Stand laden';
       $('project-storage-note').textContent = 'Ihr Projekt wird in Home Assistant gespeichert. Änderungen werden erst mit Speichern dauerhaft übernommen.';
       $('project-mode-note').textContent = 'Einrichtung';
-      const empty = {format: 'pohl-energy-project', schema_version: 1, id: 'energy-project', name: 'Mein Energieprojekt', mode: 'planning_only', grids: [], areas: [], nodes: [], connections: [], devices: [], channels: [], measurements: [], settings: {}};
       accept(empty, 'Projekt wird aus Home Assistant geladen …'); initialLoadPending = true; initialControls(true);
-      haRequest('load').then(data => { if (data.project_json) accept(M.loadProjectJson(data.project_json), '', data.revision); else { baseRevision = data.revision; message(''); } initialLoadPending = false; initialControls(false); }).catch(err => { $('project-error').hidden = false; $('project-error').textContent = err.message; $('project-reload').disabled = false; });
-    } else accept(examples.simple, 'Einfache Beispielvorlage geladen. Keine Live-Verbindung.');
+      haRequest('load').then(data => { if (data.project_json) accept(M.loadProjectDocument(data.project_json), '', data.revision); else { baseRevision = data.revision; message(''); } initialLoadPending = false; initialControls(false); }).catch(err => { $('project-error').hidden = false; $('project-error').textContent = err.message; $('project-reload').disabled = false; });
+    } else accept(M.migrateProjectV1ToV2(empty), '');
   }
   catch (err) { $('project-error').hidden = false; $('project-error').textContent = err.message; document.querySelectorAll('button').forEach(b => { b.disabled = true; }); }
 })();
