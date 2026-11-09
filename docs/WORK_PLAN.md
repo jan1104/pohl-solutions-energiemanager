@@ -1,6 +1,6 @@
 # Arbeitsplan
 
-Stand: 2026-11-09. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
+Stand: 2026-11-10. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
 
 ## Auftrag und Grenzen
 
@@ -35,7 +35,9 @@ V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberf
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
 
-Format-2-Messstellen erhalten ihre Datenquelle direkt in der Projektansicht. Das Formular unterstützt Modbus mit FC03/FC04, MQTT und HA-Entitäten und kann eine Quelle offen lassen. Ein Wechsel ersetzt die bisherigen Quellenfelder, während Messort, Kanal und Einheit erhalten bleiben. Die Desktop- und Mobilprüfung verwendete synthetische Daten. Als Nächstes folgt die ausdrückliche Prüfung eines konfigurierten Messkanals mit simulierten Daten.
+Die Messsimulation prüft eine gespeicherte Zuordnung mit einem eingegebenen Rohwert und ausdrücklicher Ausrichtung. Sie verwendet die vorhandene Bindungslogik für Skalierung und W/kW und kennzeichnet das Ergebnis sichtbar. Die Desktop- und Mobilprüfung erfolgte mit synthetischen Daten. Als Nächstes folgt eine lesende, zunächst simulierte Anbindung vom konfigurierten Kommunikationsweg zur Messung. Reale Register- und Geräteparameter müssen dafür getrennt belegt werden.
+
+Format-2-Messstellen erhalten ihre Datenquelle direkt in der Projektansicht. Das Formular unterstützt Modbus mit FC03/FC04, MQTT und HA-Entitäten und kann eine Quelle offen lassen. Ein Wechsel ersetzt die bisherigen Quellenfelder, während Messort, Kanal und Einheit erhalten bleiben. Die Desktop- und Mobilprüfung verwendete synthetische Daten. Die Testwertprüfung folgte im nächsten Entwicklungsschritt.
 
 Die Netzmessung in Format 2 lässt sich einem bestehenden Gesamtwirkleistungskanal zuordnen. Fehlt der Kanal, kann ein Entwurf mit Name und Einheit W oder kW am gewählten Messgerät angelegt werden. Das Formular beschränkt die Auswahl auf freie Kanäle am selben Anschluss und zeigt offene Quellen. Die Browserprüfung erfolgte mit synthetischen Daten bei 1440 und 390 Pixeln Breite. Das Quellenformular folgte im nächsten Entwicklungsschritt.
 

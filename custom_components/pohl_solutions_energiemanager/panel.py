@@ -31,6 +31,7 @@ async def async_setup_panel(hass: HomeAssistant) -> None:
         websocket_api.async_register_command(hass, ws_project_set)
         websocket_api.async_register_command(hass, ws_project_migration_preview)
         websocket_api.async_register_command(hass, ws_project_migrate)
+        websocket_api.async_register_command(hass, ws_simulate_measurement)
         websocket_api.async_register_command(hass, ws_system_get)
         hass.data[DATA_WEBSOCKETS] = True
     if not hass.data.get(DATA_PANEL):
@@ -154,3 +155,31 @@ async def ws_project_migration_preview(hass, connection, msg):
 @websocket_api.async_response
 async def ws_project_migrate(hass, connection, msg):
     await _async_migration_response(hass, connection, msg, commit=True)
+
+
+@websocket_api.websocket_command({
+    vol.Required("type"): "pohl_energy/project/simulate_measurement",
+    vol.Required("expected_revision"): vol.Match(r"[0-9a-f]{64}\Z"),
+    vol.Required("measurement_id"): vol.Match(r"[a-zA-Z0-9_-]{1,80}\Z"),
+    vol.Required("raw_value"): vol.Any(int, float),
+    vol.Required("polarity"): vol.All(int, vol.In((-1, 1))),
+})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def ws_simulate_measurement(hass, connection, msg):
+    async with hass.data.setdefault(f"{DOMAIN}_setup_lock", asyncio.Lock()):
+        store = _loaded_store(hass, connection, msg["id"])
+        if store is None:
+            return
+        try:
+            result = await store.async_simulate_measurement(
+                msg["expected_revision"], msg["measurement_id"], msg["raw_value"], msg["polarity"],
+            )
+        except ProjectConflictError as err:
+            connection.send_error(msg["id"], "conflict", str(err))
+        except ValueError as err:
+            connection.send_error(msg["id"], "invalid_project", str(err))
+        except OSError:
+            connection.send_error(msg["id"], "storage_error", "Gespeichertes Projekt konnte nicht gelesen werden.")
+        else:
+            connection.send_result(msg["id"], result)

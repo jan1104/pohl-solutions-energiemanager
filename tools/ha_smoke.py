@@ -363,6 +363,69 @@ async def cancelled_project_migration_check(hass):
             assert json.loads(reloaded.export()["project_json"]) == json.loads(preview["project_json"])
 
 
+async def websocket_measurement_simulation_checks(hass, admin_ws, non_admin_ws, active):
+    from custom_components.pohl_solutions_energiemanager.const import DOMAIN
+    from custom_components.pohl_solutions_energiemanager.core.project_v2 import migrate_project_v1_to_v2
+    from custom_components.pohl_solutions_energiemanager.project_store import ProjectStore
+
+    fixture = json.loads((ROOT / "examples" / "simple-project.json").read_text(encoding="utf-8"))
+    project = migrate_project_v1_to_v2(fixture)
+    command = "pohl_energy/project/simulate_measurement"
+    saved = await admin_ws("pohl_energy/project/set", project_json=json.dumps(project),
+                           expected_revision=active["revision"])
+    assert saved["success"], saved
+    args = {"measurement_id": "grid_primary", "raw_value": 2500, "polarity": -1,
+            "expected_revision": saved["result"]["revision"]}
+    denied = await non_admin_ws(command, **args)
+    assert denied["error"]["code"] == "unauthorized", denied
+    unconfigured = await admin_ws(command, **args)
+    assert unconfigured["error"]["code"] == "invalid_project", unconfigured
+
+    project["channels"][0].update(unit="W", source={"kind": "modbus", "address": 0,
+                                                   "function_code": 4, "data_type": "s32", "scale": 0.5})
+    saved = await admin_ws("pohl_energy/project/set", project_json=json.dumps(project),
+                           expected_revision=args["expected_revision"])
+    assert saved["success"], saved
+    snapshot = saved["result"]
+    args["expected_revision"] = snapshot["revision"]
+    database = Path(hass.config.path(".storage", f"{DOMAIN}.sqlite3"))
+    before = await hass.async_add_executor_job(database.read_bytes)
+    response = await admin_ws(command, **args)
+    assert response["success"], response
+    assert response["result"] == {
+        "simulated": True, "measurement_id": "grid_primary", "channel_id": "power_grid",
+        "raw_unit": "W", "scale": 0.5, "polarity": -1, "kw": -1.25, "source_kind": "modbus",
+    }
+    for changes in ({"measurement_id": "missing"}, {"raw_value": True}, {"polarity": True}):
+        invalid = await admin_ws(command, **{**args, **changes})
+        assert invalid["error"]["code"] == "invalid_project", invalid
+    stale = await admin_ws(command, **{**args, "expected_revision": "0" * 64})
+    assert stale["error"]["code"] == "conflict", stale
+    assert (await admin_ws("pohl_energy/project/get"))["result"] == snapshot
+    assert await hass.async_add_executor_job(database.read_bytes) == before
+
+    # An identical save advances the SQLite revision, but the mapping is still
+    # the one the caller confirmed. A changed SHA instead requires a new preview.
+    peer = ProjectStore(hass)
+    await peer.async_load()
+    await peer.async_import(snapshot["project_json"], expected_revision=snapshot["revision"])
+    before = await hass.async_add_executor_job(database.read_bytes)
+    assert (await admin_ws(command, **args))["result"] == response["result"]
+    assert await hass.async_add_executor_job(database.read_bytes) == before
+
+    project["channels"][0]["source"]["scale"] = 1.0
+    await peer.async_import(json.dumps(project), expected_revision=snapshot["revision"])
+    before = await hass.async_add_executor_job(database.read_bytes)
+    conflict = await admin_ws(command, **args)
+    assert conflict["error"]["code"] == "conflict", conflict
+    refreshed = (await admin_ws("pohl_energy/project/get"))["result"]
+    assert refreshed == peer.snapshot()
+    assert refreshed["revision"] != snapshot["revision"]
+    retried = await admin_ws(command, **{**args, "expected_revision": refreshed["revision"]})
+    assert retried["result"] == {**response["result"], "scale": 1.0, "kw": -2.5}
+    assert await hass.async_add_executor_job(database.read_bytes) == before
+
+
 async def main() -> None:
     from aiohttp import web
     from homeassistant.auth import auth_manager_from_config
@@ -752,6 +815,7 @@ async def main() -> None:
                 assert await async_setup_entry(hass, project_entry)
                 try:
                     assert (await admin_ws("pohl_energy/project/get"))["result"] == migrated_snapshot
+                    await websocket_measurement_simulation_checks(hass, admin_ws, non_admin_ws, migrated_snapshot)
                 finally:
                     assert await async_unload_entry(hass, project_entry)
             coordinator = PohlEnergyCoordinator(hass, entry)

@@ -8,8 +8,9 @@ from pathlib import Path
 
 import pytest
 
-from core.measurement_binding import RawPowerReading, bind_power_measurement
+from core.measurement_binding import RawPowerReading, bind_power_measurement, simulate_power_measurement
 from core.metering import PowerSample, evaluate_power
+from core.project_v2 import migrate_project_v1_to_v2
 
 NOW = datetime(2026, 11, 4, tzinfo=timezone.utc)
 
@@ -144,3 +145,45 @@ def test_unknown_receipt_time_and_invalid_known_times_are_not_accepted():
     assert not bind(project(), reading(3, received_at=None)).value.valid
     with pytest.raises(ValueError, match="timezone-aware"):
         bind(project(), reading(3, measured_at=NOW.replace(tzinfo=None)))
+
+
+def test_simulation_uses_v2_binding_and_returns_only_numeric_mapping_details():
+    data = migrate_project_v1_to_v2(project("W", {
+        "kind": "modbus", "address": 0, "function_code": 4, "data_type": "s32", "scale": 0.5,
+    }))
+    before = deepcopy(data)
+    result = simulate_power_measurement(data, "grid_primary", 2500, polarity=-1)
+    assert result == {
+        "simulated": True, "measurement_id": "grid_primary", "channel_id": "power_grid",
+        "raw_unit": "W", "scale": 0.5, "polarity": -1, "kw": -1.25, "source_kind": "modbus",
+    }
+    assert simulate_power_measurement(data, "grid_primary", 0, polarity=1)["kw"] == 0
+    assert data == before
+
+
+@pytest.mark.parametrize("version", [True, "2", 3])
+def test_binding_rejects_non_supported_schema_versions(version):
+    data = migrate_project_v1_to_v2(project())
+    data["schema_version"] = version
+    with pytest.raises(ValueError):
+        bind(data, reading(3))
+
+
+@pytest.mark.parametrize("raw", [True, "3", None, float("inf"), float("nan"), 10**400])
+def test_simulation_requires_a_finite_raw_number(raw):
+    data = migrate_project_v1_to_v2(project())
+    with pytest.raises(ValueError, match="endliche Zahl"):
+        simulate_power_measurement(data, "grid_primary", raw, polarity=1)
+
+
+def test_simulation_rejects_missing_source_overflow_and_invalid_polarity():
+    data = migrate_project_v1_to_v2(project(source={"kind": "unconfigured"}))
+    with pytest.raises(ValueError, match="konfigurierte Quelle"):
+        simulate_power_measurement(data, "grid_primary", 3, polarity=1)
+    data = migrate_project_v1_to_v2(project(source={
+        "kind": "modbus", "address": 0, "function_code": 4, "data_type": "float32", "scale": 1e10,
+    }))
+    with pytest.raises(ValueError, match="keine endliche Leistung"):
+        simulate_power_measurement(data, "grid_primary", 1e308, polarity=1)
+    with pytest.raises(ValueError, match="polarity"):
+        simulate_power_measurement(data, "grid_primary", 3, polarity=True)

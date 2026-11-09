@@ -78,6 +78,30 @@
             <button class="button primary" type="submit">Quelle übernehmen</button>
           </form>
         </section>
+        <section id="project-simulation-panel" class="panel project-add" aria-labelledby="project-simulation-heading" hidden>
+          <div class="project-panel-heading">
+            <div><span class="project-kicker">SIMULATION</span><h2 id="project-simulation-heading">Messkanal mit Testwert prüfen</h2></div>
+            <button id="project-simulation-cancel" class="project-text-button" type="button">Schließen</button>
+          </div>
+          <p id="project-simulation-channel" class="project-muted"></p>
+          <p class="project-muted">Geben Sie einen Beispielwert vor Skalierung und Umrechnung ein. Der Test ruft keine Messwerte ab.</p>
+          <form id="project-simulation-form">
+            <div class="project-add-grid">
+              <label><span id="simulation-raw-label">Testwert</span><input id="simulation-raw" type="number" step="any" inputmode="decimal" required></label>
+              <label>Ausrichtung<select id="simulation-polarity" required>
+                <option value="">Bitte wählen</option>
+                <option value="1">Vorzeichen beibehalten (+1)</option>
+                <option value="-1">Vorzeichen umkehren (−1)</option>
+              </select></label>
+            </div>
+            <button class="button primary" type="submit">Testwert berechnen</button>
+            <div id="simulation-result" class="project-row" role="status" aria-live="polite" hidden>
+              <strong id="simulation-kw"></strong>
+              <p id="simulation-calculation"></p>
+              <p id="simulation-direction"></p>
+            </div>
+          </form>
+        </section>
         <section id="project-overview" hidden><div class="project-overview-bar"><div class="project-counts" id="project-counts" aria-label="Projektumfang"></div><button id="project-open-add" class="button secondary">+ Hinzufügen</button></div><div id="project-area-filter" class="project-area-filter" hidden><label for="project-area">Bereich</label><select id="project-area"><option value="">Alle Bereiche</option></select></div><section id="project-map" class="panel project-map"><div class="project-tabs" role="tablist" aria-label="Projektansicht"><button id="tab-electrical" role="tab" aria-selected="true" aria-controls="project-view" data-view="electrical">Aufbau</button><button id="tab-communication" role="tab" aria-selected="false" aria-controls="project-view" data-view="communication">Verbindungen</button><button id="tab-measurement" role="tab" aria-selected="false" aria-controls="project-view" data-view="measurement">Messungen</button></div><div id="project-view" role="tabpanel" aria-labelledby="tab-electrical"></div></section></section>
         <details id="project-warnings-section" class="project-disclosure" hidden><summary>Hinweise <span id="project-warnings-count"></span></summary><div id="project-warnings"></div></details>
         <details id="project-options" class="project-disclosure project-options"><summary>Projektoptionen<span class="summary-hint">Name, Import und Sicherung</span></summary><div class="project-options-content"><section class="project-option-group"><label for="project-name">Projektname</label><div class="project-inline"><input id="project-name" type="text" maxlength="160"><button id="project-rename" class="button secondary">Ändern</button></div></section><section class="project-option-group"><h2>Import und Sicherung</h2><div class="project-toolbar"><button id="project-import" class="button secondary">JSON importieren</button><input id="project-file" type="file" accept=".json,application/json" hidden><button id="project-export" class="button secondary">JSON exportieren</button><button id="project-reload" class="button secondary">Gespeicherten Stand laden</button></div><p id="project-storage-note" class="project-muted">Das Projekt wird in diesem Browser gespeichert.</p></section><section id="project-migration-option" class="project-option-group" hidden><h2>Anlagenstruktur</h2><button id="project-migration-preview" class="button secondary" type="button">Umstellung prüfen</button><p class="project-muted">Ordnen Sie bestehende Anschlüsse künftig Anlagen zu. Der bisherige Stand bleibt als Sicherung erhalten.</p></section><details id="project-object-options" class="project-disclosure nested-disclosure" hidden><summary>Objekt umbenennen</summary><div class="project-rename-row"><label>Objekt<select id="project-object"></select></label><label>Name<input id="project-object-name" type="text" maxlength="160"></label><button id="project-object-rename" class="button secondary">Ändern</button></div></details><details id="project-template-options" class="project-disclosure nested-disclosure"><summary>Beispielvorlagen</summary><div class="project-toolbar"><button id="project-new" class="button secondary">Einfache Vorlage ansehen</button><button id="project-reference" class="button secondary">Referenzbeispiel ansehen</button></div><p class="project-muted">Eine Vorlage wird erst nach Ihrer Übernahme verwendet.</p></details><details id="project-json-options" class="project-disclosure nested-disclosure"><summary>Erweiterte Konfiguration</summary><p class="project-muted">JSON bearbeiten und Änderungen vor der Übernahme prüfen. Maximal 2 MiB.</p><label class="sr-only" for="project-json">Projekt als JSON</label><textarea id="project-json" spellcheck="false" rows="16"></textarea><div class="project-toolbar"><button id="project-validate" class="button secondary">Änderungen prüfen</button><button id="project-reset-editor" class="project-text-button">Zurücksetzen</button></div></details></div></details>

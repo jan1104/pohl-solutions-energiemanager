@@ -5,7 +5,7 @@
   const embedded = new URLSearchParams(window.location.search).get('ha') === '1' && window.parent !== window;
   const $ = id => document.getElementById(id), storageKey = 'pohl-energy-project-v1';
   let project, candidate = null, candidateRevision, baseRevision, savedText, migrationPreview, view = 'electrical';
-  let measurementGrid, sourceChannel, meterChoices = [];
+  let measurementGrid, sourceChannel, simulationMeasurement, meterChoices = [];
   let initialLoadPending = false, systemBusy = false, systemLoaded = false, addPanelOpen = false;
   function initialControls(disabled) {
     document.querySelectorAll('button,input,select,textarea').forEach(control => { control.disabled = disabled; });
@@ -129,7 +129,7 @@
   function accept(value, note, revision) {
     project = validate(value);
     addPanelOpen = false;
-    measurementGrid = sourceChannel = undefined;
+    measurementGrid = sourceChannel = simulationMeasurement = undefined;
     if (revision !== undefined) {
       baseRevision = revision;
       savedText = exportDraft(project);
@@ -137,7 +137,7 @@
     clearCandidate();
     render(); message(note);
   }
-  async function migrationRequest(operation, fields) {
+  async function exclusiveProjectRequest(operation, fields) {
     initialControls(true);
     try {
       return await haRequest(operation, fields);
@@ -148,10 +148,10 @@
   }
   $('project-migration-preview').addEventListener('click', guard(async () => {
     if (!embedded || isV2(project) || !savedText) throw new Error('Kein gespeichertes Projekt zur Umstellung vorhanden.');
-    if (candidate || addPanelOpen || measurementGrid || sourceChannel || exportDraft(project) !== savedText || $('project-json').value !== savedText || $('project-name').value !== project.name) {
+    if (candidate || addPanelOpen || measurementGrid || sourceChannel || simulationMeasurement || exportDraft(project) !== savedText || $('project-json').value !== savedText || $('project-name').value !== project.name) {
       throw new Error('Bitte offene Bearbeitungen zuerst abschließen und den Projektentwurf speichern.');
     }
-    const data = await migrationRequest('migration_preview', {expected_revision: baseRevision});
+    const data = await exclusiveProjectRequest('migration_preview', {expected_revision: baseRevision});
     const draft = M.loadProjectDocument(data.project_json);
     if (!isV2(draft) || data.revision !== baseRevision || !Number.isSafeInteger(data.source_revision) || data.source_revision < 1) {
       throw new Error('Die Umstellungsvorschau ist unvollständig. Bitte den gespeicherten Stand neu laden.');
@@ -257,6 +257,12 @@
         button.type = 'button';
         button.addEventListener('click', guard(() => openSource(channel.id)));
         actions.append(button);
+        if (embedded && s.kind !== 'unconfigured') {
+          const simulate = el('button', 'Mit Testwert prüfen', 'button secondary');
+          simulate.type = 'button';
+          simulate.addEventListener('click', guard(() => openSimulation(m.id)));
+          actions.append(simulate);
+        }
         row.append(actions);
       }
       target.append(row);
@@ -297,6 +303,7 @@
     $('project-add-panel').hidden = !addPanelOpen;
     $('project-measure-panel').hidden = !measurementGrid;
     $('project-source-panel').hidden = !sourceChannel;
+    $('project-simulation-panel').hidden = !simulationMeasurement;
     $('project-migration-option').hidden = !embedded || isV2(project) || !savedText;
     $('project-start-add').textContent = first === 'plant' ? 'Anlage hinzufügen' : 'Netzanschluss hinzufügen';
     $('empty-heading').textContent = first === 'plant' ? 'Erste Anlage einrichten' : 'Netzanschluss einrichten';
@@ -308,7 +315,7 @@
   function openAdd() {
     if (candidate) throw new Error('Offene Vorschau zuerst übernehmen oder verwerfen.');
     addPanelOpen = true;
-    measurementGrid = sourceChannel = undefined;
+    measurementGrid = sourceChannel = simulationMeasurement = undefined;
     $('add-action').value = firstAction() || (project.areas.length ? 'device' : 'area');
     $('add-details').open = false;
     renderProjectLayout(); renderAddForm(); $('add-name').focus();
@@ -362,7 +369,7 @@
     if (candidate) throw new Error('Offene Vorschau zuerst übernehmen oder verwerfen.');
     meterChoices = window.PohlProjectActions.gridMeterChoices(project, gridId);
     measurementGrid = gridId;
-    sourceChannel = undefined;
+    sourceChannel = simulationMeasurement = undefined;
     addPanelOpen = false;
     const grid = byId('grids', gridId);
     const area = project.areas.find(a => a.grid_id === gridId);
@@ -431,7 +438,7 @@
     const channel = byId('channels', channelId);
     if (!channel || !isV2(project)) throw new Error('Messkanal nicht gefunden.');
     sourceChannel = channelId;
-    measurementGrid = undefined;
+    measurementGrid = simulationMeasurement = undefined;
     addPanelOpen = false;
     $('project-source-channel').textContent = `${channel.name} · ${channel.unit} · ${byId('devices', channel.device_id).name}`;
     const source = channel.source;
@@ -471,6 +478,64 @@
     accept(next, 'Messquelle geändert. Änderungen noch nicht gespeichert.');
     $('tab-measurement').focus();
   }));
+  function ensureSimulationSource() {
+    if (candidate || addPanelOpen || measurementGrid || sourceChannel) {
+      throw new Error('Bitte offene Bearbeitungen zuerst abschließen.');
+    }
+    if (!savedText || exportDraft(project) !== savedText || $('project-json').value !== savedText) {
+      throw new Error('Bitte das Projekt vor dem Test speichern.');
+    }
+  }
+  function openSimulation(measurementId) {
+    ensureSimulationSource();
+    const measurement = byId('measurements', measurementId);
+    const channel = byId('channels', measurement.channel_id);
+    simulationMeasurement = measurementId;
+    $('project-simulation-channel').textContent = `${measurement.name} · ${channel.name}`;
+    $('simulation-raw-label').textContent = `Testwert (${channel.unit})`;
+    $('simulation-raw').value = '';
+    $('simulation-polarity').value = '';
+    $('simulation-result').hidden = true;
+    renderProjectLayout();
+    $('simulation-raw').focus();
+  }
+  $('project-simulation-cancel').addEventListener('click', () => {
+    simulationMeasurement = undefined;
+    renderProjectLayout();
+    $('tab-measurement').focus();
+  });
+  $('simulation-raw').addEventListener('input', () => { $('simulation-result').hidden = true; });
+  $('simulation-polarity').addEventListener('change', () => { $('simulation-result').hidden = true; });
+  const formatSimulation = number => number.toLocaleString('de-DE', {
+    maximumSignificantDigits: 12,
+    notation: Math.abs(number) >= 1e9 || (number !== 0 && Math.abs(number) < 1e-6) ? 'scientific' : 'standard',
+  });
+  $('project-simulation-form').addEventListener('submit', guard(async event => {
+    event.preventDefault();
+    ensureSimulationSource();
+    if (!simulationMeasurement) return;
+    const measurement = byId('measurements', simulationMeasurement);
+    const channel = byId('channels', measurement.channel_id);
+    const text = $('simulation-raw').value;
+    const raw = text === '' ? NaN : Number(text);
+    const polarity = Number($('simulation-polarity').value);
+    if (!Number.isFinite(raw) || ![-1, 1].includes(polarity)) throw new Error('Testwert und Ausrichtung angeben.');
+    $('simulation-result').hidden = true;
+    const data = await exclusiveProjectRequest('simulate_measurement', {
+      expected_revision: baseRevision, measurement_id: measurement.id, raw_value: raw, polarity,
+    });
+    if (data.simulated !== true || data.measurement_id !== measurement.id || data.channel_id !== channel.id ||
+        data.raw_unit !== channel.unit || data.polarity !== polarity || !Number.isFinite(data.kw) || !Number.isFinite(data.scale)) {
+      throw new Error('Testergebnis passt nicht zur gewählten Messung.');
+    }
+    $('simulation-kw').textContent = `Simuliert: ${formatSimulation(data.kw)} kW`;
+    $('simulation-calculation').textContent = `Testwert ${formatSimulation(raw)} ${data.raw_unit} · Faktor ${formatSimulation(data.scale)} · Ausrichtung ${polarity === 1 ? '+1' : '−1'}`;
+    $('simulation-direction').textContent = measurement.role === 'grid'
+      ? (data.kw > 0 ? 'Netzbezug' : data.kw < 0 ? 'Einspeisung' : 'Keine Nettoleistung') : '';
+    $('simulation-direction').hidden = !$('simulation-direction').textContent;
+    $('simulation-result').hidden = false;
+    message('');
+  }));
   const template = value => isV2(project) ? M.migrateProjectV1ToV2(value) : value;
   $('project-new').addEventListener('click', guard(() => stage(template(examples.simple), 'Neue einfache Vorlage')));
   $('project-reference').addEventListener('click', guard(() => stage(template(examples.reference), 'Anonymisiertes Referenzbeispiel')));
@@ -481,7 +546,7 @@
     if (migrationPreview) {
       const {revision, source_revision} = migrationPreview;
       try {
-        const data = await migrationRequest('migrate', {expected_revision: revision, source_revision});
+        const data = await exclusiveProjectRequest('migrate', {expected_revision: revision, source_revision});
         const stored = M.loadProjectDocument(data.project_json);
         if (!isV2(stored)) throw new Error('Der neue Speicherstand konnte nicht bestätigt werden.');
         accept(stored, 'Anlagenstruktur in Home Assistant gespeichert. Der bisherige Stand ist gesichert.', data.revision);

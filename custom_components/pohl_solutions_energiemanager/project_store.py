@@ -11,6 +11,7 @@ from typing import Any, NoReturn
 from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
+from .core.measurement_binding import simulate_power_measurement
 from .core.project import COLLECTIONS, MAX_BYTES, export_project_json, load_project_json, project_summary, validate_project
 from .core.project_migration import commit_project_v2, preview_project_v2
 from .core.project_v2 import export_project_v2_json, load_project_v2_json, project_summary_v2, validate_project_v2
@@ -43,6 +44,11 @@ def _legacy_constant(value):
 def _validate_stored(data, namespace):
     validator = validate_project_v2 if namespace.schema_version == 2 else validate_project
     return validator(data)
+
+
+def _project_revision(project):
+    canonical = json.dumps(project, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
+    return sha256(canonical.encode("utf-8")).hexdigest()
 
 
 class ProjectStore:
@@ -202,10 +208,41 @@ class ProjectStore:
                 raise asyncio.CancelledError
             return self.snapshot()
 
+    def _sync_simulate_measurement(self, expected_revision, measurement_id, raw_value, polarity):
+        try:
+            current = self._namespace.get("active")
+        except StorageSchemaError as err:
+            raise ProjectConflictError("Das gespeicherte Projektformat wurde geändert. Integration neu laden.") from err
+        if current is None:
+            raise ValueError("Für den Test wird ein gespeichertes Projekt benötigt.")
+        project = _validate_stored(current.data, self._namespace)
+        if _project_revision(project) != expected_revision:
+            return current.revision, project, None
+        result = simulate_power_measurement(project, measurement_id, raw_value, polarity=polarity)
+        return current.revision, project, result
+
+    async def async_simulate_measurement(
+        self, expected_revision: str, measurement_id: str, raw_value: float, polarity: int,
+    ) -> dict[str, Any]:
+        """Check the saved mapping and normalize a caller-supplied synthetic value."""
+        async with self._lock:
+            if not self._loaded:
+                raise RuntimeError("Project storage must be loaded before simulation")
+            checked, cancelled = await self._async_durable_call(
+                self._sync_simulate_measurement, expected_revision, measurement_id, raw_value, polarity,
+            )
+            # A fresh same-schema snapshot also lets the normal Get recover from
+            # a concurrent edit. The simulation never writes the document.
+            self._document_revision, self._project, result = checked
+            if cancelled:
+                raise asyncio.CancelledError
+            if result is None:
+                raise ProjectConflictError("Das gespeicherte Projekt wurde geändert. Projekt neu laden und den Test wiederholen.")
+            return result
+
     @property
     def revision(self) -> str:
-        canonical = json.dumps(self._project, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
-        return sha256(canonical.encode("utf-8")).hexdigest()
+        return _project_revision(self._project)
 
     def snapshot(self) -> dict[str, Any]:
         return {**self.export(), **self.status()}

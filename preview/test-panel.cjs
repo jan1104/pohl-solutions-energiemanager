@@ -424,3 +424,63 @@ test('source editor switches source kind and only persists the selected fields o
   t.reply(request, {project_json: request.project_json, revision: 'source-r2'});
   await saving;
 });
+
+
+const simulatedPower = {
+  simulated: true, measurement_id: 'grid_primary', channel_id: 'power_grid',
+  raw_unit: 'W', scale: 0.5, polarity: -1, kw: -1.25, source_kind: 'modbus',
+};
+
+test('measurement simulation bridge validates and forwards only its read-only request fields', async () => {
+  const revision = 'a'.repeat(64);
+  const t = setup(req => req.type.endsWith('/simulate_measurement')
+    ? {...simulatedPower, revision: 'ignore', credentials: 'ignore'}
+    : {revision, project_json: '{}'});
+  const fields = {expected_revision: revision, measurement_id: 'grid_primary', raw_value: 2500, polarity: -1};
+  await t.request('simulate_measurement', fields, 'early');
+  assert.equal(t.calls.length, 0);
+  await t.request('load', {}, 'load');
+  for (const [i, invalid] of [{raw_value: '2500'}, {polarity: 0}, {raw_value: Infinity}].entries()) {
+    await t.request('simulate_measurement', {...fields, ...invalid}, `bad-${i}`);
+  }
+  assert.equal(t.calls.length, 1);
+  await t.request('simulate_measurement', {...fields, project_json: 'ignore'}, 'test');
+  assert.deepEqual(JSON.parse(JSON.stringify(t.calls.at(-1))), {type: 'pohl_energy/project/simulate_measurement', ...fields});
+  assert.deepEqual(JSON.parse(JSON.stringify(t.sent.at(-1).data.data)), simulatedPower);
+  assert.equal(t.panel._revision, revision);
+  t.panel.hass = {callWS: async () => ({...simulatedPower, simulated: false})};
+  await t.request('simulate_measurement', fields, 'not-synthetic');
+  assert.equal(t.sent.at(-1).data.ok, false);
+});
+
+test('measurement simulation uses the saved configuration and keeps the result out of project data', async () => {
+  const t = editorSetup(), field = id => t.elements.get(id);
+  const v1 = JSON.parse(fs.readFileSync(require('node:path').join(__dirname, '../examples/simple-project.json'), 'utf8'));
+  const fixture = require('./project-model.js').migrateProjectV1ToV2(v1);
+  fixture.channels[0].unit = 'W';
+  fixture.channels[0].source = {kind: 'modbus', address: 0, function_code: 4, data_type: 's32', scale: 0.5};
+  const revision = 'a'.repeat(64);
+  t.reply(t.outgoing.at(-1), {project_json: JSON.stringify(fixture), revision});
+  await Promise.resolve(); await Promise.resolve();
+  await t.click('tab-measurement');
+  const row = field('project-view').children.find(e => e.className === 'project-row');
+  const action = row.children.find(e => e.className === 'project-toolbar').children.find(e => e.textContent === 'Mit Testwert prüfen');
+  await action.handlers.get('click')();
+  assert.equal(field('project-simulation-panel').hidden, false);
+  const submit = () => field('project-simulation-form').handlers.get('submit')({preventDefault() {}});
+  await submit();
+  assert.equal(t.outgoing.length, 1);
+  field('simulation-raw').value = '2500';
+  field('simulation-polarity').value = '-1';
+  const reading = submit(), request = t.outgoing.at(-1);
+  assert.equal(request.operation, 'simulate_measurement');
+  assert.equal(request.expected_revision, revision);
+  assert.equal(request.raw_value, 2500);
+  assert.equal(request.polarity, -1);
+  t.reply(request, simulatedPower); await reading;
+  assert.equal(field('simulation-kw').textContent, 'Simuliert: -1,25 kW');
+  assert.equal(field('simulation-direction').textContent, 'Einspeisung');
+  assert.deepEqual(JSON.parse(field('project-json').value), fixture);
+  field('simulation-raw').handlers.get('input')();
+  assert.equal(field('simulation-result').hidden, true);
+});

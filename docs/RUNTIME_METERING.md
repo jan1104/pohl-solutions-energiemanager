@@ -37,3 +37,8 @@ Kanonische Quellen-IDs werden noch nicht aus Netzwerkendpunkten, Registerbereich
 26 zusätzliche synthetische Tests prüfen Projektzuordnung, W/kW, Skalierung, Ausrichtung, MQTT-Quellbeschreibung, Zeit-/Fehlerfortpflanzung und unveränderte Eingaben. Insgesamt 49 Tests für diese beiden Bausteine. Kein Live-Gerätenachweis.
 
 Nächster Schritt: Quellenalias-/Abdeckungsprüfung und tatsächliche Messzeit aus einem ausdrücklich lesenden Adapter anbinden. Erst danach können diese Werte für Plan/Ist und späteren Regelbetrieb verwendet werden.
+
+
+## Simulation mit gespeichertem Messkanal
+
+Das HA-Panel kann auf ausdrückliche Anforderung einen numerischen Testwert über denselben Bindungsbaustein wie eine gelieferte Messung umrechnen. Die Bindung akzeptiert Projekte in Format 1 oder 2. Der Administratoraufruf prüft die gespeicherte Revision, verwendet rein synthetische Zeitangaben und liefert nur das gekennzeichnete Ergebnis. Werte, Ausrichtung und Resultat bleiben außerhalb der Projektablage und Planung.

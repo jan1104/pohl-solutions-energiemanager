@@ -1,6 +1,6 @@
 # Entwicklungsformat 2: Anlage vor Anschluss und Messgerät
 
-Stand 09.11.2026. Der Entwicklungsstand kann vorhandene SQLite-Projekte in Format 1 und 2 lesen und im jeweiligen Format speichern. Neue Projekte starten in Format 1. Beim Setup behält ein vorhandenes Projekt seine Version. Version 0.5.1 verwendet Format 1. Die Projektoberfläche im Entwicklungsstand unterstützt beide Formate. Die lokale Vorschau startet mit einem leeren Projekt in Format 2.
+Stand 10.11.2026. Der Entwicklungsstand kann vorhandene SQLite-Projekte in Format 1 und 2 lesen und im jeweiligen Format speichern. Neue Projekte starten in Format 1. Beim Setup behält ein vorhandenes Projekt seine Version. Version 0.5.1 verwendet Format 1. Die Projektoberfläche im Entwicklungsstand unterstützt beide Formate. Die lokale Vorschau startet mit einem leeren Projekt in Format 2.
 
 ## Bestätigter Bedienablauf
 
@@ -84,3 +84,10 @@ Der Assistent prüft die Projektstruktur. Die Quelle und ihre Vorzeichen- und Sk
 Unter **Messungen** am gewünschten Eintrag **Quelle einrichten** oder **Quelle bearbeiten** wählen. Das Formular zeigt Kanal, Messgerät und Einheit. Für Modbus sind die dokumentierte 0-basierte Registeradresse, FC03 oder FC04 und das Datenformat erforderlich. Ein optionaler Faktor multipliziert den dekodierten Wert. Für MQTT sind das Topic und bei Bedarf der JSON-Pfad einzutragen. Für Home Assistant wird die Entitäts-ID eingetragen. Mit **Offen lassen** lässt sich die Zuordnung zurücksetzen.
 
 **Quelle übernehmen** ändert den Projektentwurf. **Speichern** übernimmt ihn in die Projektablage. Beim Wechsel der Quellenart werden die Felder der bisherigen Quelle entfernt. Messort, Messgerät, Kanalkennung und Einheit bleiben erhalten. Das Formular konfiguriert die Herkunft. Die Verbindung, die Registerbelegung am konkreten Gerät, die Vorzeichenrichtung und die Messwertfrische müssen für spätere Lesezugriffe separat geprüft werden. Desktop und Mobilansicht wurden mit einer synthetischen Projektkonfiguration geprüft.
+
+
+## Messkanal mit einem Testwert prüfen
+
+Im Home-Assistant-Panel zuerst das Projekt speichern. Anschließend unter **Messungen** an einem Kanal mit eingerichteter Quelle **Mit Testwert prüfen** wählen. Den bereits dekodierten Beispielwert in der Kanaleinheit und die Ausrichtung für diesen Test eingeben. Die Berechnung wendet den konfigurierten Faktor an und gibt kW aus. Bei der Netzbilanz bedeutet ein positiver Wert Bezug und ein negativer Wert Einspeisung.
+
+Der Test verwendet die gespeicherte Projektversion. Bei einer zwischenzeitlichen Änderung muss der Stand neu geladen werden. Eingabe und Ergebnis erscheinen ausschließlich in der Simulation. Sie werden weder gespeichert noch als Messdaten für die Planung verwendet. Die Berechnung prüft Umrechnung und Ausrichtung mit vorgegebenen Werten. Für eine Prüfung der Registerdekodierung, Verbindung oder Messwertfrische ist später ein eigener Lesevorgang mit belegten Geräteparametern erforderlich.

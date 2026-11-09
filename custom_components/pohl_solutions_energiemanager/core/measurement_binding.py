@@ -1,10 +1,11 @@
 """Bind supplied decoded readings to project measurements, without any I/O."""
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from .metering import PowerSample, PowerValue, _finite_number, evaluate_power
 from .project import validate_project
+from .project_v2 import validate_project_v2
 
 
 @dataclass(frozen=True, slots=True)
@@ -58,7 +59,9 @@ def bind_power_measurement(
     """
     if type(polarity) is not int or polarity not in (-1, 1):
         raise ValueError("An explicit polarity of +1 or -1 is required")
-    validated = validate_project(project)
+    schema_version = project.get("schema_version") if isinstance(project, dict) else None
+    validator = validate_project_v2 if type(schema_version) in (int, float) and schema_version == 2 else validate_project
+    validated = validator(project)
     measurement = next((m for m in validated["measurements"] if m["id"] == measurement_id), None)
     if measurement is None:
         raise ValueError(f"Unknown measurement: {measurement_id}")
@@ -91,3 +94,29 @@ def bind_power_measurement(
         tuple(sorted(source.items())), channel["unit"], scale, polarity,
         reading.received_at if reading else None, value,
     )
+
+
+def simulate_power_measurement(project: dict, measurement_id: str, raw_value: float, *, polarity: int) -> dict:
+    """Run the normal binder for a supplied decoded value with synthetic timing."""
+    if not _finite_number(raw_value):
+        raise ValueError("Der Testwert muss eine endliche Zahl sein.")
+    synthetic_time = datetime(2000, 1, 1, tzinfo=timezone.utc)
+    bound = bind_power_measurement(
+        project, measurement_id,
+        RawPowerReading("synthetic-simulation", raw_value, synthetic_time, synthetic_time),
+        polarity=polarity, now=synthetic_time, max_age=timedelta(0), max_skew=timedelta(0),
+    )
+    if bound.source_kind == "unconfigured":
+        raise ValueError("Für diesen Messkanal fehlt eine konfigurierte Quelle.")
+    if not bound.value.valid:
+        raise ValueError("Die Umrechnung ergibt keine endliche Leistung.")
+    return {
+        "simulated": True,
+        "measurement_id": bound.measurement_id,
+        "channel_id": bound.channel_id,
+        "raw_unit": bound.raw_unit,
+        "scale": bound.scale,
+        "polarity": bound.polarity,
+        "kw": bound.value.power_kw,
+        "source_kind": bound.source_kind,
+    }

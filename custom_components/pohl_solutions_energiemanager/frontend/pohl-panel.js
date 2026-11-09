@@ -54,12 +54,13 @@
       if (event.origin !== window.location.origin || event.source !== this._frame?.contentWindow) return;
       const msg = event.data;
       if (!msg || typeof msg !== 'object' || msg.type !== REQUEST || typeof msg.id !== 'string' || !/^[a-zA-Z0-9_-]{1,100}$/.test(msg.id)) return;
-      if (!['load', 'save', 'system', 'migration_preview', 'migrate'].includes(msg.operation)) { this._reply(msg.id, false, 'Nicht erlaubte Operation.'); return; }
+      if (!['load', 'save', 'system', 'migration_preview', 'migrate', 'simulate_measurement'].includes(msg.operation)) { this._reply(msg.id, false, 'Nicht erlaubte Operation.'); return; }
       if (this._seen.has(msg.id)) { this._reply(msg.id, false, 'Anfrage wurde bereits bearbeitet.'); return; }
       this._seen.add(msg.id); if (this._seen.size > 1000) this._seen.delete(this._seen.values().next().value);
       const statusRead = msg.operation === 'system';
       const migrationPreview = msg.operation === 'migration_preview';
       const migration = migrationPreview || msg.operation === 'migrate';
+      const simulation = msg.operation === 'simulate_measurement';
       if (statusRead ? this._systemBusy : this._busy) { this._reply(msg.id, false, statusRead ? 'Eine Statusanfrage läuft bereits. Bitte kurz warten.' : 'Eine Projektanfrage läuft bereits. Bitte kurz warten.'); return; }
       if (!this._hass?.callWS) { this._reply(msg.id, false, 'Home Assistant ist noch nicht verbunden.'); return; }
       if (msg.operation === 'save' && (!this._loaded || typeof msg.expected_revision !== 'string' || !msg.expected_revision || msg.expected_revision.length > 128 || typeof msg.project_json !== 'string' || new TextEncoder().encode(msg.project_json).length > 2 * 1024 * 1024)) { this._reply(msg.id, false, 'Vor dem Speichern Projekt laden und gültige Projektdaten samt Ausgangsversion übergeben.'); return; }
@@ -67,10 +68,19 @@
         this._reply(msg.id, false, 'Für die Umstellung ist ein geprüfter Projektstand erforderlich.');
         return;
       }
+      if (simulation && (!this._loaded || typeof msg.expected_revision !== 'string' || !/^[a-f0-9]{64}$/.test(msg.expected_revision) ||
+          typeof msg.measurement_id !== 'string' || !/^[a-zA-Z0-9_-]{1,80}$/.test(msg.measurement_id) ||
+          !Number.isFinite(msg.raw_value) || ![-1, 1].includes(msg.polarity))) {
+        this._reply(msg.id, false, 'Gespeicherten Messkanal, gültigen Testwert und Ausrichtung angeben.');
+        return;
+      }
       if (statusRead) this._systemBusy = true; else this._busy = true; let timeout;
       try {
         let request;
-        if (migration) {
+        if (simulation) {
+          request = {type: 'pohl_energy/project/simulate_measurement', expected_revision: msg.expected_revision,
+            measurement_id: msg.measurement_id, raw_value: msg.raw_value, polarity: msg.polarity};
+        } else if (migration) {
           request = {type: `pohl_energy/project/${msg.operation}`, expected_revision: msg.expected_revision};
           if (!migrationPreview) request.source_revision = msg.source_revision;
         } else {
@@ -78,6 +88,17 @@
         }
         const data = await Promise.race([this._hass.callWS(request), new Promise((_, reject) => { timeout = setTimeout(() => reject(new Error(statusRead ? 'Der Systemstatus konnte nicht rechtzeitig geladen werden. Bitte erneut versuchen.' : 'Zeitüberschreitung. Speicherstand vor erneutem Speichern laden; Entwurf bleibt erhalten.')), 15000); })]);
         if (statusRead) { this._reply(msg.id, true, this._validateSystemResponse(data)); return; }
+        if (simulation) {
+          if (!data || data.simulated !== true || data.measurement_id !== msg.measurement_id ||
+              typeof data.channel_id !== 'string' || !/^[a-zA-Z0-9_-]{1,80}$/.test(data.channel_id) ||
+              !['W', 'kW'].includes(data.raw_unit) || !['modbus', 'mqtt', 'ha'].includes(data.source_kind) ||
+              !Number.isFinite(data.kw) || !Number.isFinite(data.scale) || data.scale === 0 || data.polarity !== msg.polarity) {
+            throw new Error('Ungültige Antwort zur simulierten Messung.');
+          }
+          const {simulated, measurement_id, channel_id, raw_unit, scale, polarity, kw, source_kind} = data;
+          this._reply(msg.id, true, {simulated, measurement_id, channel_id, raw_unit, scale, polarity, kw, source_kind});
+          return;
+        }
         if (!data || typeof data.revision !== 'string' || !(data.project_json === null || typeof data.project_json === 'string')) throw new Error('Unvollständige Antwort von Home Assistant.');
         if (migration) {
           if (typeof data.project_json !== 'string' || new TextEncoder().encode(data.project_json).length > 2 * 1024 * 1024) throw new Error('Ungültiger Projektstand für die Umstellung.');
@@ -90,7 +111,7 @@
         }
         this._revision = data.revision; this._loaded = true; this._reply(msg.id, true, data);
       } catch (err) {
-        const conflict = err?.code === 'conflict';
+        const conflict = err?.code === 'conflict' && !simulation;
         this._reply(msg.id, false, conflict ? 'Versionskonflikt: Der HA-Speicherstand wurde anderswo geändert. Ihr Entwurf bleibt erhalten. Bitte aktuellen Stand laden und vergleichen.' : String(err?.message || err?.code || 'Projektanfrage fehlgeschlagen.'));
       } finally { clearTimeout(timeout); if (statusRead) this._systemBusy = false; else this._busy = false; }
     }

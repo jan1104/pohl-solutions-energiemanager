@@ -1,7 +1,8 @@
 # Änderungen
 
-## Unveröffentlicht — 2026-11-09
+## Unveröffentlicht — 2026-11-10
 
+- Gespeicherte Messkanäle im HA-Panel mit einem Testwert prüfen. Das simulierte Ergebnis zeigt die Umrechnung in kW und die gewählte Ausrichtung.
 - Messquellen in Format-2-Projekten direkt bearbeiten. Das Formular unterstützt Modbus mit FC03/FC04, MQTT, Home Assistant und offene Quellen. Ein Wechsel ersetzt nur die Quellenfelder.
 - Netzmessung am Format-2-Anschluss zuordnen. Die Auswahl zeigt freie Gesamtwirkleistungskanäle desselben Anschlusses. Neue Kanäle benötigen Name und Einheit. Offene Datenquellen bleiben sichtbar.
 - Home-Assistant-Projekte können im Projektmenü die Anlagenstruktur prüfen und ausdrücklich übernehmen. Die Umstellung prüft beide Quellrevisionen und sichert das Original in SQLite.
