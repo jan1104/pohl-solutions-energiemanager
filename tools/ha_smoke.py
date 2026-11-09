@@ -264,6 +264,104 @@ async def sqlite_project_version_checks(hass):
             assert legacy.read_bytes() == raw
 
 
+async def websocket_project_migration_checks(hass, admin_ws, non_admin_ws, original):
+    from custom_components.pohl_solutions_energiemanager.const import DOMAIN
+    from custom_components.pohl_solutions_energiemanager.core.storage import SQLiteStorage
+
+    preview_command = "pohl_energy/project/migration_preview"
+    commit_command = "pohl_energy/project/migrate"
+    revision = original["revision"]
+    expected = {"expected_revision": revision}
+    for command, args in ((preview_command, expected), (commit_command, {**expected, "source_revision": 1})):
+        denied = await non_admin_ws(command, **args)
+        assert denied["error"]["code"] == "unauthorized", denied
+    stale_preview = await admin_ws(preview_command, expected_revision="0" * 64)
+    assert stale_preview["error"]["code"] == "conflict", stale_preview
+
+    response = await admin_ws(preview_command, **expected)
+    assert response["success"], response
+    preview = response["result"]
+    assert preview["revision"] == revision
+    assert type(preview["source_revision"]) is int and preview["source_revision"] > 0
+    source = json.loads(original["project_json"])
+    draft = json.loads(preview["project_json"])
+    assert draft == {**source, "schema_version": 2, "plants": []}
+    assert preview["project_json"] == json.dumps(draft, ensure_ascii=False, separators=(",", ":"))
+    assert (await admin_ws("pohl_energy/project/get"))["result"] == original
+
+    # Even an identical save changes SQLite's revision. The old preview cannot
+    # be used to authorize migration merely because the content SHA stayed equal.
+    saved = await admin_ws("pohl_energy/project/set", project_json=original["project_json"], **expected)
+    assert saved["success"] and saved["result"] == original, saved
+    stale = await admin_ws(commit_command, source_revision=preview["source_revision"], **expected)
+    assert stale["error"]["code"] == "conflict", stale
+    assert (await admin_ws("pohl_energy/project/get"))["result"] == original
+
+    refreshed = (await admin_ws(preview_command, **expected))["result"]
+    assert refreshed["source_revision"] == preview["source_revision"] + 1
+    migrated = await admin_ws(commit_command, source_revision=refreshed["source_revision"], **expected)
+    assert migrated["success"], migrated
+    snapshot = migrated["result"]
+    assert snapshot["revision"] != revision
+    assert json.loads(snapshot["project_json"]) == json.loads(refreshed["project_json"])
+    assert snapshot["summary"]["schema_version"] == 2
+    assert (await admin_ws("pohl_energy/project/get"))["result"] == snapshot
+    system = (await admin_ws("pohl_energy/system/get"))["result"]
+    assert system["database"]["schema_version"] == 2
+    repeated = await admin_ws(commit_command, source_revision=refreshed["source_revision"], **expected)
+    assert repeated["error"]["code"] == "conflict", repeated
+
+    def read_backup():
+        repository = SQLiteStorage(hass.config.path(".storage", f"{DOMAIN}.sqlite3"))
+        namespace = repository.for_module("global", "project", schema_version=2)
+        return namespace.get("original_v1").data
+
+    assert await hass.async_add_executor_job(read_backup) == source
+    return snapshot
+
+
+async def cancelled_project_migration_check(hass):
+    from threading import Event
+
+    from custom_components.pohl_solutions_energiemanager.project_store import ProjectStore
+
+    with tempfile.TemporaryDirectory() as isolated:
+        root = Path(isolated)
+        with patch.object(hass.config, "path", side_effect=lambda *parts: str(root.joinpath(*parts))):
+            store = ProjectStore(hass)
+            await store.async_load()
+            await store.async_ensure_project("CI Migrationsabbruch", "cancel_fixture")
+            preview = await store.async_migration_preview(store.revision)
+            started, release = Event(), Event()
+            commit = store._sync_migrate_project
+
+            def delayed_commit(*args):
+                started.set()
+                if not release.wait(5):
+                    raise OSError("CI migration release timeout")
+                return commit(*args)
+
+            with patch.object(store, "_sync_migrate_project", side_effect=delayed_commit):
+                task = asyncio.create_task(store.async_migrate_project(preview["revision"], preview["source_revision"]))
+                try:
+                    assert await hass.async_add_executor_job(started.wait, 5)
+                    task.cancel()
+                    await asyncio.sleep(0)
+                    assert not task.done()
+                finally:
+                    release.set()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+                else:
+                    raise AssertionError("Migration swallowed cancellation")
+            reloaded = ProjectStore(hass)
+            await reloaded.async_load()
+            assert reloaded.snapshot() == store.snapshot()
+            assert json.loads(reloaded.export()["project_json"]) == json.loads(preview["project_json"])
+
+
 async def main() -> None:
     from aiohttp import web
     from homeassistant.auth import auth_manager_from_config
@@ -339,6 +437,7 @@ async def main() -> None:
         try:
             await sqlite_migration_checks(hass)
             await sqlite_project_version_checks(hass)
+            await cancelled_project_migration_check(hass)
             now = datetime.now(timezone.utc)
             start = now.replace(minute=now.minute // 15 * 15, second=0, microsecond=0)
             rows = [{
@@ -646,6 +745,12 @@ async def main() -> None:
                     after_reload = (await admin_ws("pohl_energy/project/get"))["result"]
                     assert after_reload["project_json"] == exported["project_json"]
                     assert after_reload["revision"] == exported["revision"]
+                    migrated_snapshot = await websocket_project_migration_checks(hass, admin_ws, non_admin_ws, after_reload)
+                finally:
+                    assert await async_unload_entry(hass, project_entry)
+                assert await async_setup_entry(hass, project_entry)
+                try:
+                    assert (await admin_ws("pohl_energy/project/get"))["result"] == migrated_snapshot
                 finally:
                     assert await async_unload_entry(hass, project_entry)
             coordinator = PohlEnergyCoordinator(hass, entry)
@@ -747,7 +852,7 @@ async def main() -> None:
                 await runner.cleanup()
             # HA owns the shared HTTP session and closes it on its close event.
             await hass.async_stop(force=True)
-        print("Real HA smoke passed: project-only setup, versioned project persistence/services/unload, config flow, forecast migration, fixed/entity/HTTP prices, sensors, missing source/SOC; planning only.")
+        print("Real HA smoke passed: project-only setup, versioned project migration/persistence/services/unload, config flow, forecast migration, fixed/entity/HTTP prices, sensors, missing source/SOC; planning only.")
 
 
 if __name__ == "__main__":

@@ -1,7 +1,8 @@
 # Änderungen
 
-## Unveröffentlicht — 2026-11-08
+## Unveröffentlicht — 2026-11-09
 
+- Home-Assistant-Projekte können im Projektmenü die Anlagenstruktur prüfen und ausdrücklich übernehmen. Die Umstellung prüft beide Quellrevisionen und sichert das Original in SQLite.
 - Format-2-Projekte führen zuerst durch die Anlage und danach zum Netzanschluss. Optionale Anschlussdaten lassen sich aufklappen. Offene Netzmessungen sind im Aufbau erkennbar. Die lokale Vorschau startet mit diesem Ablauf.
 - Home Assistant öffnet vorhandene Projekte in Format 1 oder 2 und prüft Speicherimporte gegen das vorhandene Format. Format-2-Exporte bleiben im Importlimit. Veraltete Schreibzugriffe nach einem Schemawechsel melden einen Konflikt und laden den aktuellen Stand.
 - Explizite atomare Schema-Migration im Grundspeicher und vorbereiteter Projekt-Formatwechsel: Vorschau mit SHA/Revision, geschützter Originalstand, vollständiger Rollback und Erhalt der Herkunftsmetadaten. Die Migration erfolgt über eine separate Entwicklungs-API.

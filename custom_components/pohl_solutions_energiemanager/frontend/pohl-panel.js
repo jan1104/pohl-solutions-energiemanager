@@ -54,19 +54,40 @@
       if (event.origin !== window.location.origin || event.source !== this._frame?.contentWindow) return;
       const msg = event.data;
       if (!msg || typeof msg !== 'object' || msg.type !== REQUEST || typeof msg.id !== 'string' || !/^[a-zA-Z0-9_-]{1,100}$/.test(msg.id)) return;
-      if (!['load', 'save', 'system'].includes(msg.operation)) { this._reply(msg.id, false, 'Nicht erlaubte Operation.'); return; }
+      if (!['load', 'save', 'system', 'migration_preview', 'migrate'].includes(msg.operation)) { this._reply(msg.id, false, 'Nicht erlaubte Operation.'); return; }
       if (this._seen.has(msg.id)) { this._reply(msg.id, false, 'Anfrage wurde bereits bearbeitet.'); return; }
       this._seen.add(msg.id); if (this._seen.size > 1000) this._seen.delete(this._seen.values().next().value);
       const statusRead = msg.operation === 'system';
+      const migrationPreview = msg.operation === 'migration_preview';
+      const migration = migrationPreview || msg.operation === 'migrate';
       if (statusRead ? this._systemBusy : this._busy) { this._reply(msg.id, false, statusRead ? 'Eine Statusanfrage läuft bereits. Bitte kurz warten.' : 'Eine Projektanfrage läuft bereits. Bitte kurz warten.'); return; }
       if (!this._hass?.callWS) { this._reply(msg.id, false, 'Home Assistant ist noch nicht verbunden.'); return; }
       if (msg.operation === 'save' && (!this._loaded || typeof msg.expected_revision !== 'string' || !msg.expected_revision || msg.expected_revision.length > 128 || typeof msg.project_json !== 'string' || new TextEncoder().encode(msg.project_json).length > 2 * 1024 * 1024)) { this._reply(msg.id, false, 'Vor dem Speichern Projekt laden und gültige Projektdaten samt Ausgangsversion übergeben.'); return; }
+      if (migration && (!this._loaded || typeof msg.expected_revision !== 'string' || !/^[a-f0-9]{64}$/.test(msg.expected_revision) || (!migrationPreview && (!Number.isSafeInteger(msg.source_revision) || msg.source_revision < 1)))) {
+        this._reply(msg.id, false, 'Für die Umstellung ist ein geprüfter Projektstand erforderlich.');
+        return;
+      }
       if (statusRead) this._systemBusy = true; else this._busy = true; let timeout;
       try {
-        const request = statusRead ? {type: 'pohl_energy/system/get'} : msg.operation === 'load' ? {type: 'pohl_energy/project/get'} : {type: 'pohl_energy/project/set', project_json: msg.project_json, expected_revision: msg.expected_revision};
+        let request;
+        if (migration) {
+          request = {type: `pohl_energy/project/${msg.operation}`, expected_revision: msg.expected_revision};
+          if (!migrationPreview) request.source_revision = msg.source_revision;
+        } else {
+          request = statusRead ? {type: 'pohl_energy/system/get'} : msg.operation === 'load' ? {type: 'pohl_energy/project/get'} : {type: 'pohl_energy/project/set', project_json: msg.project_json, expected_revision: msg.expected_revision};
+        }
         const data = await Promise.race([this._hass.callWS(request), new Promise((_, reject) => { timeout = setTimeout(() => reject(new Error(statusRead ? 'Der Systemstatus konnte nicht rechtzeitig geladen werden. Bitte erneut versuchen.' : 'Zeitüberschreitung. Speicherstand vor erneutem Speichern laden; Entwurf bleibt erhalten.')), 15000); })]);
         if (statusRead) { this._reply(msg.id, true, this._validateSystemResponse(data)); return; }
         if (!data || typeof data.revision !== 'string' || !(data.project_json === null || typeof data.project_json === 'string')) throw new Error('Unvollständige Antwort von Home Assistant.');
+        if (migration) {
+          if (typeof data.project_json !== 'string' || new TextEncoder().encode(data.project_json).length > 2 * 1024 * 1024) throw new Error('Ungültiger Projektstand für die Umstellung.');
+          if (migrationPreview) {
+            if (data.revision !== msg.expected_revision || !Number.isSafeInteger(data.source_revision) || data.source_revision < 1) throw new Error('Ungültige Ausgangsversion der Umstellung.');
+            this._reply(msg.id, true, {revision: data.revision, source_revision: data.source_revision, project_json: data.project_json});
+            return;
+          }
+          if (!/^[a-f0-9]{64}$/.test(data.revision) || data.revision === msg.expected_revision) throw new Error('Die gespeicherte Umstellung konnte nicht bestätigt werden.');
+        }
         this._revision = data.revision; this._loaded = true; this._reply(msg.id, true, data);
       } catch (err) {
         const conflict = err?.code === 'conflict';

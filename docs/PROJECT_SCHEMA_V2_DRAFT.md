@@ -1,6 +1,6 @@
 # Entwicklungsformat 2: Anlage vor Anschluss und Messgerät
 
-Stand 08.11.2026. Der Entwicklungsstand kann vorhandene SQLite-Projekte in Format 1 und 2 lesen und im jeweiligen Format speichern. Neue Projekte starten in Format 1. Beim Setup behält ein vorhandenes Projekt seine Version. Version 0.5.1 verwendet Format 1. Die Projektoberfläche im Entwicklungsstand unterstützt beide Formate. Die lokale Vorschau startet mit einem leeren Projekt in Format 2.
+Stand 09.11.2026. Der Entwicklungsstand kann vorhandene SQLite-Projekte in Format 1 und 2 lesen und im jeweiligen Format speichern. Neue Projekte starten in Format 1. Beim Setup behält ein vorhandenes Projekt seine Version. Version 0.5.1 verwendet Format 1. Die Projektoberfläche im Entwicklungsstand unterstützt beide Formate. Die lokale Vorschau startet mit einem leeren Projekt in Format 2.
 
 ## Bestätigter Bedienablauf
 
@@ -47,7 +47,7 @@ Alle Zahlen müssen endlich und betragsmäßig höchstens `9007199254740991` sei
 
 Grenztests vergleichen exakt 2 MiB und ein Byte darüber, Zahlenbereich, Unterlauf-Minimalwert, negative Null, bool/null, Steuerzeichen/Escapes, Emoji-Schlüssel, einzelne Surrogate und unveränderte Originale. Format 1 behält sein bisheriges Verhalten. Eine Migration außerhalb des neuen Wertebereichs bricht mit Fehler ab; sie rundet oder entfernt keine Nutzerdaten. Der versionsbewusste Speichervertrag ist unten beschrieben.
 
-## Expliziter Persistenzwechsel (Entwicklungs-API)
+## Expliziter Persistenzwechsel
 
 `core/project_migration.py` bietet eine lesende Vorschau des aktiven SQLite-Projekts mit Dokumentrevision, Inhalts-SHA, unabhängigem Format-2-Entwurf und Konfigurationshinweisen. Der ausdrückliche Commit verlangt beide Quellkennungen und berechnet den Entwurf erneut aus dem dauerhaft gespeicherten Original; Änderungen am Vorschauobjekt werden nicht übernommen.
 
@@ -55,8 +55,16 @@ Der Wechsel speichert in einer Transaktion den neuen aktiven Stand, die ursprün
 
 ## Versionsbewusste Speicherung in Home Assistant
 
-Der ProjectStore öffnet die vorhandene Namespace-Version 1 oder 2 und prüft den Dokumentinhalt gegen dieselbe Version. Ein frischer Namespace startet in Version 1. Der Formatwechsel bleibt eine separate Entwicklungsoperation. Ein leerer Namespace in Version 2 führt zu einem Fehler, auch bei vorhandener Legacy-Datei.
+Der ProjectStore öffnet die vorhandene Namespace-Version 1 oder 2 und prüft den Dokumentinhalt gegen dieselbe Version. Ein frischer Namespace startet in Version 1. Der Formatwechsel ist eine eigene Aktion im Projektmenü. Ein leerer Namespace in Version 2 führt zu einem Fehler, auch bei vorhandener Legacy-Datei.
 
 Für Projekte in Format 2 verwendet die HA-Speicherschicht kompaktes UTF-8-JSON. Die Exportdatei passt dadurch in das Rohtextlimit des Imports. Beide Formate teilen die Prüfung auf doppelte JSON-Schlüssel und nicht endliche Zahlen. Import und Speichern übernehmen ausschließlich Dokumente in der aktuellen Namespace-Version. Die Statusantwort zu Format 2 enthält die Anlagenanzahl und strukturierte Hinweise zu offenen Zuordnungen und Messungen. Ein veralteter Schreibzugriff nach einem Schemawechsel lädt den aktuellen Stand und meldet einen Konflikt.
 
-Die CI-Prüfung nutzt eine temporäre SQLite-Datenbank mit Home Assistants Executor. Sie deckt expliziten Wechsel, Wiederöffnen, gleichformatigen Import, Schutz vor veralteten Schreibständen und Ablehnung unpassender Formate ab. Die Oberfläche für Anlage und Netzanschluss ist im Entwicklungsstand verfügbar. Im nächsten Schritt folgen die ausdrückliche Migrationsbestätigung für bestehende HA-Projekte und die geführte Zuordnung eines Messkanals zum Anschluss.
+Die CI-Prüfung nutzt eine temporäre SQLite-Datenbank mit Home Assistants Executor. Sie deckt expliziten Wechsel, Wiederöffnen, gleichformatigen Import, Schutz vor veralteten Schreibständen und Ablehnung unpassender Formate ab. Die Oberfläche für Anlage und Netzanschluss ist im Entwicklungsstand verfügbar. Die geführte Zuordnung eines Messkanals zum Anschluss folgt.
+
+## Bestehendes Projekt umstellen
+
+In Home Assistant unter **Projektoptionen → Anlagenstruktur** auf **Umstellung prüfen** klicken. Offene Bearbeitungen zuerst abschließen und speichern. Die Vorschau zeigt die geplante Struktur und offene Zuordnungen. **Verwerfen** schließt die Vorschau. **Umstellen und speichern** übernimmt den angezeigten Stand und hält das bisherige Projektdokument in der SQLite-Projektablage fest.
+
+Beide Anfragen erfordern ein Administratorkonto. Die Bestätigung bezieht sich auf den gespeicherten Inhalt und die SQLite-Revision der Vorschau. Hat sich der Speicherstand geändert, muss er neu geladen und erneut geprüft werden. Der Formatwechsel läuft in einer Transaktion. Bei einem leeren Projekt führt der nächste Schritt direkt zur ersten Anlage. Bei einem bestehenden Projekt wird die Zuordnung zur importierten Anlage als prüfbedürftig angezeigt.
+
+Die Browserprüfung deckte Verwerfen und Bestätigen in einer lokalen Testansicht bei 1440 und 390 Pixeln Breite ab. Die HA-Laufzeitprüfung verwendet eine separate temporäre Datenbank.

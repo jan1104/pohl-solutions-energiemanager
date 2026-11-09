@@ -1,4 +1,4 @@
-"""Explicit development-only project persistence transition; no HA activation.
+"""Explicit project persistence transition with source preservation.
 
 Call only from an explicit migration workflow with a format-2-capable UI.
 No storage is created by import, and preview performs reads only.
@@ -44,7 +44,7 @@ def commit_project_v2(namespace, *, expected_revision, expected_sha256):
     """Recompute from persisted source; never trust a modified preview object.
 
     Preserve original data and legacy-migration metadata in the same transaction.
-    The old HA runtime cannot open the resulting schema: this API stays dormant.
+    Callers must support reopening the resulting schema.
     """
     if type(expected_revision) is not int or expected_revision < 1:
         raise ValueError("A positive source revision is required")

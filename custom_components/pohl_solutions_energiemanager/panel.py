@@ -29,6 +29,8 @@ async def async_setup_panel(hass: HomeAssistant) -> None:
     if not hass.data.get(DATA_WEBSOCKETS):
         websocket_api.async_register_command(hass, ws_project_get)
         websocket_api.async_register_command(hass, ws_project_set)
+        websocket_api.async_register_command(hass, ws_project_migration_preview)
+        websocket_api.async_register_command(hass, ws_project_migrate)
         websocket_api.async_register_command(hass, ws_system_get)
         hass.data[DATA_WEBSOCKETS] = True
     if not hass.data.get(DATA_PANEL):
@@ -111,3 +113,44 @@ async def ws_project_set(hass, connection, msg):
             connection.send_error(msg["id"], "storage_error", "Projekt konnte nicht dauerhaft gespeichert werden.")
         else:
             connection.send_result(msg["id"], store.snapshot())
+
+
+async def _async_migration_response(hass, connection, msg, *, commit):
+    async with hass.data.setdefault(f"{DOMAIN}_setup_lock", asyncio.Lock()):
+        store = _loaded_store(hass, connection, msg["id"])
+        if store is None:
+            return
+        try:
+            if commit:
+                result = await store.async_migrate_project(msg["expected_revision"], msg["source_revision"])
+            else:
+                result = await store.async_migration_preview(msg["expected_revision"])
+        except ProjectConflictError as err:
+            connection.send_error(msg["id"], "conflict", str(err))
+        except ValueError as err:
+            connection.send_error(msg["id"], "invalid_project", str(err))
+        except OSError:
+            connection.send_error(msg["id"], "storage_error", "Projektformat konnte nicht verarbeitet werden.")
+        else:
+            connection.send_result(msg["id"], result)
+
+
+@websocket_api.websocket_command({
+    vol.Required("type"): "pohl_energy/project/migration_preview",
+    vol.Required("expected_revision"): vol.Match(r"[0-9a-f]{64}\Z"),
+})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def ws_project_migration_preview(hass, connection, msg):
+    await _async_migration_response(hass, connection, msg, commit=False)
+
+
+@websocket_api.websocket_command({
+    vol.Required("type"): "pohl_energy/project/migrate",
+    vol.Required("expected_revision"): vol.Match(r"[0-9a-f]{64}\Z"),
+    vol.Required("source_revision"): vol.All(int, vol.Range(min=1, max=2**53 - 1)),
+})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def ws_project_migrate(hass, connection, msg):
+    await _async_migration_response(hass, connection, msg, commit=True)

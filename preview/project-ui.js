@@ -4,7 +4,7 @@
   const M = window.PohlProjectModel, examples = window.PohlProjectExamples;
   const embedded = new URLSearchParams(window.location.search).get('ha') === '1' && window.parent !== window;
   const $ = id => document.getElementById(id), storageKey = 'pohl-energy-project-v1';
-  let project, candidate = null, candidateRevision, baseRevision, view = 'electrical';
+  let project, candidate = null, candidateRevision, baseRevision, savedText, migrationPreview, view = 'electrical';
   let initialLoadPending = false, systemBusy = false, systemLoaded = false, addPanelOpen = false;
   function initialControls(disabled) {
     document.querySelectorAll('button,input,select,textarea').forEach(control => { control.disabled = disabled; });
@@ -14,12 +14,12 @@
     if (!disabled) $('project-object-rename').disabled = !$('project-object').value;
   }
   let requestCounter = 0; const pending = new Map();
-  function haRequest(operation, projectJson, revision) {
+  function haRequest(operation, fields = {}) {
     return new Promise((resolve, reject) => {
       const id = `project-${Date.now()}-${++requestCounter}`;
       const timer = setTimeout(() => { pending.delete(id); reject(new Error(operation === 'system' ? 'Home Assistant antwortet nicht auf die Statusanfrage. Bitte erneut versuchen.' : 'Home Assistant antwortet nicht. Ihr Entwurf bleibt erhalten.')); }, 18000);
       pending.set(id, {resolve, reject, timer});
-      window.parent.postMessage({type: 'pohl-energy-request', id, operation, ...(operation === 'save' ? {project_json: projectJson, expected_revision: revision} : {})}, window.location.origin);
+      window.parent.postMessage({type: 'pohl-energy-request', id, operation, ...fields}, window.location.origin);
     });
   }
   if (embedded) window.addEventListener('message', event => {
@@ -103,18 +103,59 @@
   const isV2 = value => value?.schema_version === 2;
   const validate = value => isV2(value) ? M.validateProjectV2(value) : M.validateProject(value);
   const exportDraft = value => isV2(value) ? JSON.stringify(M.validateProjectV2(value)) : M.exportProjectJson(value);
-  function stage(value, origin, revision) {
-    if (embedded && revision === undefined && value.schema_version !== project.schema_version) {
+  function stage(value, origin, revision, migration) {
+    if (embedded && !migration && revision === undefined && value.schema_version !== project.schema_version) {
       throw new Error('Das Importformat muss zum gespeicherten Projekt passen.');
     }
     const checked = validate(value), summary = M.projectSummary(checked);
-    candidate = checked; candidateRevision = revision; $('project-candidate').hidden = false;
+    candidate = checked;
+    candidateRevision = revision;
+    migrationPreview = migration;
+    $('project-candidate').hidden = false;
+    $('candidate-heading').textContent = migration ? 'Anlagenstruktur übernehmen?' : 'Änderungen übernehmen?';
+    $('candidate-migration-note').hidden = !migration;
+    $('project-apply').textContent = migration ? 'Umstellen und speichern' : 'Übernehmen';
     $('candidate-summary').textContent = `${origin}: „${checked.name}“ · ${isV2(checked) ? `${summary.counts.plants} Anlagen · ` : ''}${summary.counts.grids} Netzanschlüsse · ${summary.counts.devices} Geräte · ${summary.counts.measurements} Bilanzmessungen. Noch nicht übernommen.`;
     warningList($('candidate-warnings'), summary.warnings); $('project-json').value = exportDraft(checked);
     message('Vorschau geprüft. Bitte prüfen und ausdrücklich übernehmen.');
     $('project-apply').focus();
   }
-  function accept(value, note, revision) { project = validate(value); addPanelOpen = false; if (revision !== undefined) baseRevision = revision; candidate = null; candidateRevision = undefined; $('project-candidate').hidden = true; render(); message(note); }
+  function clearCandidate() {
+    candidate = null;
+    candidateRevision = migrationPreview = undefined;
+    $('project-candidate').hidden = true;
+  }
+  function accept(value, note, revision) {
+    project = validate(value);
+    addPanelOpen = false;
+    if (revision !== undefined) {
+      baseRevision = revision;
+      savedText = exportDraft(project);
+    }
+    clearCandidate();
+    render(); message(note);
+  }
+  async function migrationRequest(operation, fields) {
+    initialControls(true);
+    try {
+      return await haRequest(operation, fields);
+    } finally {
+      initialControls(false);
+      renderAddForm();
+    }
+  }
+  $('project-migration-preview').addEventListener('click', guard(async () => {
+    if (!embedded || isV2(project) || !savedText) throw new Error('Kein gespeichertes Projekt zur Umstellung vorhanden.');
+    if (candidate || addPanelOpen || exportDraft(project) !== savedText || $('project-json').value !== savedText || $('project-name').value !== project.name) {
+      throw new Error('Bitte offene Bearbeitungen zuerst abschließen und den Projektentwurf speichern.');
+    }
+    const data = await migrationRequest('migration_preview', {expected_revision: baseRevision});
+    const draft = M.loadProjectDocument(data.project_json);
+    if (!isV2(draft) || data.revision !== baseRevision || !Number.isSafeInteger(data.source_revision) || data.source_revision < 1) {
+      throw new Error('Die Umstellungsvorschau ist unvollständig. Bitte den gespeicherten Stand neu laden.');
+    }
+    stage(draft, 'Geplante Anlagenstruktur', undefined, data);
+  }));
   function currentArea() { return $('project-area').value; }
   function devicesForArea() { return project.devices.filter(d => !currentArea() || d.area_id === currentArea()); }
   function chip(text) { return el('span', text, 'project-chip'); }
@@ -219,6 +260,7 @@
     $('project-empty').hidden = !first || addPanelOpen;
     $('project-overview').hidden = Boolean(first);
     $('project-add-panel').hidden = !addPanelOpen;
+    $('project-migration-option').hidden = !embedded || isV2(project) || !savedText;
     $('project-start-add').textContent = first === 'plant' ? 'Anlage hinzufügen' : 'Netzanschluss hinzufügen';
     $('empty-heading').textContent = first === 'plant' ? 'Erste Anlage einrichten' : 'Netzanschluss einrichten';
     const onlyPlant = project.plants?.length === 1 ? project.plants[0] : null;
@@ -263,10 +305,27 @@
   $('project-new').addEventListener('click', guard(() => stage(template(examples.simple), 'Neue einfache Vorlage')));
   $('project-reference').addEventListener('click', guard(() => stage(template(examples.reference), 'Anonymisiertes Referenzbeispiel')));
   $('project-validate').addEventListener('click', guard(() => stage(M.loadProjectDocument($('project-json').value), 'JSON-Änderungen')));
-  $('project-json').addEventListener('input', () => { if (candidate) { candidate = null; $('project-candidate').hidden = true; message('Editor geändert. Vor der Übernahme bitte erneut prüfen.'); } });
-  $('project-apply').addEventListener('click', guard(() => { if (!candidate) throw new Error('Keine geprüfte Vorschau vorhanden.'); accept(candidate, embedded ? 'Projektentwurf übernommen. Noch nicht in Home Assistant gespeichert.' : 'Projekt übernommen. Noch nicht lokal gespeichert.', candidateRevision); }));
-  $('project-discard').addEventListener('click', () => { candidate = null; $('project-candidate').hidden = true; $('project-json').value = exportDraft(project); message('Vorschau verworfen. Projekt unverändert.'); });
-  $('project-reset-editor').addEventListener('click', () => { candidate = null; $('project-candidate').hidden = true; $('project-json').value = exportDraft(project); message('Editor zurückgesetzt.'); });
+  $('project-json').addEventListener('input', () => { if (candidate) { clearCandidate(); message('Editor geändert. Vor der Übernahme bitte erneut prüfen.'); } });
+  $('project-apply').addEventListener('click', guard(async () => {
+    if (!candidate) throw new Error('Keine geprüfte Vorschau vorhanden.');
+    if (migrationPreview) {
+      const {revision, source_revision} = migrationPreview;
+      try {
+        const data = await migrationRequest('migrate', {expected_revision: revision, source_revision});
+        const stored = M.loadProjectDocument(data.project_json);
+        if (!isV2(stored)) throw new Error('Der neue Speicherstand konnte nicht bestätigt werden.');
+        accept(stored, 'Anlagenstruktur in Home Assistant gespeichert. Der bisherige Stand ist gesichert.', data.revision);
+      } catch (err) {
+        clearCandidate();
+        $('project-json').value = exportDraft(project);
+        throw err;
+      }
+      return;
+    }
+    accept(candidate, candidateRevision !== undefined ? 'Gespeicherten Stand geladen.' : embedded ? 'Projektentwurf übernommen. Noch nicht in Home Assistant gespeichert.' : 'Projekt übernommen. Noch nicht lokal gespeichert.', candidateRevision);
+  }));
+  $('project-discard').addEventListener('click', () => { clearCandidate(); $('project-json').value = exportDraft(project); message('Vorschau verworfen. Projekt unverändert.'); });
+  $('project-reset-editor').addEventListener('click', () => { clearCandidate(); $('project-json').value = exportDraft(project); message('Editor zurückgesetzt.'); });
   $('project-area').addEventListener('change', renderView);
   document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => { view = b.dataset.view; renderView(); }));
   document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('keydown', event => {
@@ -284,7 +343,7 @@
   $('project-save').addEventListener('click', guard(async () => {
     if (candidate) throw new Error('Offene Vorschau zuerst übernehmen oder verwerfen.');
     const text = exportDraft(project);
-    if (embedded) { $('project-save').disabled = true; try { const data = await haRequest('save', text, baseRevision); baseRevision = data.revision; message(exportDraft(project) === text ? 'Projekt in Home Assistant gespeichert. Keine Gerätesteuerung aktiviert.' : 'Vorherigen Entwurf gespeichert. Neuere Änderungen in dieser Ansicht sind noch nicht gespeichert.'); } finally { $('project-save').disabled = false; } }
+    if (embedded) { $('project-save').disabled = true; try { const data = await haRequest('save', {project_json: text, expected_revision: baseRevision}); baseRevision = data.revision; savedText = text; renderProjectLayout(); message(exportDraft(project) === text ? 'Projekt in Home Assistant gespeichert. Keine Gerätesteuerung aktiviert.' : 'Vorherigen Entwurf gespeichert. Neuere Änderungen in dieser Ansicht sind noch nicht gespeichert.'); } finally { $('project-save').disabled = false; } }
     else { window.localStorage.setItem(storageKey, text); message('Übernommenes Projekt in diesem Browser gespeichert.'); }
   }));
   $('project-reload').addEventListener('click', guard(async () => {

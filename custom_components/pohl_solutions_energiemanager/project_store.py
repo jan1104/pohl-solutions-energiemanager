@@ -6,12 +6,13 @@ from hashlib import sha256
 from os import fstat
 from pathlib import Path
 import sqlite3
-from typing import Any
+from typing import Any, NoReturn
 
 from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
 from .core.project import COLLECTIONS, MAX_BYTES, export_project_json, load_project_json, project_summary, validate_project
+from .core.project_migration import commit_project_v2, preview_project_v2
 from .core.project_v2 import export_project_v2_json, load_project_v2_json, project_summary_v2, validate_project_v2
 from .core.storage import SQLiteStorage, StorageConflict, StorageSchemaError
 
@@ -155,6 +156,52 @@ class ProjectStore:
             await self._async_commit(candidate)
             return self.status()
 
+    def _check_migration_source(self, expected_revision: str) -> None:
+        if not self._loaded:
+            raise RuntimeError("Project storage must be loaded before migration")
+        if expected_revision != self.revision:
+            raise ProjectConflictError("Das Projekt wurde zwischenzeitlich geändert. Neu laden und die Übernahme erneut prüfen.")
+        if self._project is None or self._namespace.schema_version != 1:
+            raise ValueError("Für die Übernahme ist ein gespeichertes Projekt im Format 1 erforderlich.")
+
+    def _sync_migration_preview(self, expected_revision):
+        preview = preview_project_v2(self._namespace)
+        if preview.source_sha256 != expected_revision or preview.source_revision != self._document_revision:
+            raise StorageConflict("Project changed before migration preview")
+        return {"project_json": export_project_v2_json(preview.project),
+                "revision": preview.source_sha256, "source_revision": preview.source_revision}
+
+    async def async_migration_preview(self, expected_revision: str) -> dict[str, Any]:
+        """Read the persisted source and return a preview bound to both revisions."""
+        async with self._lock:
+            self._check_migration_source(expected_revision)
+            try:
+                preview, cancelled = await self._async_durable_call(self._sync_migration_preview, expected_revision)
+            except (StorageConflict, StorageSchemaError) as err:
+                await self._async_reload_conflict(err)
+            if cancelled:
+                raise asyncio.CancelledError
+            return preview
+
+    def _sync_migrate_project(self, expected_revision, source_revision):
+        commit_project_v2(self._namespace, expected_revision=source_revision, expected_sha256=expected_revision)
+        return self._sync_load()
+
+    async def async_migrate_project(self, expected_revision: str, source_revision: int) -> dict[str, Any]:
+        """Persist the exact migration of the confirmed source revision."""
+        async with self._lock:
+            self._check_migration_source(expected_revision)
+            try:
+                loaded, cancelled = await self._async_durable_call(
+                    self._sync_migrate_project, expected_revision, source_revision,
+                )
+            except (StorageConflict, StorageSchemaError) as err:
+                await self._async_reload_conflict(err)
+            self._apply_loaded(loaded)
+            if cancelled:
+                raise asyncio.CancelledError
+            return self.snapshot()
+
     @property
     def revision(self) -> str:
         canonical = json.dumps(self._project, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
@@ -182,15 +229,18 @@ class ProjectStore:
             raise OSError("Project could not be confirmed in persistent SQLite storage")
         return persisted
 
+    async def _async_reload_conflict(self, error: Exception) -> NoReturn:
+        loaded, cancelled = await self._async_durable_call(self._sync_load)
+        self._apply_loaded(loaded)
+        if cancelled:
+            raise asyncio.CancelledError from error
+        raise ProjectConflictError("Das dauerhaft gespeicherte Projekt wurde geändert. Neu laden und erneut prüfen.") from error
+
     async def _async_commit(self, candidate: dict[str, Any]) -> None:
         try:
             persisted, cancelled = await self._async_durable_call(self._sync_commit, candidate, self._document_revision)
         except (StorageConflict, StorageSchemaError) as err:
-            loaded, cancelled = await self._async_durable_call(self._sync_load)
-            self._apply_loaded(loaded)
-            if cancelled:
-                raise asyncio.CancelledError from err
-            raise ProjectConflictError("Das dauerhaft gespeicherte Projekt wurde geändert. Neu laden und erneut prüfen.") from err
+            await self._async_reload_conflict(err)
         self._project = _validate_stored(persisted.data, self._namespace)
         self._document_revision = persisted.revision
         if cancelled:

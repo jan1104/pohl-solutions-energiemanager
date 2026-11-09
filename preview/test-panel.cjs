@@ -279,3 +279,70 @@ test('HA editor rejects changing persisted format through JSON or templates', as
   assert.equal(JSON.parse(t.elements.get('project-json').value).schema_version, 2);
   assert.equal(t.elements.get('project-candidate').hidden, false);
 });
+
+
+test('migration bridge requires a loaded revision and forwards only confirmation fields', async () => {
+  const source = 'a'.repeat(64), target = 'b'.repeat(64);
+  const t = setup(req => req.type.endsWith('/migration_preview')
+    ? {revision: source, source_revision: 4, project_json: '{}', secret: 'ignore'}
+    : {revision: req.type.endsWith('/migrate') ? target : source, project_json: '{}'});
+  await t.request('migration_preview', {expected_revision: source}, 'early');
+  assert.equal(t.calls.length, 0);
+  await t.request('load', {}, 'load');
+  await t.request('migration_preview', {expected_revision: source, project_json: 'ignore'}, 'preview');
+  assert.deepEqual(JSON.parse(JSON.stringify(t.calls.at(-1))), {type: 'pohl_energy/project/migration_preview', expected_revision: source});
+  assert.deepEqual(JSON.parse(JSON.stringify(t.sent.at(-1).data.data)), {revision: source, source_revision: 4, project_json: '{}'});
+  assert.equal(t.panel._revision, source);
+  await t.request('migrate', {expected_revision: source, source_revision: true}, 'bad-confirm');
+  assert.equal(t.calls.length, 2);
+  await t.request('migrate', {expected_revision: source, source_revision: 4, project_json: 'ignore', write_device: true}, 'confirm');
+  assert.deepEqual(JSON.parse(JSON.stringify(t.calls.at(-1))), {type: 'pohl_energy/project/migrate', expected_revision: source, source_revision: 4});
+  assert.equal(t.panel._revision, target);
+});
+
+test('migration preview requires a saved draft and writes only after explicit confirmation', async () => {
+  const t = editorSetup(), v1 = emptyProject(), v2 = {...v1, schema_version: 2, plants: []};
+  const source = 'a'.repeat(64), target = 'b'.repeat(64);
+  const field = id => t.elements.get(id);
+  t.reply(t.outgoing.at(-1), {project_json: JSON.stringify(v1), revision: source});
+  await Promise.resolve(); await Promise.resolve();
+  assert.equal(field('project-migration-option').hidden, false);
+  field('project-name').value = 'Ungespeicherter Name';
+  await t.click('project-migration-preview');
+  assert.equal(t.outgoing.length, 1);
+  assert.match(field('project-error').textContent, /Bearbeitungen/);
+  field('project-name').value = v1.name;
+  async function preview() {
+    const reading = t.click('project-migration-preview'), request = t.outgoing.at(-1);
+    assert.equal(request.operation, 'migration_preview');
+    assert.equal(request.expected_revision, source);
+    t.reply(request, {project_json: JSON.stringify(v2), revision: source, source_revision: 1});
+    await reading;
+    assert.equal(field('project-apply').textContent, 'Umstellen und speichern');
+    assert.equal(field('candidate-migration-note').hidden, false);
+  }
+  await preview();
+  await t.click('project-discard');
+  assert.equal(t.outgoing.length, 2);
+  assert.equal(JSON.parse(field('project-json').value).schema_version, 1);
+  await preview();
+  let confirming = t.click('project-apply'), request = t.outgoing.at(-1);
+  assert.equal(request.operation, 'migrate');
+  assert.equal(request.expected_revision, source);
+  assert.equal(request.source_revision, 1);
+  assert.equal(Object.hasOwn(request, 'project_json'), false);
+  t.reply(request, 'Versionskonflikt', false);
+  await confirming;
+  assert.equal(JSON.parse(field('project-json').value).schema_version, 1);
+  assert.equal(field('project-candidate').hidden, true);
+  await preview();
+  confirming = t.click('project-apply'); request = t.outgoing.at(-1);
+  t.reply(request, {project_json: JSON.stringify(v2), revision: target});
+  await confirming;
+  assert.equal(field('project-start-add').textContent, 'Anlage hinzufügen');
+  assert.equal(field('project-migration-option').hidden, true);
+  const saving = t.click('project-save');
+  assert.equal(t.outgoing.at(-1).expected_revision, target);
+  t.reply(t.outgoing.at(-1), {project_json: JSON.stringify(v2), revision: target});
+  await saving;
+});

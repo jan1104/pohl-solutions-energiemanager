@@ -1,6 +1,6 @@
 # Arbeitsplan
 
-Stand: 2026-11-08. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
+Stand: 2026-11-09. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
 
 ## Auftrag und Grenzen
 
@@ -35,7 +35,9 @@ V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberf
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
 
-Die Format-2-Projektansicht führt vom Projektnamen über die Anlage zum Netzanschluss. Angaben zu Ort, Beschreibung, Absicherung und Phasen lassen sich aufklappen. Bereiche referenzieren eine Anlage und einen ihrer Anschlüsse. Offene Netzmessungen sind im Aufbau erkennbar. Lokale Vorschau und vorhandene Format-2-Projekte verwenden den Ablauf. Die Browserprüfung mit synthetischen Daten erfolgte bei 1440 und 390 Pixeln Breite. Als Nächstes folgen die ausdrückliche Migrationsbestätigung für vorhandene HA-Projekte und die Zuordnung eines Messkanals.
+Am 09.11.2026 hat das HA-Projektmenü eine ausdrückliche Umstellung auf die Anlagenstruktur erhalten. Die Vorschau liest den gespeicherten Stand. Die Bestätigung prüft dessen Inhaltskennung und SQLite-Revision und sichert das Original im selben Schreibvorgang. Desktop und Mobilansicht wurden mit synthetischen Daten geprüft. Als Nächstes folgt die Messkanalzuordnung.
+
+Die Format-2-Projektansicht führt vom Projektnamen über die Anlage zum Netzanschluss. Angaben zu Ort, Beschreibung, Absicherung und Phasen lassen sich aufklappen. Bereiche referenzieren eine Anlage und einen ihrer Anschlüsse. Offene Netzmessungen sind im Aufbau erkennbar. Lokale Vorschau und vorhandene Format-2-Projekte verwenden den Ablauf. Die Browserprüfung mit synthetischen Daten erfolgte bei 1440 und 390 Pixeln Breite. Die Migrationsbestätigung folgte am 09.11.2026.
 
 Am 08.11.2026 hat der ProjectStore das Lesen, Speichern und Exportieren vorhandener Format-2-Projekte übernommen. Die Namespace-Version bestimmt den zulässigen Import. Konflikte nach einem externen Schemawechsel aktualisieren die lokale Ansicht. Format-2-Exporte bleiben im Rohtextlimit und Statusantworten zeigen offene Messungen. Neue Projekte beginnen in Format 1. Lokal bestanden 342 Python-Tests, 18 Untertests und 45 JavaScript-Tests. Die Anlagenoberfläche folgte im nächsten Entwicklungsschritt.
 
