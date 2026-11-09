@@ -4,6 +4,7 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 import json
 import logging
+from math import isclose
 import sqlite3
 from pathlib import Path
 import sys
@@ -778,7 +779,9 @@ async def main() -> None:
             external_result = await external_coordinator._async_update_data()
             assert external_result["valid"], external_result
             assert external_result["slots"][0]["import_price_eur_kwh"] == .3
-            assert external_result["slots"][0]["export_price_eur_kwh"] == -.02
+            # The first slot can be partial. Duration weighting can differ by
+            # a floating-point rounding step even for a constant price.
+            assert isclose(external_result["slots"][0]["export_price_eur_kwh"], -.02, abs_tol=1e-12)
 
             # Exercise real async HTTP against a temporary local JSON server.
             app = web.Application()
@@ -832,7 +835,7 @@ async def main() -> None:
             extra_coordinators.append(http_coordinator)
             http_result = await http_coordinator._async_update_data()
             assert http_result["valid"], http_result
-            assert http_result["slots"][0]["import_price_eur_kwh"] == -.02
+            assert isclose(http_result["slots"][0]["import_price_eur_kwh"], -.02, abs_tol=1e-12)
             assert http_result["slots"][0]["export_price_eur_kwh"] == .05
             # No stale price data or forecast fallback after a selected source fails.
             hass.states.async_set("sensor.pohl_test_prices", "unavailable")
