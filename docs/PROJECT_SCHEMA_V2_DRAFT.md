@@ -59,7 +59,7 @@ Der ProjectStore öffnet die vorhandene Namespace-Version 1 oder 2 und prüft de
 
 Für Projekte in Format 2 verwendet die HA-Speicherschicht kompaktes UTF-8-JSON. Die Exportdatei passt dadurch in das Rohtextlimit des Imports. Beide Formate teilen die Prüfung auf doppelte JSON-Schlüssel und nicht endliche Zahlen. Import und Speichern übernehmen ausschließlich Dokumente in der aktuellen Namespace-Version. Die Statusantwort zu Format 2 enthält die Anlagenanzahl und strukturierte Hinweise zu offenen Zuordnungen und Messungen. Ein veralteter Schreibzugriff nach einem Schemawechsel lädt den aktuellen Stand und meldet einen Konflikt.
 
-Die CI-Prüfung nutzt eine temporäre SQLite-Datenbank mit Home Assistants Executor. Sie deckt expliziten Wechsel, Wiederöffnen, gleichformatigen Import, Schutz vor veralteten Schreibständen und Ablehnung unpassender Formate ab. Die Oberfläche für Anlage und Netzanschluss ist im Entwicklungsstand verfügbar. Die geführte Zuordnung eines Messkanals zum Anschluss folgt.
+Die CI-Prüfung nutzt eine temporäre SQLite-Datenbank mit Home Assistants Executor. Sie deckt expliziten Wechsel, Wiederöffnen, gleichformatigen Import, Schutz vor veralteten Schreibständen und Ablehnung unpassender Formate ab. Die Oberfläche für Anlage und Netzanschluss ist im Entwicklungsstand verfügbar. Die Netzmessung lässt sich im Aufbau oder unter Messungen zuordnen.
 
 ## Bestehendes Projekt umstellen
 
@@ -68,3 +68,12 @@ In Home Assistant unter **Projektoptionen → Anlagenstruktur** auf **Umstellung
 Beide Anfragen erfordern ein Administratorkonto. Die Bestätigung bezieht sich auf den gespeicherten Inhalt und die SQLite-Revision der Vorschau. Hat sich der Speicherstand geändert, muss er neu geladen und erneut geprüft werden. Der Formatwechsel läuft in einer Transaktion. Bei einem leeren Projekt führt der nächste Schritt direkt zur ersten Anlage. Bei einem bestehenden Projekt wird die Zuordnung zur importierten Anlage als prüfbedürftig angezeigt.
 
 Die Browserprüfung deckte Verwerfen und Bestätigen in einer lokalen Testansicht bei 1440 und 390 Pixeln Breite ab. Die HA-Laufzeitprüfung verwendet eine separate temporäre Datenbank.
+
+
+## Netzmessung zuordnen
+
+Im Aufbau oder unter **Messungen** beim gewünschten Anschluss **Netzmessung zuordnen** wählen. Fehlt dort ein Messgerät, führt das Formular zur Anlage eines Bereichs oder Messgeräts am betreffenden Anschluss. Geräte dürfen in einem anderen Bereich desselben Netzanschlusses liegen.
+
+Zur Auswahl stehen freie Kanäle mit der Messgröße Gesamtwirkleistung. Phasenkanäle und Kanäle mit unbekanntem Phasenbezug erscheinen nicht in der Auswahl. Alternativ lässt sich am gewählten Messgerät ein Gesamtkanal mit Name und Einheit W oder kW anlegen. Die Quelle eines neuen Kanals bleibt offen. Die Ansicht zeigt Messort, Kanal, Messgerät und gegebenenfalls den Verbindungsweg. Die Zuordnung bleibt bis zum Speichern ein Projektentwurf.
+
+Der Assistent prüft die Projektstruktur. Die Quelle und ihre Vorzeichen- und Skalierungsregeln müssen für spätere Messwerte ausdrücklich konfiguriert und geprüft werden. Die Zuordnung öffnet keine Geräteverbindung. Desktop und Mobilansicht wurden anhand einer synthetischen Projektkonfiguration geprüft.

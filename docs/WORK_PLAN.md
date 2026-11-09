@@ -35,7 +35,9 @@ V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberf
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
 
-Am 09.11.2026 hat das HA-Projektmenü eine ausdrückliche Umstellung auf die Anlagenstruktur erhalten. Die Vorschau liest den gespeicherten Stand. Die Bestätigung prüft dessen Inhaltskennung und SQLite-Revision und sichert das Original im selben Schreibvorgang. Desktop und Mobilansicht wurden mit synthetischen Daten geprüft. Als Nächstes folgt die Messkanalzuordnung.
+Die Netzmessung in Format 2 lässt sich einem bestehenden Gesamtwirkleistungskanal zuordnen. Fehlt der Kanal, kann ein Entwurf mit Name und Einheit W oder kW am gewählten Messgerät angelegt werden. Das Formular beschränkt die Auswahl auf freie Kanäle am selben Anschluss und zeigt offene Quellen. Die Browserprüfung erfolgte mit synthetischen Daten bei 1440 und 390 Pixeln Breite. Als Nächstes folgt die geführte Konfiguration der Datenquelle.
+
+Am 09.11.2026 hat das HA-Projektmenü eine ausdrückliche Umstellung auf die Anlagenstruktur erhalten. Die Vorschau liest den gespeicherten Stand. Die Bestätigung prüft dessen Inhaltskennung und SQLite-Revision und sichert das Original im selben Schreibvorgang. Desktop und Mobilansicht wurden mit synthetischen Daten geprüft. Die Messkanalzuordnung folgte im nächsten Entwicklungsschritt.
 
 Die Format-2-Projektansicht führt vom Projektnamen über die Anlage zum Netzanschluss. Angaben zu Ort, Beschreibung, Absicherung und Phasen lassen sich aufklappen. Bereiche referenzieren eine Anlage und einen ihrer Anschlüsse. Offene Netzmessungen sind im Aufbau erkennbar. Lokale Vorschau und vorhandene Format-2-Projekte verwenden den Ablauf. Die Browserprüfung mit synthetischen Daten erfolgte bei 1440 und 390 Pixeln Breite. Die Migrationsbestätigung folgte am 09.11.2026.
 

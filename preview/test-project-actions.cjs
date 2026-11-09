@@ -193,3 +193,103 @@ test('v2 invalid grid or plant metadata cannot mutate a valid draft', () => {
     assert.equal(JSON.stringify(project), before);
   }
 });
+
+
+function netMeterProject() {
+  const power = (id, deviceId, phase = 'total') => ({
+    id, name: id, device_id: deviceId, quantity: 'active_power', unit: 'W', phase,
+    source: {kind: 'ha', entity_id: `sensor.${id}`},
+  });
+  const unspecified = power('unspecified', 'meter_a');
+  delete unspecified.phase;
+  return {
+    ...emptyV2(),
+    plants: [{id: 'plant', name: 'Anlage', grid_ids: ['grid_a', 'grid_b']}],
+    grids: [{id: 'grid_a', name: 'Netz A'}, {id: 'grid_b', name: 'Netz B'}],
+    areas: [
+      {id: 'area_a', name: 'Bereich A', grid_id: 'grid_a', plant_id: 'plant'},
+      {id: 'area_b', name: 'Bereich B', grid_id: 'grid_b', plant_id: 'plant'},
+    ],
+    nodes: [
+      {id: 'root_a', name: 'HAK A', grid_id: 'grid_a', parent_id: null},
+      {id: 'root_b', name: 'HAK B', grid_id: 'grid_b', parent_id: null},
+      {id: 'branch', name: 'Abgang A', grid_id: 'grid_a', parent_id: 'root_a'},
+    ],
+    devices: [
+      {id: 'meter_a', name: 'Zähler A', kind: 'meter', area_id: 'area_a', node_id: 'root_a'},
+      {id: 'meter_b', name: 'Zähler B', kind: 'meter', area_id: 'area_b', node_id: 'root_b'},
+      {id: 'meter_empty', name: 'Neuer Zähler', kind: 'meter', area_id: 'area_a', node_id: 'root_a'},
+      {id: 'pv', name: 'PV A', kind: 'pv_inverter', area_id: 'area_a', node_id: 'root_a'},
+    ],
+    channels: [
+      power('total', 'meter_a'), power('phase_one', 'meter_a', 'L1'), unspecified,
+      power('used', 'meter_a'), power('remote', 'meter_b'), power('pv_power', 'pv'),
+      {...power('voltage', 'meter_a'), quantity: 'voltage', unit: 'V'},
+    ],
+    measurements: [{id: 'branch_measurement', name: 'Abgang A', role: 'branch',
+      node_id: 'branch', channel_id: 'used', includes_device_ids: []}],
+  };
+}
+
+test('v2 grid meter choices expose only unused total power channels of local meters', () => {
+  const project = netMeterProject();
+  assert.deepEqual(actions.gridMeterChoices(project, 'grid_a'), [
+    {id: 'meter_a', name: 'Zähler A', channels: [{id: 'total', name: 'total', unit: 'W'}]},
+    {id: 'meter_empty', name: 'Neuer Zähler', channels: []},
+  ]);
+  assert.deepEqual(actions.gridMeterChoices(project, 'grid_b').map(meter => meter.id), ['meter_b']);
+  assert.throws(() => actions.gridMeterChoices(project, 'missing'));
+  assert.throws(() => actions.gridMeterChoices(empty(), 'grid_a'));
+});
+
+test('v2 grid measurement links an existing configured channel without changing its source', () => {
+  const project = netMeterProject();
+  const snapshot = JSON.stringify(project);
+  const updated = actions.addGridMeasurement(project, {gridId: 'grid_a', meterId: 'meter_a', channelId: 'total'});
+  assert.equal(JSON.stringify(project), snapshot);
+  assert.deepEqual(updated.channels, project.channels);
+  const measurement = updated.measurements.at(-1);
+  assert.deepEqual(measurement, {id: measurement.id, name: 'Netzbilanz', role: 'grid',
+    node_id: 'root_a', channel_id: 'total', includes_device_ids: []});
+  assert.deepEqual(model.configurationIssuesV2(updated), [{code: 'grid_measurement_missing', grid_id: 'grid_b'}]);
+  assert.throws(() => actions.addGridMeasurement(updated, {
+    gridId: 'grid_a', meterId: 'meter_empty', channelName: 'Ersatzkanal', unit: 'kW',
+  }), /bereits eine Netzmessung/);
+});
+
+test('v2 new net channel is explicit and reports its missing source', () => {
+  const project = netMeterProject();
+  const updated = actions.addGridMeasurement(project, {
+    gridId: 'grid_a', meterId: 'meter_empty', channelName: 'Summenleistung', unit: 'kW',
+  });
+  const channel = updated.channels.at(-1);
+  const measurement = updated.measurements.at(-1);
+  assert.deepEqual(channel, {id: channel.id, name: 'Summenleistung', device_id: 'meter_empty',
+    quantity: 'active_power', phase: 'total', unit: 'kW', source: {kind: 'unconfigured'}});
+  assert.equal(measurement.channel_id, channel.id);
+  assert.deepEqual(updated.devices, project.devices);
+  assert.deepEqual(model.configurationIssuesV2(updated), [
+    {code: 'grid_measurement_missing', grid_id: 'grid_b'},
+    {code: 'measurement_source_unconfigured', measurement_id: measurement.id, channel_id: channel.id},
+  ]);
+});
+
+test('v2 rejects ambiguous, used, cross-grid or non-total channel assignments without mutating the draft', () => {
+  const project = netMeterProject();
+  const snapshot = JSON.stringify(project);
+  const base = {gridId: 'grid_a', meterId: 'meter_a'};
+  const invalid = [
+    ...['phase_one', 'unspecified', 'used', 'voltage', 'remote', 'missing'].map(channelId => ({...base, channelId})),
+    {...base, meterId: 'meter_b', channelId: 'remote'},
+    {...base, meterId: 'pv', channelId: 'pv_power'},
+    {...base, meterId: 'meter_empty', channelId: 'total'},
+    {...base, channelId: 'total', channelName: 'Zusatz', unit: 'kW'},
+    {...base, channelName: 'Summenleistung', unit: 'Wh'},
+    {...base, unit: 'kW'},
+  ];
+  for (const values of invalid) {
+    assert.throws(() => actions.addGridMeasurement(project, values));
+    assert.equal(JSON.stringify(project), snapshot);
+  }
+  assert.throws(() => actions.addGridMeasurement(empty(), {...base, channelId: 'total'}));
+});

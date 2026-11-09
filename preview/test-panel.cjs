@@ -346,3 +346,46 @@ test('migration preview requires a saved draft and writes only after explicit co
   t.reply(t.outgoing.at(-1), {project_json: JSON.stringify(v2), revision: target});
   await saving;
 });
+
+
+for (const create of [false, true]) {
+  test(`HA editor assigns ${create ? 'a new draft' : 'an existing'} power channel without device calls`, async () => {
+    const t = editorSetup(), field = id => t.elements.get(id);
+    const model = require('./project-model.js');
+    const v1 = JSON.parse(fs.readFileSync(require('node:path').join(__dirname, '../examples/simple-project.json'), 'utf8'));
+    const project = model.migrateProjectV1ToV2(v1);
+    project.measurements = [];
+    project.channels[0].phase = 'total';
+    project.channels.push({...project.channels[0], id: 'phase_1', name: 'L1', phase: 'L1'});
+    t.reply(t.outgoing.at(-1), {project_json: JSON.stringify(project), revision: 'measured-r1'});
+    await Promise.resolve(); await Promise.resolve();
+    const toolbar = field('project-view').children.find(e => e.className === 'project-toolbar');
+    await toolbar.children[0].handlers.get('click')();
+    assert.equal(field('project-measure-panel').hidden, false);
+    assert.equal(field('measure-meter').value, 'meter_grid');
+    assert.deepEqual(field('measure-channel').children.map(e => e.value), ['', 'power_grid', ':new']);
+    field('measure-channel').value = create ? ':new' : 'power_grid';
+    field('measure-channel').handlers.get('change')();
+    assert.equal(field('measure-name-field').hidden, !create);
+    if (create) {
+      field('measure-name').value = 'Netz gesamt';
+      field('measure-unit').value = 'W';
+    }
+    await field('project-measure-form').handlers.get('submit')({preventDefault() {}});
+    assert.equal(field('project-measure-panel').hidden, true);
+    assert.equal(t.outgoing.length, 1);
+    const saving = t.click('project-save'), request = t.outgoing.at(-1);
+    assert.equal(request.expected_revision, 'measured-r1');
+    const saved = JSON.parse(request.project_json);
+    const measurement = saved.measurements[0];
+    assert.equal(measurement.node_id, 'main');
+    assert.equal(measurement.role, 'grid');
+    assert.equal(saved.channels.length, create ? 3 : 2);
+    if (create) {
+      const channel = saved.channels.find(c => c.id === measurement.channel_id);
+      assert.deepEqual({name: channel.name, phase: channel.phase, unit: channel.unit, source: channel.source},
+        {name: 'Netz gesamt', phase: 'total', unit: 'W', source: {kind: 'unconfigured'}});
+    } else assert.equal(measurement.channel_id, 'power_grid');
+    t.reply(request, {project_json: request.project_json, revision: 'measured-r2'}); await saving;
+  });
+}

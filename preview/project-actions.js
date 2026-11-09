@@ -125,7 +125,57 @@
     return validate(project);
   }
 
-  const api = {addPlant, addGrid, addArea, addDevice, addConnection};
+  function availableGridMeters(project, gridId) {
+    const nodeIds = new Set(project.nodes.filter(node => node.grid_id === gridId).map(node => node.id));
+    const usedChannels = new Set(project.measurements.map(measurement => measurement.channel_id));
+    const meters = new Map();
+    for (const device of project.devices) {
+      if (device.kind === 'meter' && nodeIds.has(device.node_id)) {
+        meters.set(device.id, {id: device.id, name: device.name, channels: []});
+      }
+    }
+    for (const channel of project.channels) {
+      const meter = meters.get(channel.device_id);
+      if (meter && channel.quantity === 'active_power' && channel.phase === 'total' && !usedChannels.has(channel.id)) {
+        meter.channels.push({id: channel.id, name: channel.name, unit: channel.unit});
+      }
+    }
+    return meters;
+  }
+
+  function gridMeterChoices(input, gridId) {
+    const project = model.validateProjectV2(input);
+    find(project, 'grids', gridId, 'Netzanschluss');
+    return Array.from(availableGridMeters(project, gridId).values());
+  }
+
+  function addGridMeasurement(input, values) {
+    const reuseChannel = values != null && Object.hasOwn(values, 'channelId');
+    options(values, reuseChannel ? ['gridId', 'meterId', 'channelId'] : ['gridId', 'meterId', 'channelName', 'unit']);
+    const project = model.validateProjectV2(input);
+    find(project, 'grids', values.gridId, 'Netzanschluss');
+    const node = project.nodes.find(row => row.grid_id === values.gridId && row.parent_id === null);
+    if (project.measurements.some(row => row.node_id === node.id && row.role === 'grid')) {
+      throw new Error('Für diesen Netzanschluss ist bereits eine Netzmessung zugeordnet');
+    }
+    const meter = availableGridMeters(project, values.gridId).get(values.meterId);
+    if (!meter) throw new Error('Ein Messgerät an diesem Netzanschluss auswählen');
+    let channelId = values.channelId;
+    if (reuseChannel) {
+      if (!meter.channels.some(channel => channel.id === channelId)) {
+        throw new Error('Ein freier Kanal für die Gesamtwirkleistung dieses Messgeräts ist erforderlich');
+      }
+    } else {
+      channelId = newId(project, 'channel');
+      project.channels.push({id: channelId, name: values.channelName, device_id: meter.id,
+        quantity: 'active_power', unit: values.unit, phase: 'total', source: {kind: 'unconfigured'}});
+    }
+    project.measurements.push({id: newId(project, 'measurement'), name: 'Netzbilanz',
+      role: 'grid', node_id: node.id, channel_id: channelId, includes_device_ids: []});
+    return model.validateProjectV2(project);
+  }
+
+  const api = {addPlant, addGrid, addArea, addDevice, addConnection, gridMeterChoices, addGridMeasurement};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) root.PohlProjectActions = api;
 })(typeof window !== 'undefined' ? window : null);

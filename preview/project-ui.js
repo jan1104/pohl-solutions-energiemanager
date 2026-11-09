@@ -5,6 +5,7 @@
   const embedded = new URLSearchParams(window.location.search).get('ha') === '1' && window.parent !== window;
   const $ = id => document.getElementById(id), storageKey = 'pohl-energy-project-v1';
   let project, candidate = null, candidateRevision, baseRevision, savedText, migrationPreview, view = 'electrical';
+  let measurementGrid, meterChoices = [];
   let initialLoadPending = false, systemBusy = false, systemLoaded = false, addPanelOpen = false;
   function initialControls(disabled) {
     document.querySelectorAll('button,input,select,textarea').forEach(control => { control.disabled = disabled; });
@@ -128,6 +129,7 @@
   function accept(value, note, revision) {
     project = validate(value);
     addPanelOpen = false;
+    measurementGrid = undefined;
     if (revision !== undefined) {
       baseRevision = revision;
       savedText = exportDraft(project);
@@ -146,7 +148,7 @@
   }
   $('project-migration-preview').addEventListener('click', guard(async () => {
     if (!embedded || isV2(project) || !savedText) throw new Error('Kein gespeichertes Projekt zur Umstellung vorhanden.');
-    if (candidate || addPanelOpen || exportDraft(project) !== savedText || $('project-json').value !== savedText || $('project-name').value !== project.name) {
+    if (candidate || addPanelOpen || measurementGrid || exportDraft(project) !== savedText || $('project-json').value !== savedText || $('project-name').value !== project.name) {
       throw new Error('Bitte offene Bearbeitungen zuerst abschließen und den Projektentwurf speichern.');
     }
     const data = await migrationRequest('migration_preview', {expected_revision: baseRevision});
@@ -161,6 +163,16 @@
   function chip(text) { return el('span', text, 'project-chip'); }
   function byId(group, id) { return (project[group] || []).find(v => v.id === id); }
   function path(container, parts) { const p = el('div', undefined, 'project-path'); parts.forEach(s => p.append(el('span', s))); container.append(p); }
+  function gridMeasurement(gridId) {
+    return project.measurements.find(m => m.role === 'grid' && byId('nodes', m.node_id).grid_id === gridId);
+  }
+  function measurementButton(grid) {
+    const button = el('button', 'Netzmessung zuordnen', 'button secondary');
+    button.type = 'button';
+    button.setAttribute('aria-label', `Netzmessung für ${grid.name} zuordnen`);
+    button.addEventListener('click', guard(() => openMeasurement(grid.id)));
+    return button;
+  }
   function renderElectrical(target) {
     const area = byId('areas', currentArea()); const grids = project.grids.filter(g => !area || g.id === area.grid_id);
     function renderNode(node) {
@@ -194,7 +206,14 @@
         const details = [root.location, root.fuse_a && `${root.fuse_a} A`, root.phases && `${root.phases} ${root.phases === 1 ? 'Phase' : 'Phasen'}`].filter(Boolean);
         if (details.length) target.append(el('p', details.join(' · '), 'project-muted'));
         if (root.description) target.append(el('p', root.description, 'project-muted'));
-        if (!project.measurements.some(m => m.node_id === root.id && m.role === 'grid')) target.append(chip('Netzmessung offen'));
+        const measurement = gridMeasurement(g.id);
+        if (!measurement) {
+          const actions = el('div', undefined, 'project-toolbar');
+          actions.append(measurementButton(g));
+          target.append(actions);
+        } else if (byId('channels', measurement.channel_id).source.kind === 'unconfigured') {
+          target.append(chip('Messquelle offen'));
+        }
       }
       const tree = el('ul', undefined, 'project-tree');
       tree.append(renderNode(root)); target.append(tree);
@@ -216,6 +235,13 @@
   function renderMeasurements(target) {
     target.append(el('h2', 'Messort und Datenquelle'), el('p', 'Bei Bereichsauswahl werden Messstellen des zugehörigen Netzanschlusses angezeigt. Die Quelle kann in einem anderen Bereich liegen. Enthaltene Geräte werden nicht zusätzlich zur Zweigmessung summiert.', 'project-muted'));
     const area = byId('areas', currentArea());
+    if (isV2(project)) {
+      for (const grid of project.grids.filter(g => (!area || g.id === area.grid_id) && !gridMeasurement(g.id))) {
+        const row = el('article', undefined, 'project-row');
+        row.append(el('strong', grid.name), el('p', 'Netzmessung offen'), measurementButton(grid));
+        target.append(row);
+      }
+    }
     // Measurements belong to electrical nodes, not necessarily to the source device area.
     const measurements = project.measurements.filter(m => !area || byId('nodes', m.node_id).grid_id === area.grid_id);
     measurements.forEach(m => {
@@ -260,6 +286,7 @@
     $('project-empty').hidden = !first || addPanelOpen;
     $('project-overview').hidden = Boolean(first);
     $('project-add-panel').hidden = !addPanelOpen;
+    $('project-measure-panel').hidden = !measurementGrid;
     $('project-migration-option').hidden = !embedded || isV2(project) || !savedText;
     $('project-start-add').textContent = first === 'plant' ? 'Anlage hinzufügen' : 'Netzanschluss hinzufügen';
     $('empty-heading').textContent = first === 'plant' ? 'Erste Anlage einrichten' : 'Netzanschluss einrichten';
@@ -271,6 +298,7 @@
   function openAdd() {
     if (candidate) throw new Error('Offene Vorschau zuerst übernehmen oder verwerfen.');
     addPanelOpen = true;
+    measurementGrid = undefined;
     $('add-action').value = firstAction() || (project.areas.length ? 'device' : 'area');
     $('add-details').open = false;
     renderProjectLayout(); renderAddForm(); $('add-name').focus();
@@ -301,6 +329,85 @@
     $('project-add-heading').textContent = ({plant: 'Anlage hinzufügen', grid: 'Netzanschluss hinzufügen', area: 'Bereich hinzufügen', connection: 'Verbindung hinzufügen', device: 'Gerät hinzufügen'})[action] || 'Projekt ergänzen';
     $('add-parent-field').hidden = action !== 'device' || $('add-device-kind').value !== 'battery';
   }
+  function renderChannelChoices() {
+    const meter = meterChoices.find(choice => choice.id === $('measure-meter').value);
+    const select = $('measure-channel');
+    select.replaceChildren(new Option('Bitte wählen', ''));
+    if (meter) {
+      for (const channel of meter.channels) {
+        select.append(new Option(`${channel.name} · ${channel.unit}`, channel.id));
+      }
+      select.append(new Option('Neuen Messkanal anlegen', ':new'));
+      if (!meter.channels.length) select.value = ':new';
+    }
+    select.disabled = !meter;
+    renderNewChannelFields();
+  }
+  function renderNewChannelFields() {
+    const create = $('measure-channel').value === ':new';
+    $('measure-name-field').hidden = $('measure-unit-field').hidden = $('measure-source-note').hidden = !create;
+    $('measure-name').required = $('measure-unit').required = create;
+  }
+  function openMeasurement(gridId) {
+    if (candidate) throw new Error('Offene Vorschau zuerst übernehmen oder verwerfen.');
+    meterChoices = window.PohlProjectActions.gridMeterChoices(project, gridId);
+    measurementGrid = gridId;
+    addPanelOpen = false;
+    const grid = byId('grids', gridId);
+    const area = project.areas.find(a => a.grid_id === gridId);
+    $('project-measure-grid').textContent = grid.name;
+    $('project-measure-empty').hidden = Boolean(meterChoices.length);
+    $('project-measure-form').hidden = !meterChoices.length;
+    $('project-measure-add-meter').textContent = area ? 'Messgerät hinzufügen' : 'Bereich hinzufügen';
+    const meter = $('measure-meter');
+    meter.replaceChildren(new Option('Bitte wählen', ''));
+    for (const choice of meterChoices) meter.append(new Option(choice.name, choice.id));
+    if (meterChoices.length === 1) meter.value = meterChoices[0].id;
+    $('measure-name').value = '';
+    $('measure-unit').value = '';
+    renderChannelChoices();
+    renderProjectLayout();
+    $(meterChoices.length ? 'measure-meter' : 'project-measure-add-meter').focus();
+  }
+  $('measure-meter').addEventListener('change', renderChannelChoices);
+  $('measure-channel').addEventListener('change', renderNewChannelFields);
+  $('project-measure-cancel').addEventListener('click', () => {
+    measurementGrid = undefined;
+    renderProjectLayout();
+    $('project-open-add').focus();
+  });
+  $('project-measure-add-meter').addEventListener('click', guard(() => {
+    const gridId = measurementGrid;
+    if (!gridId) return;
+    const area = project.areas.find(a => a.grid_id === gridId);
+    openAdd();
+    if (area) {
+      $('add-action').value = 'device';
+      $('add-area').value = area.id;
+      $('add-device-kind').value = 'meter';
+      renderAddForm();
+      $('add-node').value = project.nodes.find(n => n.grid_id === gridId && n.parent_id === null).id;
+    } else {
+      $('add-action').value = 'area';
+      $('add-plant').value = project.plants.find(p => p.grid_ids.includes(gridId)).id;
+      renderAddForm();
+      $('add-grid').value = gridId;
+    }
+  }));
+  $('project-measure-form').addEventListener('submit', guard(event => {
+    event.preventDefault();
+    if (candidate || !measurementGrid) throw new Error('Bitte zuerst die aktuelle Vorschau abschließen.');
+    const channelId = $('measure-channel').value;
+    const choice = channelId === ':new'
+      ? {channelName: $('measure-name').value.trim(), unit: $('measure-unit').value}
+      : {channelId};
+    const next = window.PohlProjectActions.addGridMeasurement(project, {
+      gridId: measurementGrid, meterId: $('measure-meter').value, ...choice,
+    });
+    view = 'measurement';
+    accept(next, 'Netzmessung zugeordnet. Änderungen noch nicht gespeichert.');
+    $('tab-measurement').focus();
+  }));
   const template = value => isV2(project) ? M.migrateProjectV1ToV2(value) : value;
   $('project-new').addEventListener('click', guard(() => stage(template(examples.simple), 'Neue einfache Vorlage')));
   $('project-reference').addEventListener('click', guard(() => stage(template(examples.reference), 'Anonymisiertes Referenzbeispiel')));
