@@ -175,7 +175,27 @@
     return model.validateProjectV2(project);
   }
 
-  const api = {addPlant, addGrid, addArea, addDevice, addConnection, gridMeterChoices, addGridMeasurement};
+  function setChannelSource(input, values) {
+    options(values, ['channelId', 'source']);
+    const source = values.source;
+    const fields = {
+      unconfigured: [[], []],
+      modbus: [['address', 'function_code', 'data_type'], ['scale']],
+      mqtt: [['topic'], ['json_path']],
+      ha: [['entity_id'], []],
+    };
+    if (typeof source?.kind !== 'string' || !Object.hasOwn(fields, source.kind)) {
+      throw new Error('Unbekannte Quellenart');
+    }
+    const [required, optional] = fields[source.kind];
+    options(source, ['kind', ...required], optional);
+    const project = model.validateProjectV2(input);
+    const channel = find(project, 'channels', values.channelId, 'Messkanal');
+    channel.source = source;
+    return model.validateProjectV2(project);
+  }
+
+  const api = {addPlant, addGrid, addArea, addDevice, addConnection, gridMeterChoices, addGridMeasurement, setChannelSource};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) root.PohlProjectActions = api;
 })(typeof window !== 'undefined' ? window : null);

@@ -77,3 +77,10 @@ Im Aufbau oder unter **Messungen** beim gewünschten Anschluss **Netzmessung zuo
 Zur Auswahl stehen freie Kanäle mit der Messgröße Gesamtwirkleistung. Phasenkanäle und Kanäle mit unbekanntem Phasenbezug erscheinen nicht in der Auswahl. Alternativ lässt sich am gewählten Messgerät ein Gesamtkanal mit Name und Einheit W oder kW anlegen. Die Quelle eines neuen Kanals bleibt offen. Die Ansicht zeigt Messort, Kanal, Messgerät und gegebenenfalls den Verbindungsweg. Die Zuordnung bleibt bis zum Speichern ein Projektentwurf.
 
 Der Assistent prüft die Projektstruktur. Die Quelle und ihre Vorzeichen- und Skalierungsregeln müssen für spätere Messwerte ausdrücklich konfiguriert und geprüft werden. Die Zuordnung öffnet keine Geräteverbindung. Desktop und Mobilansicht wurden anhand einer synthetischen Projektkonfiguration geprüft.
+
+
+## Messquelle einrichten
+
+Unter **Messungen** am gewünschten Eintrag **Quelle einrichten** oder **Quelle bearbeiten** wählen. Das Formular zeigt Kanal, Messgerät und Einheit. Für Modbus sind die dokumentierte 0-basierte Registeradresse, FC03 oder FC04 und das Datenformat erforderlich. Ein optionaler Faktor multipliziert den dekodierten Wert. Für MQTT sind das Topic und bei Bedarf der JSON-Pfad einzutragen. Für Home Assistant wird die Entitäts-ID eingetragen. Mit **Offen lassen** lässt sich die Zuordnung zurücksetzen.
+
+**Quelle übernehmen** ändert den Projektentwurf. **Speichern** übernimmt ihn in die Projektablage. Beim Wechsel der Quellenart werden die Felder der bisherigen Quelle entfernt. Messort, Messgerät, Kanalkennung und Einheit bleiben erhalten. Das Formular konfiguriert die Herkunft. Die Verbindung, die Registerbelegung am konkreten Gerät, die Vorzeichenrichtung und die Messwertfrische müssen für spätere Lesezugriffe separat geprüft werden. Desktop und Mobilansicht wurden mit einer synthetischen Projektkonfiguration geprüft.

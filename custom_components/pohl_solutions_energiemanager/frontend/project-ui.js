@@ -5,7 +5,7 @@
   const embedded = new URLSearchParams(window.location.search).get('ha') === '1' && window.parent !== window;
   const $ = id => document.getElementById(id), storageKey = 'pohl-energy-project-v1';
   let project, candidate = null, candidateRevision, baseRevision, savedText, migrationPreview, view = 'electrical';
-  let measurementGrid, meterChoices = [];
+  let measurementGrid, sourceChannel, meterChoices = [];
   let initialLoadPending = false, systemBusy = false, systemLoaded = false, addPanelOpen = false;
   function initialControls(disabled) {
     document.querySelectorAll('button,input,select,textarea').forEach(control => { control.disabled = disabled; });
@@ -129,7 +129,7 @@
   function accept(value, note, revision) {
     project = validate(value);
     addPanelOpen = false;
-    measurementGrid = undefined;
+    measurementGrid = sourceChannel = undefined;
     if (revision !== undefined) {
       baseRevision = revision;
       savedText = exportDraft(project);
@@ -148,7 +148,7 @@
   }
   $('project-migration-preview').addEventListener('click', guard(async () => {
     if (!embedded || isV2(project) || !savedText) throw new Error('Kein gespeichertes Projekt zur Umstellung vorhanden.');
-    if (candidate || addPanelOpen || measurementGrid || exportDraft(project) !== savedText || $('project-json').value !== savedText || $('project-name').value !== project.name) {
+    if (candidate || addPanelOpen || measurementGrid || sourceChannel || exportDraft(project) !== savedText || $('project-json').value !== savedText || $('project-name').value !== project.name) {
       throw new Error('Bitte offene Bearbeitungen zuerst abschließen und den Projektentwurf speichern.');
     }
     const data = await migrationRequest('migration_preview', {expected_revision: baseRevision});
@@ -250,7 +250,16 @@
       path(row, M.sourceChain(project, channel.id));
       const s = channel.source;
       row.append(el('p', s.kind === 'unconfigured' ? 'Quelle noch nicht konfiguriert · kein Livewert' : s.kind === 'modbus' ? `Lesezuordnung: FC ${s.function_code} · Adresse ${s.address} · ${s.data_type}${s.scale != null ? ` · Faktor ${s.scale}` : ''}` : s.kind === 'mqtt' ? `MQTT: ${s.topic}${s.json_path ? ` · ${s.json_path}` : ''}` : `HA-Entität: ${s.entity_id}`));
-      row.append(el('p', `Enthaltene Geräte: ${m.includes_device_ids.length ? m.includes_device_ids.map(id => byId('devices', id).name).join(', ') : 'keine ausdrücklich zugeordnet'}`)); target.append(row);
+      row.append(el('p', `Enthaltene Geräte: ${m.includes_device_ids.length ? m.includes_device_ids.map(id => byId('devices', id).name).join(', ') : 'keine ausdrücklich zugeordnet'}`));
+      if (isV2(project)) {
+        const actions = el('div', undefined, 'project-toolbar');
+        const button = el('button', s.kind === 'unconfigured' ? 'Quelle einrichten' : 'Quelle bearbeiten', 'button secondary');
+        button.type = 'button';
+        button.addEventListener('click', guard(() => openSource(channel.id)));
+        actions.append(button);
+        row.append(actions);
+      }
+      target.append(row);
     });
     if (!measurements.length) target.append(el('p', 'Keine zugeordnete Bilanzmessung in diesem Bereich.'));
   }
@@ -287,6 +296,7 @@
     $('project-overview').hidden = Boolean(first);
     $('project-add-panel').hidden = !addPanelOpen;
     $('project-measure-panel').hidden = !measurementGrid;
+    $('project-source-panel').hidden = !sourceChannel;
     $('project-migration-option').hidden = !embedded || isV2(project) || !savedText;
     $('project-start-add').textContent = first === 'plant' ? 'Anlage hinzufügen' : 'Netzanschluss hinzufügen';
     $('empty-heading').textContent = first === 'plant' ? 'Erste Anlage einrichten' : 'Netzanschluss einrichten';
@@ -298,7 +308,7 @@
   function openAdd() {
     if (candidate) throw new Error('Offene Vorschau zuerst übernehmen oder verwerfen.');
     addPanelOpen = true;
-    measurementGrid = undefined;
+    measurementGrid = sourceChannel = undefined;
     $('add-action').value = firstAction() || (project.areas.length ? 'device' : 'area');
     $('add-details').open = false;
     renderProjectLayout(); renderAddForm(); $('add-name').focus();
@@ -352,6 +362,7 @@
     if (candidate) throw new Error('Offene Vorschau zuerst übernehmen oder verwerfen.');
     meterChoices = window.PohlProjectActions.gridMeterChoices(project, gridId);
     measurementGrid = gridId;
+    sourceChannel = undefined;
     addPanelOpen = false;
     const grid = byId('grids', gridId);
     const area = project.areas.find(a => a.grid_id === gridId);
@@ -406,6 +417,58 @@
     });
     view = 'measurement';
     accept(next, 'Netzmessung zugeordnet. Änderungen noch nicht gespeichert.');
+    $('tab-measurement').focus();
+  }));
+  function renderSourceFields() {
+    const selected = $('source-kind').value;
+    for (const kind of ['modbus', 'mqtt', 'ha']) {
+      const group = $(`source-${kind}`);
+      group.hidden = group.disabled = selected !== kind;
+    }
+  }
+  function openSource(channelId) {
+    if (candidate) throw new Error('Offene Vorschau zuerst übernehmen oder verwerfen.');
+    const channel = byId('channels', channelId);
+    if (!channel || !isV2(project)) throw new Error('Messkanal nicht gefunden.');
+    sourceChannel = channelId;
+    measurementGrid = undefined;
+    addPanelOpen = false;
+    $('project-source-channel').textContent = `${channel.name} · ${channel.unit} · ${byId('devices', channel.device_id).name}`;
+    const source = channel.source;
+    const fields = {'source-kind': 'kind', 'source-address': 'address', 'source-function': 'function_code',
+      'source-type': 'data_type', 'source-scale': 'scale', 'source-topic': 'topic', 'source-path': 'json_path',
+      'source-entity': 'entity_id'};
+    for (const [id, key] of Object.entries(fields)) $(id).value = String(source[key] ?? '');
+    renderSourceFields();
+    renderProjectLayout();
+    $('source-kind').focus();
+  }
+  $('source-kind').addEventListener('change', renderSourceFields);
+  $('project-source-cancel').addEventListener('click', () => {
+    sourceChannel = undefined;
+    renderProjectLayout();
+    $('tab-measurement').focus();
+  });
+  $('project-source-form').addEventListener('submit', guard(event => {
+    event.preventDefault();
+    if (candidate || !sourceChannel) throw new Error('Bitte zuerst die aktuelle Vorschau abschließen.');
+    const kind = $('source-kind').value;
+    const source = {kind};
+    if (kind === 'modbus') {
+      const address = $('source-address').value;
+      source.address = address === '' ? NaN : Number(address);
+      source.function_code = Number($('source-function').value);
+      source.data_type = $('source-type').value;
+      if ($('source-scale').value !== '') source.scale = Number($('source-scale').value);
+    } else if (kind === 'mqtt') {
+      source.topic = $('source-topic').value;
+      const path = $('source-path').value;
+      if (path) source.json_path = path;
+    } else if (kind === 'ha') {
+      source.entity_id = $('source-entity').value.trim();
+    }
+    const next = window.PohlProjectActions.setChannelSource(project, {channelId: sourceChannel, source});
+    accept(next, 'Messquelle geändert. Änderungen noch nicht gespeichert.');
     $('tab-measurement').focus();
   }));
   const template = value => isV2(project) ? M.migrateProjectV1ToV2(value) : value;

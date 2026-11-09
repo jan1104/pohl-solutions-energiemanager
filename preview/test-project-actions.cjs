@@ -293,3 +293,56 @@ test('v2 rejects ambiguous, used, cross-grid or non-total channel assignments wi
   }
   assert.throws(() => actions.addGridMeasurement(empty(), {...base, channelId: 'total'}));
 });
+
+
+test('v2 source replacement preserves channel identity, unit and measurement assignment', () => {
+  const original = actions.addGridMeasurement(netMeterProject(), {
+    gridId: 'grid_a', meterId: 'meter_a', channelId: 'total',
+  });
+  const snapshot = JSON.stringify(original);
+  const sources = [
+    {kind: 'modbus', address: 0, function_code: 4, data_type: 's32', scale: 0.1},
+    {kind: 'mqtt', topic: 'test/meter/power', json_path: 'data.power'},
+    {kind: 'ha', entity_id: 'sensor.test_power'},
+    {kind: 'unconfigured'},
+  ];
+  let project = original;
+  for (const source of sources) {
+    project = actions.setChannelSource(project, {channelId: 'total', source});
+    const expected = JSON.parse(snapshot);
+    expected.channels.find(channel => channel.id === 'total').source = source;
+    assert.deepEqual(project, expected);
+    assert.notEqual(project.channels.find(channel => channel.id === 'total').source, source);
+    assert.equal(JSON.stringify(original), snapshot);
+  }
+  assert.ok(model.configurationIssuesV2(project).some(issue =>
+    issue.code === 'measurement_source_unconfigured' && issue.channel_id === 'total'));
+});
+
+test('v2 source edits reject malformed, mixed, or unsupported configurations', () => {
+  const project = netMeterProject();
+  const snapshot = JSON.stringify(project);
+  const modbus = {kind: 'modbus', address: 100, function_code: 3, data_type: 'u32'};
+  const invalidSources = [
+    null,
+    {kind: 'unconfigured', address: null},
+    {kind: 'unsupported'},
+    {kind: 'modbus', address: 100},
+    {...modbus, function_code: 6},
+    {...modbus, address: '100'},
+    {...modbus, address: 65536},
+    {...modbus, scale: 0},
+    {...modbus, topic: null},
+    {kind: 'mqtt', topic: ''},
+    {kind: 'mqtt', topic: 'test/meter', token: 'synthetic'},
+    {kind: 'ha', entity_id: ''},
+  ];
+  for (const source of invalidSources) {
+    assert.throws(() => actions.setChannelSource(project, {channelId: 'total', source}));
+    assert.equal(JSON.stringify(project), snapshot);
+  }
+  assert.throws(() => actions.setChannelSource(project, {channelId: 'missing', source: modbus}));
+  assert.throws(() => actions.setChannelSource(project, {channelId: 'total', source: modbus, unit: 'kW'}));
+  const v1 = grid();
+  assert.throws(() => actions.setChannelSource(v1, {channelId: v1.channels[0].id, source: modbus}));
+});

@@ -43,6 +43,41 @@
             <button class="button primary" type="submit">Zuordnen</button>
           </form>
         </section>
+        <section id="project-source-panel" class="panel project-add" aria-labelledby="project-source-heading" hidden>
+          <div class="project-panel-heading">
+            <div><span class="project-kicker">MESSUNGEN</span><h2 id="project-source-heading">Datenquelle bearbeiten</h2></div>
+            <button id="project-source-cancel" class="project-text-button" type="button">Schließen</button>
+          </div>
+          <p id="project-source-channel" class="project-muted"></p>
+          <form id="project-source-form">
+            <div class="project-add-grid">
+              <label>Quelle<select id="source-kind">
+                <option value="unconfigured">Offen lassen</option>
+                <option value="modbus">Modbus</option>
+                <option value="mqtt">MQTT</option>
+                <option value="ha">Home Assistant</option>
+              </select></label>
+            </div>
+            <fieldset id="source-modbus" class="project-add-grid source-fields" hidden disabled aria-label="Modbus">
+              <label>Registeradresse (0-basiert)<input id="source-address" type="number" min="0" max="65535" step="1" required></label>
+              <label>Lesefunktion<select id="source-function" required>
+                <option value="">Bitte wählen</option><option value="3">FC03 · Holding Register</option><option value="4">FC04 · Input Register</option>
+              </select></label>
+              <label>Datenformat<select id="source-type" required>
+                <option value="">Bitte wählen</option><option value="u16">u16 · 16 Bit ohne Vorzeichen</option><option value="s16">s16 · 16 Bit mit Vorzeichen</option><option value="u32">u32 · 32 Bit ohne Vorzeichen</option><option value="s32">s32 · 32 Bit mit Vorzeichen</option><option value="float32">float32 · Gleitkomma</option>
+              </select></label>
+              <label>Faktor (optional)<input id="source-scale" type="number" step="any"></label>
+            </fieldset>
+            <fieldset id="source-mqtt" class="project-add-grid source-fields" hidden disabled aria-label="MQTT">
+              <label>Topic<input id="source-topic" maxlength="512" required></label>
+              <label>JSON-Pfad (optional)<input id="source-path" maxlength="512"></label>
+            </fieldset>
+            <fieldset id="source-ha" class="project-add-grid source-fields" hidden disabled aria-label="Home Assistant">
+              <label>Entitäts-ID<input id="source-entity" maxlength="512" required placeholder="sensor.netzleistung"></label>
+            </fieldset>
+            <button class="button primary" type="submit">Quelle übernehmen</button>
+          </form>
+        </section>
         <section id="project-overview" hidden><div class="project-overview-bar"><div class="project-counts" id="project-counts" aria-label="Projektumfang"></div><button id="project-open-add" class="button secondary">+ Hinzufügen</button></div><div id="project-area-filter" class="project-area-filter" hidden><label for="project-area">Bereich</label><select id="project-area"><option value="">Alle Bereiche</option></select></div><section id="project-map" class="panel project-map"><div class="project-tabs" role="tablist" aria-label="Projektansicht"><button id="tab-electrical" role="tab" aria-selected="true" aria-controls="project-view" data-view="electrical">Aufbau</button><button id="tab-communication" role="tab" aria-selected="false" aria-controls="project-view" data-view="communication">Verbindungen</button><button id="tab-measurement" role="tab" aria-selected="false" aria-controls="project-view" data-view="measurement">Messungen</button></div><div id="project-view" role="tabpanel" aria-labelledby="tab-electrical"></div></section></section>
         <details id="project-warnings-section" class="project-disclosure" hidden><summary>Hinweise <span id="project-warnings-count"></span></summary><div id="project-warnings"></div></details>
         <details id="project-options" class="project-disclosure project-options"><summary>Projektoptionen<span class="summary-hint">Name, Import und Sicherung</span></summary><div class="project-options-content"><section class="project-option-group"><label for="project-name">Projektname</label><div class="project-inline"><input id="project-name" type="text" maxlength="160"><button id="project-rename" class="button secondary">Ändern</button></div></section><section class="project-option-group"><h2>Import und Sicherung</h2><div class="project-toolbar"><button id="project-import" class="button secondary">JSON importieren</button><input id="project-file" type="file" accept=".json,application/json" hidden><button id="project-export" class="button secondary">JSON exportieren</button><button id="project-reload" class="button secondary">Gespeicherten Stand laden</button></div><p id="project-storage-note" class="project-muted">Das Projekt wird in diesem Browser gespeichert.</p></section><section id="project-migration-option" class="project-option-group" hidden><h2>Anlagenstruktur</h2><button id="project-migration-preview" class="button secondary" type="button">Umstellung prüfen</button><p class="project-muted">Ordnen Sie bestehende Anschlüsse künftig Anlagen zu. Der bisherige Stand bleibt als Sicherung erhalten.</p></section><details id="project-object-options" class="project-disclosure nested-disclosure" hidden><summary>Objekt umbenennen</summary><div class="project-rename-row"><label>Objekt<select id="project-object"></select></label><label>Name<input id="project-object-name" type="text" maxlength="160"></label><button id="project-object-rename" class="button secondary">Ändern</button></div></details><details id="project-template-options" class="project-disclosure nested-disclosure"><summary>Beispielvorlagen</summary><div class="project-toolbar"><button id="project-new" class="button secondary">Einfache Vorlage ansehen</button><button id="project-reference" class="button secondary">Referenzbeispiel ansehen</button></div><p class="project-muted">Eine Vorlage wird erst nach Ihrer Übernahme verwendet.</p></details><details id="project-json-options" class="project-disclosure nested-disclosure"><summary>Erweiterte Konfiguration</summary><p class="project-muted">JSON bearbeiten und Änderungen vor der Übernahme prüfen. Maximal 2 MiB.</p><label class="sr-only" for="project-json">Projekt als JSON</label><textarea id="project-json" spellcheck="false" rows="16"></textarea><div class="project-toolbar"><button id="project-validate" class="button secondary">Änderungen prüfen</button><button id="project-reset-editor" class="project-text-button">Zurücksetzen</button></div></details></div></details>

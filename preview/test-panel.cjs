@@ -389,3 +389,38 @@ for (const create of [false, true]) {
     t.reply(request, {project_json: request.project_json, revision: 'measured-r2'}); await saving;
   });
 }
+
+
+test('source editor switches source kind and only persists the selected fields on save', async () => {
+  const t = editorSetup(), field = id => t.elements.get(id);
+  const model = require('./project-model.js');
+  const v1 = JSON.parse(fs.readFileSync(require('node:path').join(__dirname, '../examples/simple-project.json'), 'utf8'));
+  const project = model.migrateProjectV1ToV2(v1);
+  project.channels[0].source = {kind: 'modbus', address: 0, function_code: 4, data_type: 's32', scale: 0.01};
+  t.reply(t.outgoing.at(-1), {project_json: JSON.stringify(project), revision: 'source-r1'});
+  await Promise.resolve(); await Promise.resolve();
+  await t.click('tab-measurement');
+  const row = field('project-view').children.find(e => e.className === 'project-row');
+  const actions = row.children.find(e => e.className === 'project-toolbar');
+  await actions.children[0].handlers.get('click')();
+  assert.equal(field('project-source-panel').hidden, false);
+  assert.equal(field('source-address').value, '0');
+  assert.equal(field('source-modbus').disabled, false);
+  field('source-kind').value = 'mqtt';
+  field('source-kind').handlers.get('change')();
+  assert.equal(field('source-modbus').disabled, true);
+  assert.equal(field('source-mqtt').disabled, false);
+  field('source-topic').value = ' synthetic/power ';
+  field('source-path').value = 'power';
+  await field('project-source-form').handlers.get('submit')({preventDefault() {}});
+  assert.equal(field('project-source-panel').hidden, true);
+  assert.equal(t.outgoing.length, 1);
+  const saving = t.click('project-save'), request = t.outgoing.at(-1);
+  assert.equal(request.expected_revision, 'source-r1');
+  const saved = JSON.parse(request.project_json);
+  assert.deepEqual(saved.measurements, project.measurements);
+  assert.deepEqual(saved.channels[0], {...project.channels[0],
+    source: {kind: 'mqtt', topic: ' synthetic/power ', json_path: 'power'}});
+  t.reply(request, {project_json: request.project_json, revision: 'source-r2'});
+  await saving;
+});

@@ -35,7 +35,9 @@ V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberf
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
 
-Die Netzmessung in Format 2 lässt sich einem bestehenden Gesamtwirkleistungskanal zuordnen. Fehlt der Kanal, kann ein Entwurf mit Name und Einheit W oder kW am gewählten Messgerät angelegt werden. Das Formular beschränkt die Auswahl auf freie Kanäle am selben Anschluss und zeigt offene Quellen. Die Browserprüfung erfolgte mit synthetischen Daten bei 1440 und 390 Pixeln Breite. Als Nächstes folgt die geführte Konfiguration der Datenquelle.
+Format-2-Messstellen erhalten ihre Datenquelle direkt in der Projektansicht. Das Formular unterstützt Modbus mit FC03/FC04, MQTT und HA-Entitäten und kann eine Quelle offen lassen. Ein Wechsel ersetzt die bisherigen Quellenfelder, während Messort, Kanal und Einheit erhalten bleiben. Die Desktop- und Mobilprüfung verwendete synthetische Daten. Als Nächstes folgt die ausdrückliche Prüfung eines konfigurierten Messkanals mit simulierten Daten.
+
+Die Netzmessung in Format 2 lässt sich einem bestehenden Gesamtwirkleistungskanal zuordnen. Fehlt der Kanal, kann ein Entwurf mit Name und Einheit W oder kW am gewählten Messgerät angelegt werden. Das Formular beschränkt die Auswahl auf freie Kanäle am selben Anschluss und zeigt offene Quellen. Die Browserprüfung erfolgte mit synthetischen Daten bei 1440 und 390 Pixeln Breite. Das Quellenformular folgte im nächsten Entwicklungsschritt.
 
 Am 09.11.2026 hat das HA-Projektmenü eine ausdrückliche Umstellung auf die Anlagenstruktur erhalten. Die Vorschau liest den gespeicherten Stand. Die Bestätigung prüft dessen Inhaltskennung und SQLite-Revision und sichert das Original im selben Schreibvorgang. Desktop und Mobilansicht wurden mit synthetischen Daten geprüft. Die Messkanalzuordnung folgte im nächsten Entwicklungsschritt.
 
