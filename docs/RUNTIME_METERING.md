@@ -42,3 +42,12 @@ Nächster Schritt: Quellenalias-/Abdeckungsprüfung und tatsächliche Messzeit a
 ## Simulation mit gespeichertem Messkanal
 
 Das HA-Panel kann auf ausdrückliche Anforderung einen numerischen Testwert über denselben Bindungsbaustein wie eine gelieferte Messung umrechnen. Die Bindung akzeptiert Projekte in Format 1 oder 2. Der Administratoraufruf prüft die gespeicherte Revision, verwendet rein synthetische Zeitangaben und liefert nur das gekennzeichnete Ergebnis. Werte, Ausrichtung und Resultat bleiben außerhalb der Projektablage und Planung.
+
+
+## Modbus-Lesepfad mit eingesetztem Reader
+
+`read_modbus_power_measurement` verbindet die Projektmessstelle mit der Kommunikationsroute. Der Reader wird vom Aufrufer anhand der Verbindungs-ID bereitgestellt. Die Zieladresse ist die ausdrücklich konfigurierte Unit-ID des Messgeräts, auch wenn der Anschluss über ein Gateway läuft. Registeradresse, Lesefunktion und Datenformat stammen aus der Kanalquelle. Die Registeranzahl stammt aus demselben Format wie die Dekodierung.
+
+Byte- und Wortreihenfolge, Quellenidentität, Ausrichtung und Altersgrenze kommen vom Aufrufer. Die Dekodierung liefert den Rohwert. Erst die Messwertbindung rechnet einmal in kW um und wendet Faktor und Ausrichtung an. Die Empfangszeit entsteht nach der Antwort. Eine unbekannte Gerätezeit bleibt unbekannt und führt zu einem ungültigen Leistungswert. Ein gemeldeter Lesefehler oder eine fehlerhafte Registerantwort bricht die Prüfung ab.
+
+Die Tests verwenden eingesetzte Testreader und einen synthetischen Modbus-Server auf Loopback. Damit sind Weiterleitung, Wort-/Byte-Reihenfolge, Skalierung, Zeitprüfung und Herkunft gemeinsam geprüft. Die Integration ruft den Adapter derzeit nicht auf. Für einen späteren Lesezugriff müssen die Registerbelegung und Reihenfolge des tatsächlichen Geräts sowie die Herkunft seiner Messzeit nachgewiesen sein.

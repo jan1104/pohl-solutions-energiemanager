@@ -35,7 +35,9 @@ V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberf
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
 
-Die Messsimulation prüft eine gespeicherte Zuordnung mit einem eingegebenen Rohwert und ausdrücklicher Ausrichtung. Sie verwendet die vorhandene Bindungslogik für Skalierung und W/kW und kennzeichnet das Ergebnis sichtbar. Die Desktop- und Mobilprüfung erfolgte mit synthetischen Daten. Als Nächstes folgt eine lesende, zunächst simulierte Anbindung vom konfigurierten Kommunikationsweg zur Messung. Reale Register- und Geräteparameter müssen dafür getrennt belegt werden.
+Der Modbus-Lesepfad verbindet eine gespeicherte Kanalzuordnung über einen eingesetzten Reader mit Registerdekodierung und der bestehenden Leistungsumrechnung. Die Route unterstützt beide Projektformate. Tests mit Testreadern und einem synthetischen Loopback-Server prüfen Zieladresse, Registerbreite, Umrechnung und die Trennung von Empfangs- und Messzeit. Der nächste Schritt ist eine ausdrücklich aufgerufene Testoberfläche für diesen simulierten Lesepfad. Reale Geräte benötigen belegte Registerparameter, Reihenfolge und Messzeit.
+
+Die Messsimulation prüft eine gespeicherte Zuordnung mit einem eingegebenen Rohwert und ausdrücklicher Ausrichtung. Sie verwendet die vorhandene Bindungslogik für Skalierung und W/kW und kennzeichnet das Ergebnis sichtbar. Die Desktop- und Mobilprüfung erfolgte mit synthetischen Daten. Der simulierte Modbus-Lesepfad folgte im nächsten Entwicklungsschritt. Reale Register- und Geräteparameter müssen dafür getrennt belegt werden.
 
 Format-2-Messstellen erhalten ihre Datenquelle direkt in der Projektansicht. Das Formular unterstützt Modbus mit FC03/FC04, MQTT und HA-Entitäten und kann eine Quelle offen lassen. Ein Wechsel ersetzt die bisherigen Quellenfelder, während Messort, Kanal und Einheit erhalten bleiben. Die Desktop- und Mobilprüfung verwendete synthetische Daten. Die Testwertprüfung folgte im nächsten Entwicklungsschritt.
 

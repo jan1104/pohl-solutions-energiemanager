@@ -129,14 +129,24 @@ class ReadOnlyModbusTCP:
         return struct.unpack(">" + "H" * count, pdu[2:])
 
 
+_REGISTER_FORMATS = {"u16": (1, "H"), "s16": (1, "h"), "u32": (2, "I"),
+                     "s32": (2, "i"), "float32": (2, "f")}
+
+
+def register_count(data_type: str) -> int:
+    """Return the read width used by the decoder."""
+    if not isinstance(data_type, str) or data_type not in _REGISTER_FORMATS:
+        raise ValueError("Unsupported register type")
+    return _REGISTER_FORMATS[data_type][0]
+
+
 def decode_registers(registers: tuple[int, ...], data_type: str, *,
                      byte_order: str = "big", word_order: str = "big", scale: float = 1) -> float:
     """Decode an explicit profile; never guess byte/word order from a value."""
-    formats = {"u16": (1, "H"), "s16": (1, "h"), "u32": (2, "I"),
-               "s32": (2, "i"), "float32": (2, "f")}
-    if not isinstance(data_type, str) or data_type not in formats or byte_order not in ("big", "little") or word_order not in ("big", "little"):
-        raise ValueError("Unsupported register type or byte/word order")
-    count, code = formats[data_type]
+    count = register_count(data_type)
+    if byte_order not in ("big", "little") or word_order not in ("big", "little"):
+        raise ValueError("Unsupported register byte/word order")
+    _, code = _REGISTER_FORMATS[data_type]
     if len(registers) != count:
         raise ValueError("Wrong register count for data type")
     if not _finite(scale) or scale == 0:

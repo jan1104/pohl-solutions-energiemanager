@@ -12,6 +12,7 @@ import pytest
 from adapters.connections import ReadOnlyConnectionManager, UnsupportedTransportError
 from adapters.profiles.janitza_103_cbm import read_power
 from core.connection_routes import resolve_modbus_route
+from core.project_v2 import migrate_project_v1_to_v2
 from test_modbus_tcp import simulator, frame, good
 
 
@@ -220,3 +221,27 @@ def test_serial_route_is_resolvable_without_claiming_transport_implementation():
     p["connections"][0]["kind"] = "mqtt"
     with pytest.raises(ValueError, match="not a Modbus"):
         resolve_modbus_route(p, "hybrid")
+
+
+def test_v2_route_resolves_on_a_grid_without_a_primary_measurement():
+    data = migrate_project_v1_to_v2(project())
+    data["measurements"] = []
+    data["devices"][1].pop("connection_id")
+    before = deepcopy(data)
+    route = resolve_modbus_route(data, "hybrid")
+    assert route.connection_id == "connection_main" and route.unit_id == 2
+    assert data == before
+    data["devices"][1].pop("unit_id")
+    with pytest.raises(ValueError, match="own explicit Unit ID"):
+        resolve_modbus_route(data, "hybrid")
+    data["devices"][1]["unit_id"] = 248
+    with pytest.raises(ValueError, match="unit_id"):
+        resolve_modbus_route(data, "hybrid")
+
+
+@pytest.mark.parametrize("version", [True, "2", 3])
+def test_route_rejects_invalid_or_unsupported_project_versions(version):
+    data = project() if version is True else migrate_project_v1_to_v2(project())
+    data["schema_version"] = version
+    with pytest.raises(ValueError):
+        resolve_modbus_route(data, "hybrid")

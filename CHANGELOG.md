@@ -2,6 +2,7 @@
 
 ## Unveröffentlicht — 2026-11-10
 
+- Modbus-Messkanäle über einen eingesetzten Reader dekodieren und in kW umrechnen. Synthetische Tests prüfen Gateway-Route, Skalierung und Messzeit.
 - Gespeicherte Messkanäle im HA-Panel mit einem Testwert prüfen. Das simulierte Ergebnis zeigt die Umrechnung in kW und die gewählte Ausrichtung.
 - Messquellen in Format-2-Projekten direkt bearbeiten. Das Formular unterstützt Modbus mit FC03/FC04, MQTT, Home Assistant und offene Quellen. Ein Wechsel ersetzt nur die Quellenfelder.
 - Netzmessung am Format-2-Anschluss zuordnen. Die Auswahl zeigt freie Gesamtwirkleistungskanäle desselben Anschlusses. Neue Kanäle benötigen Name und Einheit. Offene Datenquellen bleiben sichtbar.

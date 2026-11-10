@@ -4,8 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
 from .metering import PowerSample, PowerValue, _finite_number, evaluate_power
-from .project import validate_project
-from .project_v2 import validate_project_v2
+from .project_v2 import validate_project_document
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,9 +58,7 @@ def bind_power_measurement(
     """
     if type(polarity) is not int or polarity not in (-1, 1):
         raise ValueError("An explicit polarity of +1 or -1 is required")
-    schema_version = project.get("schema_version") if isinstance(project, dict) else None
-    validator = validate_project_v2 if type(schema_version) in (int, float) and schema_version == 2 else validate_project
-    validated = validator(project)
+    validated = validate_project_document(project)
     measurement = next((m for m in validated["measurements"] if m["id"] == measurement_id), None)
     if measurement is None:
         raise ValueError(f"Unknown measurement: {measurement_id}")

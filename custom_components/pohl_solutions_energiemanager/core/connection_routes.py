@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from .project import validate_project
+from .project_v2 import validate_project_document
 
 
 @dataclass(frozen=True, slots=True)
@@ -17,7 +17,7 @@ def resolve_modbus_route(project, device_id) -> ModbusRoute:
     This resolves TCP, serial and raw TCP configuration equally; it does not
     claim that all of those transports already have an implemented reader.
     """
-    snapshot = validate_project(project)
+    snapshot = validate_project_document(project)
     devices = {d["id"]: d for d in snapshot["devices"]}
     if device_id not in devices:
         raise ValueError(f"Unknown device: {device_id}")

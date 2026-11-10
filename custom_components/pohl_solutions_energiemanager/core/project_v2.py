@@ -161,6 +161,14 @@ def _configuration_issues(project):
     return issues
 
 
+def validate_project_document(data):
+    """Validate a supported project version without converting it."""
+    version = data.get("schema_version") if isinstance(data, dict) else None
+    if type(version) in (int, float) and version == 2:
+        return validate_project_v2(data)
+    return validate_project(data)
+
+
 def load_project_v2_json(text):
     return validate_project_v2(_parse_project_json(text))
 
