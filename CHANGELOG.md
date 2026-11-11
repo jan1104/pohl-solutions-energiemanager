@@ -1,7 +1,8 @@
 # Änderungen
 
-## Unveröffentlicht — 2026-11-10
+## Unveröffentlicht — 2026-11-11
 
+- Überlaufende Modbus-Registerbereiche bereits beim Import und Bearbeiten der Quelle ablehnen. 32-Bit-Werte dürfen höchstens an Adresse 65534 beginnen.
 - Modbus-Messkanäle über einen eingesetzten Reader dekodieren und in kW umrechnen. Synthetische Tests prüfen Gateway-Route, Skalierung und Messzeit.
 - Gespeicherte Messkanäle im HA-Panel mit einem Testwert prüfen. Das simulierte Ergebnis zeigt die Umrechnung in kW und die gewählte Ausrichtung.
 - Messquellen in Format-2-Projekten direkt bearbeiten. Das Formular unterstützt Modbus mit FC03/FC04, MQTT, Home Assistant und offene Quellen. Ein Wechsel ersetzt nur die Quellenfelder.

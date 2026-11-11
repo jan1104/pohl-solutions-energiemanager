@@ -346,3 +346,18 @@ test('v2 source edits reject malformed, mixed, or unsupported configurations', (
   const v1 = grid();
   assert.throws(() => actions.setChannelSource(v1, {channelId: v1.channels[0].id, source: modbus}));
 });
+
+
+test('source edits reject a 32-bit value beyond the last register without changing the draft', () => {
+  const input = model.migrateProjectV1ToV2(grid());
+  const before = JSON.stringify(input);
+  const channelId = input.channels[0].id;
+  for (const data_type of ['u32', 's32', 'float32']) {
+    assert.throws(() => actions.setChannelSource(input, {channelId,
+      source: {kind: 'modbus', address: 65535, function_code: 3, data_type}}), /zwei Register/);
+    assert.equal(JSON.stringify(input), before);
+  }
+  const valid = actions.setChannelSource(input, {channelId,
+    source: {kind: 'modbus', address: 65535, function_code: 4, data_type: 's16'}});
+  assert.equal(valid.channels[0].source.address, 65535);
+});

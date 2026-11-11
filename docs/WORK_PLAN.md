@@ -1,6 +1,6 @@
 # Arbeitsplan
 
-Stand: 2026-11-10. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
+Stand: 2026-11-11. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
 
 ## Auftrag und Grenzen
 
@@ -34,6 +34,8 @@ Stand: 2026-11-10. Dieser Plan steuert die weitere Entwicklung in diesem Chat un
 V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberflächenprüfungen getestet. Die erweiterte echte HA-Laufzeitprüfung ist im GitHub-Lauf 41618373561 auf Commit e02b711 erfolgreich. Die lokale Vorschau ruft keine Preise ab; die aktive Integration kann konfigurierte Quellen lesen. Der SMARD-Nutzungsstatus ist in PRICE_SOURCES.md dokumentiert.
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
+
+Eine belegte Grenzprüfung wurde korrigiert. Projektimport und Quellenformular akzeptierten bisher 32-Bit-Registerwerte ab Adresse 65535, obwohl der Lesepfad zwei Register benötigt und den Bereich ablehnt. Beide Projektvalidatoren prüfen nun die vollständige Registerbreite. Tests vergleichen Format 1/2, FC03/FC04 und 16-/32-Bit-Grenzen zwischen Python und JavaScript. Vorhandene Konfigurationen mit dieser ungültigen Adresse melden den Fehler an der Quelle und benötigen eine anhand der Geräteunterlagen korrigierte Adresse.
 
 Der Modbus-Lesepfad verbindet eine gespeicherte Kanalzuordnung über einen eingesetzten Reader mit Registerdekodierung und der bestehenden Leistungsumrechnung. Die Route unterstützt beide Projektformate. Tests mit Testreadern und einem synthetischen Loopback-Server prüfen Zieladresse, Registerbreite, Umrechnung und die Trennung von Empfangs- und Messzeit. Der nächste Schritt ist eine ausdrücklich aufgerufene Testoberfläche für diesen simulierten Lesepfad. Reale Geräte benötigen belegte Registerparameter, Reihenfolge und Messzeit.
 

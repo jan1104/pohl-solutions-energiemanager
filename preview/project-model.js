@@ -105,6 +105,7 @@
       if (s.kind === 'modbus') {
         number(s.address, `${p}.source.address`, 0, 65535); if (!Number.isInteger(s.address)) fail(p, 'Registeradresse muss ganzzahlig sein');
         choose(s.function_code, `${p}.source.function_code`, [3, 4]); choose(s.data_type, `${p}.source.data_type`, ['u16', 's16', 'u32', 's32', 'float32']);
+        if (s.address === 65535 && ['u32', 's32', 'float32'].includes(s.data_type)) fail(`${p}.source.address`, '32-Bit-Wert benötigt zwei Register innerhalb 0 bis 65535');
         if (s.scale != null) { number(s.scale, `${p}.source.scale`, -Number.MAX_VALUE, Number.MAX_VALUE); if (s.scale === 0) fail(p, 'Skalierung darf nicht null sein'); }
       }
       if (s.kind === 'mqtt') { text(s.topic, `${p}.source.topic`, 512); if (s.json_path != null) text(s.json_path, `${p}.source.json_path`, 512); }

@@ -253,6 +253,9 @@ def _validate_project_v1(data, *, require_grid_measurement=True):
         for key in required:
             if source.get(key) is None:
                 _fail(path + ".source." + key, "Für diese Quelle erforderlich")
+        if (source["kind"] == "modbus" and source["address"] == 65535
+                and source["data_type"] in ("u32", "s32", "float32")):
+            _fail(path + ".source.address", "32-Bit-Wert benötigt zwei Register innerhalb 0 bis 65535")
     used_channels = set()
     used_roles = set()
     grid_measurements = {grid: 0 for grid in grids}

@@ -51,3 +51,6 @@ Das HA-Panel kann auf ausdrückliche Anforderung einen numerischen Testwert übe
 Byte- und Wortreihenfolge, Quellenidentität, Ausrichtung und Altersgrenze kommen vom Aufrufer. Die Dekodierung liefert den Rohwert. Erst die Messwertbindung rechnet einmal in kW um und wendet Faktor und Ausrichtung an. Die Empfangszeit entsteht nach der Antwort. Eine unbekannte Gerätezeit bleibt unbekannt und führt zu einem ungültigen Leistungswert. Ein gemeldeter Lesefehler oder eine fehlerhafte Registerantwort bricht die Prüfung ab.
 
 Die Tests verwenden eingesetzte Testreader und einen synthetischen Modbus-Server auf Loopback. Damit sind Weiterleitung, Wort-/Byte-Reihenfolge, Skalierung, Zeitprüfung und Herkunft gemeinsam geprüft. Die Integration ruft den Adapter derzeit nicht auf. Für einen späteren Lesezugriff müssen die Registerbelegung und Reihenfolge des tatsächlichen Geräts sowie die Herkunft seiner Messzeit nachgewiesen sein.
+
+
+Die Registergrenze wird bereits bei der Projektprüfung berücksichtigt. Bei 32-Bit-Datenformaten ist 65534 die höchste Startadresse, bei 16-Bit-Formaten 65535. Dies gilt für FC03 und FC04. Bestehende Konfigurationen mit einem überlaufenden Registerbereich müssen anhand der Geräteunterlagen korrigiert werden. Der Import meldet die betroffene Quellenadresse.

@@ -85,3 +85,42 @@ def test_bundled_browser_examples_match_export_files():
     bundled = json.loads(result.stdout)
     for key, filename in (("reference", "reference-project.json"), ("simple", "simple-project.json")):
         assert bundled[key] == json.loads((ROOT / "examples" / filename).read_text(encoding="utf-8"))
+
+
+
+def test_modbus_register_span_boundaries_match_browser_and_backend():
+    if shutil.which("node") is None:
+        pytest.skip("Node.js is required for the cross-runtime contract check")
+    from core.project_v2 import load_project_v2_json, migrate_project_v1_to_v2
+
+    simple = json.loads((ROOT / "examples/simple-project.json").read_text(encoding="utf-8"))
+    cases = []
+    for version in (1, 2):
+        for data_type in ("u16", "s16", "u32", "s32", "float32"):
+            for address in (65534, 65535, 65535.0):
+                for function_code in (3, 4):
+                    project = deepcopy(simple) if version == 1 else migrate_project_v1_to_v2(simple)
+                    project["channels"][0]["source"] = {
+                        "kind": "modbus", "address": address, "function_code": function_code, "data_type": data_type,
+                    }
+                    valid = address == 65534 or data_type in ("u16", "s16")
+                    cases.append((project, valid))
+    payloads = [json.dumps(p) for p, _ in cases]
+    script = """
+const fs = require('node:fs'), model = require('./preview/project-model.js');
+const payloads = JSON.parse(fs.readFileSync(0, 'utf8'));
+process.stdout.write(JSON.stringify(payloads.map(text => {
+  try { model.loadProjectDocument(text); return true; } catch { return false; }
+})));
+"""
+    run = subprocess.run(["node", "-e", script], input=json.dumps(payloads), cwd=ROOT,
+                         capture_output=True, encoding="utf-8", check=True, timeout=30)
+    browser = json.loads(run.stdout)
+    for (project, valid), text, accepted in zip(cases, payloads, browser, strict=True):
+        load = load_project_v2_json if project["schema_version"] == 2 else load_project_json
+        if valid:
+            assert load(text) == project
+        else:
+            with pytest.raises(ValueError, match="Register"):
+                load(text)
+        assert accepted is valid, project["channels"][0]["source"]
