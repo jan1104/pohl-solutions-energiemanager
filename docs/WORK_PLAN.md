@@ -1,6 +1,6 @@
 # Arbeitsplan
 
-Stand: 2026-11-11. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
+Stand: 2026-11-12. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
 
 ## Auftrag und Grenzen
 
@@ -34,6 +34,8 @@ Stand: 2026-11-11. Dieser Plan steuert die weitere Entwicklung in diesem Chat un
 V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberflächenprüfungen getestet. Die erweiterte echte HA-Laufzeitprüfung ist im GitHub-Lauf 41618373561 auf Commit e02b711 erfolgreich. Die lokale Vorschau ruft keine Preise ab; die aktive Integration kann konfigurierte Quellen lesen. Der SMARD-Nutzungsstatus ist in PRICE_SOURCES.md dokumentiert.
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
+
+Bedienlücke am 12.11.2026 geschlossen: Die vom Modell bereits unterstützte geräteeigene Modbus-Unit-ID lässt sich beim Anlegen direkt eingeben. Das Feld erscheint für TCP, TCP/RTU-Gateway, USB/RS485 und RTU über TCP, bleibt optional für Entwürfe und übernimmt keinen Standardwert. MQTT, HA und Solarman erhalten daraus keine Modbus-Adresse. Tests prüfen beide Projektformate, ungültige Adressen, Erhalt fehlerhafter Eingaben und explizite Speicherung. Desktop (1440 × 900) und Mobil (390 × 844) mit synthetischem Messgerät visuell geprüft. Keine Geräteverbindung und kein Release.
 
 Grundversion 0.6.0 wird für den Nutzertest vorbereitet. Neue HA-Projekte starten direkt in Format 2. Eine atomare Neuanlage erhält konkurrierende oder bestehende Daten. Die Oberfläche verlangt die Übernahme oder das Schließen offener Bearbeitungen vor Speichern oder Formularwechsel. Testablauf und Umfang stehen in TESTING_0_6.md. Der aktuelle Lauf erstellt und pusht den geprüften Kandidaten mit lokalem Installationspaket. Die Veröffentlichung als HACS-Release erfolgt getrennt.
 

@@ -508,3 +508,46 @@ test('global save cannot report success while a source edit or unchecked JSON is
   assert.equal(t.outgoing.length, 1);
   assert.match(field('project-error').textContent, /prüfen und übernehmen/);
 });
+for (const version of [1, 2]) {
+  for (const kind of ['modbus_tcp', 'modbus_tcp_rtu_gateway', 'modbus_rtu_usb', 'rtu_over_tcp', 'mqtt', 'ha', 'solarman']) {
+    test(`device setup in format ${version} handles an explicit Unit-ID for ${kind}`, async () => {
+      const t = editorSetup(), field = id => t.elements.get(id);
+      const v1 = JSON.parse(fs.readFileSync(require('node:path').join(__dirname, '../examples/simple-project.json'), 'utf8'));
+      const project = version === 2 ? require('./project-model.js').migrateProjectV1ToV2(v1) : v1;
+      project.connections[0].kind = kind;
+      t.reply(t.outgoing.at(-1), {project_json: JSON.stringify(project), revision: 'device-r1'});
+      await Promise.resolve(); await Promise.resolve();
+      await t.click('project-open-add');
+      field('add-action').value = 'device';
+      field('add-action').handlers.get('change')();
+      field('add-name').value = 'Testmessgerät';
+      field('add-device-kind').value = 'meter';
+      field('add-device-connection').value = 'connection_main';
+      field('add-device-connection').handlers.get('change')();
+      const modbus = !['mqtt', 'ha', 'solarman'].includes(kind);
+      assert.equal(field('add-unit-field').hidden, !modbus);
+      assert.equal(field('add-unit').disabled, !modbus);
+      assert.equal(field('add-unit').value, ''); // No inferred address.
+      const submit = () => field('project-add-form').handlers.get('submit')({preventDefault() {}});
+      if (modbus) {
+        for (const invalid of ['0', '248', '1.5']) {
+          field('add-unit').value = invalid;
+          await submit();
+          assert.equal(field('project-add-panel').hidden, false);
+          assert.equal(field('add-unit').value, invalid);
+          assert.equal(t.outgoing.length, 1);
+        }
+      }
+      field('add-unit').value = '247';
+      await submit();
+      assert.equal(field('project-add-panel').hidden, true);
+      assert.equal(field('add-unit').value, '');
+      const saving = t.click('project-save'), request = t.outgoing.at(-1);
+      const device = JSON.parse(request.project_json).devices.find(d => d.name === 'Testmessgerät');
+      assert.equal(device.connection_id, 'connection_main');
+      assert.equal(device.unit_id, modbus ? 247 : undefined);
+      t.reply(request, {project_json: request.project_json, revision: 'device-r2'});
+      await saving;
+    });
+  }
+}

@@ -1,7 +1,8 @@
 # Änderungen
 
-## 0.6.0 — vorbereitet, 2026-11-11
+## 0.6.0 — vorbereitet, 2026-11-12
 
+- Beim Hinzufügen eines Modbus-Geräts die eigene Unit-ID (1–247) direkt eingeben. Das optionale Feld erscheint nur für Modbus-Verbindungen; keine Adresse wird angenommen oder vom vorherigen Gerät übernommen.
 - Neue HA-Projekte beginnen direkt mit der ersten Anlage. Projekt und Speicherformat werden atomar angelegt.
 - Speichern und Wechseln der Ansicht schützen offene Formulare und ungeprüfte JSON-Änderungen vor versehentlichem Verwerfen.
 - Überlaufende Modbus-Registerbereiche bereits beim Import und Bearbeiten der Quelle ablehnen. 32-Bit-Werte dürfen höchstens an Adresse 65534 beginnen.

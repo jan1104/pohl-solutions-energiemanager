@@ -12,7 +12,9 @@ Die Grundversion umfasst Projektverwaltung, Speicherung, Geräte- und Messquelle
 
 Beim Hinzufügen der Integration den Namen des Energiemanagers eingeben. Ein neues Projekt beginnt mit **Anlage hinzufügen**. Anschließend einen Netzanschluss wie HAK anlegen. Ort, Beschreibung, Absicherung und Phasen lassen sich bei Bedarf aufklappen. Die Daten jeweils mit **Speichern** übernehmen.
 
-Über **Hinzufügen** einen Bereich und anschließend ein Messgerät anlegen. Im Aufbau am Anschluss **Netzmessung zuordnen** wählen. Ein vorhandener Gesamtwirkleistungskanal kann ausgewählt werden. Alternativ einen Kanal mit Name und Einheit W oder kW anlegen.
+Über **Hinzufügen** einen Bereich und anschließend ein Messgerät anlegen. Bei einem Modbus-Gerät die zuvor angelegte Verbindung auswählen und die **Modbus-Geräteadresse (Unit-ID)** aus der Gerätekonfiguration eintragen. Ein leerer Wert bleibt als Entwurf offen; er wird nicht durch 1 ersetzt. Mehrere Geräte dürfen dieselbe Verbindung referenzieren, ihre Adresse wird je Gerät angegeben.
+
+Im Aufbau am Anschluss **Netzmessung zuordnen** wählen. Ein vorhandener Gesamtwirkleistungskanal kann ausgewählt werden. Alternativ einen Kanal mit Name und Einheit W oder kW anlegen.
 
 Unter **Messungen** die **Quelle einrichten**. Unterstützt sind die Projektangaben für Modbus, MQTT und eine HA-Entität. Diese Angaben beschreiben die Quelle. Die Grundversion ruft sie beim Speichern nicht ab.
 
@@ -35,4 +37,4 @@ Die aktive Projektablage liegt unter `.storage/pohl_solutions_energiemanager.sql
 
 Der Releasekandidat wird mit Python-, Browserlogik-, Archiv- und echten HA-Laufzeitprüfungen getestet. Die visuelle Prüfung verwendet synthetische Projektangaben auf Desktop und Mobil. Tests mit Modbus-Antworten verwenden einen lokalen Testserver. Tatsächliche Gerätekompatibilität und Messwertgüte benötigen eine gesonderte Prüfung mit belegten Parametern.
 
-Für diesen Kandidaten wurde der Einrichtungsablauf bei Desktop- und Mobilbreite über die Browseroberfläche geprüft. Die aktuelle Screenshotaufnahme schlug im Browserwerkzeug fehl. Vorherige Ansichten wurden visuell geprüft.
+Der Einrichtungsablauf wurde bei Desktop- und Mobilbreite über die Browseroberfläche geprüft. Bei der ersten Prüfung des Kandidaten am 11.11.2026 schlug die Screenshotaufnahme fehl. Das ergänzte Geräteformular mit Unit-ID wurde am 12.11.2026 bei 1440 × 900 und 390 × 844 Pixeln anhand von Screenshots geprüft; das synthetische Messgerät ließ sich anschließend speichern.

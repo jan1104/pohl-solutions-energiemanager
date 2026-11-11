@@ -351,6 +351,10 @@
     $('add-name').placeholder = action === 'plant' ? 'Zum Beispiel Werkstatt' : action === 'grid' ? 'Zum Beispiel HAK' : '';
 
     $('project-add-heading').textContent = ({plant: 'Anlage hinzufügen', grid: 'Netzanschluss hinzufügen', area: 'Bereich hinzufügen', connection: 'Verbindung hinzufügen', device: 'Gerät hinzufügen'})[action] || 'Projekt ergänzen';
+    const connection = byId('connections', $('add-device-connection').value);
+    const modbusDevice = action === 'device' && ['modbus_tcp', 'modbus_tcp_rtu_gateway', 'modbus_rtu_usb', 'rtu_over_tcp'].includes(connection?.kind);
+    $('add-unit-field').hidden = !modbusDevice;
+    $('add-unit').disabled = !modbusDevice;
     $('add-parent-field').hidden = action !== 'device' || $('add-device-kind').value !== 'battery';
   }
   function renderChannelChoices() {
@@ -601,7 +605,7 @@
     if (embedded) { const data = await haRequest('load'); if (initialLoadPending) { initialLoadPending = false; baseRevision = data.revision; initialControls(false); } if (!data.project_json) { message('In Home Assistant ist noch kein Projekt gespeichert. Ihr Entwurf bleibt erhalten.'); return; } stage(M.loadProjectDocument(data.project_json), 'Aktueller Home-Assistant-Speicherstand', data.revision); }
     else { const raw = window.localStorage.getItem(storageKey); if (!raw) throw new Error('Kein lokaler Stand vorhanden.'); stage(M.loadProjectDocument(raw), 'Lokaler Speicherstand'); }
   }));
-  ['add-action', 'add-plant', 'add-area', 'add-device-kind'].forEach(id => $(id).addEventListener('change', renderAddForm));
+  ['add-action', 'add-plant', 'add-area', 'add-device-kind', 'add-device-connection'].forEach(id => $(id).addEventListener('change', renderAddForm));
   $('project-add-form').addEventListener('submit', guard(event => {
     event.preventDefault(); if (candidate) throw new Error('Offene Vorschau zuerst übernehmen oder verwerfen.');
     const A = window.PohlProjectActions; if (!A) throw new Error('Projektfunktionen sind noch nicht verfügbar.');
@@ -628,12 +632,13 @@
     if (action === 'device') {
       const values = {name, areaId: $('add-area').value, nodeId: $('add-node').value, kind: $('add-device-kind').value};
       if ($('add-device-connection').value) values.connectionId = $('add-device-connection').value;
+      if (!$('add-unit').disabled && $('add-unit').value !== '') values.unitId = Number($('add-unit').value);
       if (values.kind === 'battery') values.parentId = $('add-parent').value;
       next = A.addDevice(project, values);
     }
     addPanelOpen = false;
     accept(next, 'Hinzugefügt. Änderungen noch nicht gespeichert.');
-    for (const id of ['add-name', 'add-location', 'add-description', 'add-fuse', 'add-phases']) $(id).value = '';
+    for (const id of ['add-name', 'add-location', 'add-description', 'add-fuse', 'add-phases', 'add-unit']) $(id).value = '';
     $(firstAction() ? 'project-start-add' : 'project-open-add').focus();
   }));
   try {
