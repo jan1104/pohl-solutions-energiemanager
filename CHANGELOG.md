@@ -1,7 +1,9 @@
 # Änderungen
 
-## Unveröffentlicht — 2026-11-11
+## 0.6.0 — vorbereitet, 2026-11-11
 
+- Neue HA-Projekte beginnen direkt mit der ersten Anlage. Projekt und Speicherformat werden atomar angelegt.
+- Speichern und Wechseln der Ansicht schützen offene Formulare und ungeprüfte JSON-Änderungen vor versehentlichem Verwerfen.
 - Überlaufende Modbus-Registerbereiche bereits beim Import und Bearbeiten der Quelle ablehnen. 32-Bit-Werte dürfen höchstens an Adresse 65534 beginnen.
 - Modbus-Messkanäle über einen eingesetzten Reader dekodieren und in kW umrechnen. Synthetische Tests prüfen Gateway-Route, Skalierung und Messzeit.
 - Gespeicherte Messkanäle im HA-Panel mit einem Testwert prüfen. Das simulierte Ergebnis zeigt die Umrechnung in kW und die gewählte Ausrichtung.

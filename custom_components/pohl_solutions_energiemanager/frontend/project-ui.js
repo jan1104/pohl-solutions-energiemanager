@@ -104,7 +104,13 @@
   const isV2 = value => value?.schema_version === 2;
   const validate = value => isV2(value) ? M.validateProjectV2(value) : M.validateProject(value);
   const exportDraft = value => isV2(value) ? JSON.stringify(M.validateProjectV2(value)) : M.exportProjectJson(value);
+  function ensureGuidedEditorClosed() {
+    if (addPanelOpen || measurementGrid || sourceChannel) {
+      throw new Error('Bitte die offene Bearbeitung zuerst übernehmen oder schließen.');
+    }
+  }
   function stage(value, origin, revision, migration) {
+    ensureGuidedEditorClosed();
     if (embedded && !migration && revision === undefined && value.schema_version !== project.schema_version) {
       throw new Error('Das Importformat muss zum gespeicherten Projekt passen.');
     }
@@ -313,6 +319,7 @@
       : 'Legen Sie einen Anschluss an. Danach können Sie Geräte und Messstellen ergänzen.';
   }
   function openAdd() {
+    ensureGuidedEditorClosed();
     if (candidate) throw new Error('Offene Vorschau zuerst übernehmen oder verwerfen.');
     addPanelOpen = true;
     measurementGrid = sourceChannel = simulationMeasurement = undefined;
@@ -366,6 +373,7 @@
     $('measure-name').required = $('measure-unit').required = create;
   }
   function openMeasurement(gridId) {
+    ensureGuidedEditorClosed();
     if (candidate) throw new Error('Offene Vorschau zuerst übernehmen oder verwerfen.');
     meterChoices = window.PohlProjectActions.gridMeterChoices(project, gridId);
     measurementGrid = gridId;
@@ -398,6 +406,7 @@
     const gridId = measurementGrid;
     if (!gridId) return;
     const area = project.areas.find(a => a.grid_id === gridId);
+    measurementGrid = undefined;
     openAdd();
     if (area) {
       $('add-action').value = 'device';
@@ -434,6 +443,7 @@
     }
   }
   function openSource(channelId) {
+    ensureGuidedEditorClosed();
     if (candidate) throw new Error('Offene Vorschau zuerst übernehmen oder verwerfen.');
     const channel = byId('channels', channelId);
     if (!channel || !isV2(project)) throw new Error('Messkanal nicht gefunden.');
@@ -569,14 +579,20 @@
     const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : (index + (event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length;
     view = buttons[next].dataset.view; renderView(); buttons[next].focus();
   }));
-  $('project-rename').addEventListener('click', guard(() => { const next = validate(project); next.name = $('project-name').value; accept(next, embedded ? 'Projektname geändert. Noch nicht in Home Assistant gespeichert.' : 'Projektname geändert. Noch nicht lokal gespeichert.'); }));
+  $('project-rename').addEventListener('click', guard(() => { ensureGuidedEditorClosed(); const next = validate(project); next.name = $('project-name').value; accept(next, embedded ? 'Projektname geändert. Noch nicht in Home Assistant gespeichert.' : 'Projektname geändert. Noch nicht lokal gespeichert.'); }));
   $('project-object').addEventListener('change', () => { $('project-object-name').value = selectedObject().value?.name || ''; });
-  $('project-object-rename').addEventListener('click', guard(() => { const {group, value} = selectedObject(); if (!value) throw new Error('Objekt auswählen.'); const next = validate(project); next[group].find(v => v.id === value.id).name = $('project-object-name').value; accept(next, embedded ? 'Objektname geändert. Noch nicht in Home Assistant gespeichert.' : 'Objektname geändert. Noch nicht lokal gespeichert.'); }));
+  $('project-object-rename').addEventListener('click', guard(() => { ensureGuidedEditorClosed(); const {group, value} = selectedObject(); if (!value) throw new Error('Objekt auswählen.'); const next = validate(project); next[group].find(v => v.id === value.id).name = $('project-object-name').value; accept(next, embedded ? 'Objektname geändert. Noch nicht in Home Assistant gespeichert.' : 'Objektname geändert. Noch nicht lokal gespeichert.'); }));
   $('project-import').addEventListener('click', () => $('project-file').click());
   $('project-file').addEventListener('change', guard(async event => { const file = event.target.files[0]; event.target.value = ''; if (!file) return; if (file.size > M.MAX_BYTES) throw new Error('Datei überschreitet 2 MiB.'); stage(M.loadProjectDocument(await file.text()), `Import ${file.name}`); }));
   $('project-export').addEventListener('click', guard(() => { const blob = new Blob([exportDraft(project)], {type: 'application/json'}), url = URL.createObjectURL(blob), a = el('a'); a.href = url; a.download = `${project.id}.json`; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); message('Übernommenes Projekt exportiert; eine offene Vorschau wird nicht exportiert.'); }));
   $('project-save').addEventListener('click', guard(async () => {
     if (candidate) throw new Error('Offene Vorschau zuerst übernehmen oder verwerfen.');
+    if (addPanelOpen || measurementGrid || sourceChannel) {
+      throw new Error('Bitte die offene Bearbeitung zuerst übernehmen oder schließen.');
+    }
+    if ($('project-name').value !== project.name || $('project-json').value !== exportDraft(project)) {
+      throw new Error('Bitte die Änderungen in den Projektoptionen zuerst prüfen und übernehmen.');
+    }
     const text = exportDraft(project);
     if (embedded) { $('project-save').disabled = true; try { const data = await haRequest('save', {project_json: text, expected_revision: baseRevision}); baseRevision = data.revision; savedText = text; renderProjectLayout(); message(exportDraft(project) === text ? 'Projekt in Home Assistant gespeichert. Keine Gerätesteuerung aktiviert.' : 'Vorherigen Entwurf gespeichert. Neuere Änderungen in dieser Ansicht sind noch nicht gespeichert.'); } finally { $('project-save').disabled = false; } }
     else { window.localStorage.setItem(storageKey, text); message('Übernommenes Projekt in diesem Browser gespeichert.'); }

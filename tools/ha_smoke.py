@@ -16,6 +16,28 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 
+async def seed_v1_project(hass, name, project_id):
+    """Explicit old-version fixture; ordinary integration setup now creates v2."""
+    from custom_components.pohl_solutions_energiemanager.const import DOMAIN
+    from custom_components.pohl_solutions_energiemanager.core.storage import SQLiteStorage
+
+    fixture = {"format": "pohl-energy-project", "schema_version": 1,
+               "id": project_id, "name": name, "mode": "planning_only",
+               "grids": [], "areas": [], "nodes": [], "connections": [],
+               "devices": [], "channels": [], "measurements": [], "settings": {}}
+    path = Path(hass.config.path(".storage", f"{DOMAIN}.sqlite3"))
+
+    def seed():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        repository = SQLiteStorage(path)
+        repository.initialize()
+        namespace = repository.for_module("global", "project", schema_version=1)
+        namespace.put("active", fixture, expected_revision=None)
+
+    await hass.async_add_executor_job(seed)
+    return fixture
+
+
 async def sqlite_migration_checks(hass):
     """Use real HA executor and real SQLite, isolated from the integration project."""
     from threading import Event
@@ -145,6 +167,115 @@ async def sqlite_migration_checks(hass):
             assert legacy.read_bytes() == pretty
 
 
+async def fresh_project_creation_checks(hass):
+    from threading import Event
+
+    from custom_components.pohl_solutions_energiemanager.core.storage import ModuleStorage
+    from custom_components.pohl_solutions_energiemanager.project_store import ProjectConflictError, ProjectStore
+
+    with tempfile.TemporaryDirectory() as isolated:
+        root = Path(isolated)
+        with patch.object(hass.config, "path", side_effect=lambda *parts: str(root.joinpath(*parts))):
+            store = ProjectStore(hass)
+            await store.async_load()
+            with patch.object(ModuleStorage, "migrate", side_effect=sqlite3.OperationalError("CI failed creation")):
+                try:
+                    await store.async_ensure_project("Failed", "failed")
+                except OSError:
+                    pass
+                else:
+                    raise AssertionError("Failed project creation was accepted")
+            assert store.export()["project_json"] is None
+            peer = ProjectStore(hass)
+            await peer.async_load()
+            await store.async_ensure_project("Fresh CI", "fresh")
+            assert json.loads(store.export()["project_json"])["schema_version"] == 2
+            assert (await store.async_storage_health())["schema_version"] == 2
+            try:
+                await peer.async_ensure_project("Other name", "other")
+            except ProjectConflictError:
+                pass
+            else:
+                raise AssertionError("Competing creation overwrote the project")
+            assert peer.snapshot() == store.snapshot()
+            restarted = ProjectStore(hass)
+            await restarted.async_load()
+            await restarted.async_ensure_project("Ignored name", "ignored")
+            assert restarted.snapshot() == store.snapshot()
+
+    with tempfile.TemporaryDirectory() as isolated:
+        root = Path(isolated)
+        with patch.object(hass.config, "path", side_effect=lambda *parts: str(root.joinpath(*parts))):
+            store = ProjectStore(hass)
+            await store.async_load()
+            started, release = Event(), Event()
+            create = store._sync_create_project
+
+            def delayed_create(*args):
+                started.set()
+                if not release.wait(5):
+                    raise OSError("CI creation release timeout")
+                return create(*args)
+
+            with patch.object(store, "_sync_create_project", side_effect=delayed_create):
+                task = asyncio.create_task(store.async_ensure_project("Cancelled create", "cancelled"))
+                try:
+                    assert await hass.async_add_executor_job(started.wait, 5)
+                    task.cancel()
+                    await asyncio.sleep(0)
+                    assert not task.done()
+                finally:
+                    release.set()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+                else:
+                    raise AssertionError("Creation swallowed cancellation")
+            restarted = ProjectStore(hass)
+            await restarted.async_load()
+            assert restarted.snapshot() == store.snapshot()
+            assert json.loads(restarted.export()["project_json"])["schema_version"] == 2
+
+
+async def fresh_runtime_project_checks(hass, admin_ws):
+    from homeassistant.config_entries import ConfigEntry, ConfigEntryState
+
+    from custom_components.pohl_solutions_energiemanager import async_setup_entry, async_unload_entry
+    from custom_components.pohl_solutions_energiemanager.const import DOMAIN
+
+    with tempfile.TemporaryDirectory() as isolated:
+        root = Path(isolated)
+        with patch.object(hass.config, "path", side_effect=lambda *parts: str(root.joinpath(*parts))):
+            entry = ConfigEntry(
+                version=1, minor_version=1, domain=DOMAIN, title="Fresh runtime CI",
+                data={"name": "Fresh runtime CI", "project_only": True}, options={}, source="user",
+                unique_id=None, discovery_keys=MappingProxyType({}), subentries_data=(),
+                state=ConfigEntryState.SETUP_IN_PROGRESS,
+            )
+            with patch.object(hass.config_entries, "async_setup", new=AsyncMock(return_value=True)):
+                await hass.config_entries.async_add(entry)
+            assert await async_setup_entry(hass, entry)
+            try:
+                initial = (await admin_ws("pohl_energy/project/get"))["result"]
+                project = json.loads(initial["project_json"])
+                assert project["schema_version"] == 2 and project["plants"] == []
+                assert project["name"] == "Fresh runtime CI"
+                project["plants"] = [{"id": "plant", "name": "CI Anlage", "grid_ids": []}]
+                response = await admin_ws("pohl_energy/project/set", project_json=json.dumps(project),
+                                          expected_revision=initial["revision"])
+                assert response["success"], response
+                saved = response["result"]
+                assert saved["summary"]["counts"]["plants"] == 1
+            finally:
+                assert await async_unload_entry(hass, entry)
+            assert await async_setup_entry(hass, entry)
+            try:
+                assert (await admin_ws("pohl_energy/project/get"))["result"] == saved
+            finally:
+                assert await async_unload_entry(hass, entry)
+
+
 async def sqlite_project_version_checks(hass):
     """Exercise v1 and v2 ProjectStore persistence without migrating on setup."""
     from custom_components.pohl_solutions_energiemanager.const import DOMAIN
@@ -159,9 +290,10 @@ async def sqlite_project_version_checks(hass):
     with tempfile.TemporaryDirectory() as isolated:
         root = Path(isolated)
         with patch.object(hass.config, "path", side_effect=lambda *parts: str(root.joinpath(*parts))):
+            await seed_v1_project(hass, "CI Versionspruefung", "version_fixture")
             first = ProjectStore(hass)
             await first.async_load()
-            await first.async_ensure_project("CI Versionspruefung", "version_fixture")
+            await first.async_ensure_project("Must preserve v1", "another_fixture")
             original = first.export()["project_json"]
             source = json.loads(original)
             assert source["schema_version"] == 1
@@ -329,9 +461,10 @@ async def cancelled_project_migration_check(hass):
     with tempfile.TemporaryDirectory() as isolated:
         root = Path(isolated)
         with patch.object(hass.config, "path", side_effect=lambda *parts: str(root.joinpath(*parts))):
+            await seed_v1_project(hass, "CI Migrationsabbruch", "cancel_fixture")
             store = ProjectStore(hass)
             await store.async_load()
-            await store.async_ensure_project("CI Migrationsabbruch", "cancel_fixture")
+            await store.async_ensure_project("Must preserve v1", "another_fixture")
             preview = await store.async_migration_preview(store.revision)
             started, release = Event(), Event()
             commit = store._sync_migrate_project
@@ -500,6 +633,7 @@ async def main() -> None:
         runner = None
         try:
             await sqlite_migration_checks(hass)
+            await fresh_project_creation_checks(hass)
             await sqlite_project_version_checks(hass)
             await cancelled_project_migration_check(hass)
             now = datetime.now(timezone.utc)
@@ -568,6 +702,7 @@ async def main() -> None:
                 discovery_keys=MappingProxyType({}), subentries_data=(),
                 state=ConfigEntryState.SETUP_IN_PROGRESS,
             )
+            await seed_v1_project(hass, "Project CI", project_entry.entry_id)
             # Register the fixture with the real manager before creating legacy
             # entity-registry rows; lifecycle calls remain explicit below.
             with patch.object(hass.config_entries, "async_setup", new=AsyncMock(return_value=True)):
@@ -818,6 +953,7 @@ async def main() -> None:
                     await websocket_measurement_simulation_checks(hass, admin_ws, non_admin_ws, migrated_snapshot)
                 finally:
                     assert await async_unload_entry(hass, project_entry)
+                await fresh_runtime_project_checks(hass, admin_ws)
             coordinator = PohlEnergyCoordinator(hass, entry)
             result = await coordinator._async_update_data()
             assert result["valid"], result

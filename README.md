@@ -2,7 +2,7 @@
 
 Lokale, nachvollziehbare Energieplanung für Home Assistant und Node-RED.
 
-**Version 0.5.1 ist eine testbare Entwicklungsversion mit eingebauter HA-Projektverwaltung und Grundmodul. Sie schreibt keine Gerätebefehle.** Projekt- und Basisstatus sind in HA bedienbar; vollständige Prognose-/Gerätemodule und produktive Automatik folgen.
+**Die vorbereitete Grundversion 0.6.0 umfasst die Projektverwaltung in Home Assistant.** Der Ablauf führt von Anlage und Netzanschluss zu Geräten, Messkanälen und Datenquellen. Die Messsimulation prüft vorgegebene Testwerte. Der Ausbau zur automatischen Anlagenregelung ist im Arbeitsplan beschrieben.
 
 ## Was bereits funktioniert
 
@@ -19,7 +19,7 @@ Lokale, nachvollziehbare Energieplanung für Home Assistant und Node-RED.
 
 ## Schnell ansehen
 
-**Grundmodul 0.5.1 testen:** Über HACS aktualisieren, HA neu starten und links **Energiemanager → Grundmodul** öffnen. Tatsächliche Modulversionen und zentralen SQLite-Projektspeicher prüfen; vorhandene Projekte werden einmalig übernommen. [Testablauf und Speicherhinweise](docs/TESTING_0_5.md).
+**Grundversion 0.6.0 testen:** Das Paket wird vor Veröffentlichung als HACS-Release geprüft. Nach Bereitstellung über HACS aktualisieren, HA neu starten und links **Energiemanager** öffnen. Neue Projekte beginnen direkt mit der ersten Anlage. Vorhandene Projekte können nach Vorschau auf die Anlagenstruktur umgestellt werden. [Testablauf für 0.6.0](docs/TESTING_0_6.md).
 
 **Ab 0.4:** Nach HACS-Update und HA-Neustart links **Energiemanager** öffnen (Administrator). Dort Projekt direkt aus HA laden/speichern, Netzanschlüsse, Bereiche, Verbindungen und Geräte über Formulare hinzufügen sowie Messzuordnungen ansehen. Keine separate Installation der Browserseite erforderlich. [Bedienung und Grenzen](docs/HA_PANEL.md). Noch keine automatische Geräteabfrage oder aktive Steuerung.
 

@@ -2,7 +2,7 @@
 
 DOMAIN = "pohl_solutions_energiemanager"
 NAME = "Pohl Solutions Energiemanager"
-VERSION = "0.5.1"
+VERSION = "0.6.0"
 EVENT_PLAN_UPDATED = f"{DOMAIN}_plan_updated"
 SERVICE_REPLAN = "replan"
 CONF_FORECAST_ENTITY = "forecast_entity"

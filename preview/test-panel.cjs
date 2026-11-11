@@ -20,7 +20,7 @@ function setup(handler) {
 }
 test('HA updates create one iframe and theme messages never contain authentication', () => {
   const t = setup(); t.panel.hass = t.hass; t.panel.hass = {...t.hass};
-  assert.equal(t.panel.children.length, 2); assert.equal(t.panel._frame.src, '/pohl-energy-assets/project.html?ha=1&v=0.5.1');
+  assert.equal(t.panel.children.length, 2); assert.equal(t.panel._frame.src, '/pohl-energy-assets/project.html?ha=1&v=0.6.0');
   assert.equal(t.calls.length, 0); assert.ok(t.sent.length > 0); assert.ok(!JSON.stringify(t.sent).includes('never-send-this'));
   assert.ok(t.sent.every(s => s.origin === 'https://ha.example'));
   t.panel.disconnectedCallback(); assert.equal(t.listeners.size, 0);
@@ -483,4 +483,28 @@ test('measurement simulation uses the saved configuration and keeps the result o
   assert.deepEqual(JSON.parse(field('project-json').value), fixture);
   field('simulation-raw').handlers.get('input')();
   assert.equal(field('simulation-result').hidden, true);
+});
+
+
+test('global save cannot report success while a source edit or unchecked JSON is pending', async () => {
+  const t = editorSetup(), field = id => t.elements.get(id);
+  const v1 = JSON.parse(fs.readFileSync(require('node:path').join(__dirname, '../examples/simple-project.json'), 'utf8'));
+  const project = require('./project-model.js').migrateProjectV1ToV2(v1);
+  project.channels[0].source = {kind: 'ha', entity_id: 'sensor.old_power'};
+  t.reply(t.outgoing.at(-1), {project_json: JSON.stringify(project), revision: 'r1'});
+  await Promise.resolve(); await Promise.resolve();
+  await t.click('tab-measurement');
+  const row = field('project-view').children.find(e => e.className === 'project-row');
+  const actions = row.children.find(e => e.className === 'project-toolbar');
+  await actions.children[0].handlers.get('click')();
+  field('source-entity').value = 'sensor.new_power';
+  await t.click('project-save');
+  assert.equal(t.outgoing.length, 1);
+  assert.match(field('project-error').textContent, /offene Bearbeitung/);
+  assert.equal(field('source-entity').value, 'sensor.new_power');
+  await t.click('project-source-cancel');
+  field('project-json').value = JSON.stringify({...project, name: 'Pending JSON'});
+  await t.click('project-save');
+  assert.equal(t.outgoing.length, 1);
+  assert.match(field('project-error').textContent, /prüfen und übernehmen/);
 });

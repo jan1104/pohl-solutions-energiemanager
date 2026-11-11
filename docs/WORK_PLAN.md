@@ -35,6 +35,8 @@ V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberf
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
 
+Grundversion 0.6.0 wird für den Nutzertest vorbereitet. Neue HA-Projekte starten direkt in Format 2. Eine atomare Neuanlage erhält konkurrierende oder bestehende Daten. Die Oberfläche verlangt die Übernahme oder das Schließen offener Bearbeitungen vor Speichern oder Formularwechsel. Testablauf und Umfang stehen in TESTING_0_6.md. Der aktuelle Lauf erstellt und pusht den geprüften Kandidaten mit lokalem Installationspaket. Die Veröffentlichung als HACS-Release erfolgt getrennt.
+
 Eine belegte Grenzprüfung wurde korrigiert. Projektimport und Quellenformular akzeptierten bisher 32-Bit-Registerwerte ab Adresse 65535, obwohl der Lesepfad zwei Register benötigt und den Bereich ablehnt. Beide Projektvalidatoren prüfen nun die vollständige Registerbreite. Tests vergleichen Format 1/2, FC03/FC04 und 16-/32-Bit-Grenzen zwischen Python und JavaScript. Vorhandene Konfigurationen mit dieser ungültigen Adresse melden den Fehler an der Quelle und benötigen eine anhand der Geräteunterlagen korrigierte Adresse.
 
 Der Modbus-Lesepfad verbindet eine gespeicherte Kanalzuordnung über einen eingesetzten Reader mit Registerdekodierung und der bestehenden Leistungsumrechnung. Die Route unterstützt beide Projektformate. Tests mit Testreadern und einem synthetischen Loopback-Server prüfen Zieladresse, Registerbreite, Umrechnung und die Trennung von Empfangs- und Messzeit. Der nächste Schritt ist eine ausdrücklich aufgerufene Testoberfläche für diesen simulierten Lesepfad. Reale Geräte benötigen belegte Registerparameter, Reihenfolge und Messzeit.

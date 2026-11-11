@@ -1,6 +1,6 @@
 # Entwicklungsformat 2: Anlage vor Anschluss und Messgerät
 
-Stand 10.11.2026. Der Entwicklungsstand kann vorhandene SQLite-Projekte in Format 1 und 2 lesen und im jeweiligen Format speichern. Neue Projekte starten in Format 1. Beim Setup behält ein vorhandenes Projekt seine Version. Version 0.5.1 verwendet Format 1. Die Projektoberfläche im Entwicklungsstand unterstützt beide Formate. Die lokale Vorschau startet mit einem leeren Projekt in Format 2.
+Stand 10.11.2026. Der Entwicklungsstand kann vorhandene SQLite-Projekte in Format 1 und 2 lesen und im jeweiligen Format speichern. Neue Projekte starten ab Grundversion 0.6.0 direkt in Format 2. Beim Setup behält ein vorhandenes Projekt seine Version. Version 0.5.1 verwendet Format 1. Die Projektoberfläche im Entwicklungsstand unterstützt beide Formate. Die lokale Vorschau startet mit einem leeren Projekt in Format 2.
 
 ## Bestätigter Bedienablauf
 
@@ -55,7 +55,7 @@ Der Wechsel speichert in einer Transaktion den neuen aktiven Stand, die ursprün
 
 ## Versionsbewusste Speicherung in Home Assistant
 
-Der ProjectStore öffnet die vorhandene Namespace-Version 1 oder 2 und prüft den Dokumentinhalt gegen dieselbe Version. Ein frischer Namespace startet in Version 1. Der Formatwechsel ist eine eigene Aktion im Projektmenü. Ein leerer Namespace in Version 2 führt zu einem Fehler, auch bei vorhandener Legacy-Datei.
+Der ProjectStore öffnet die vorhandene Namespace-Version 1 oder 2 und prüft den Dokumentinhalt gegen dieselbe Version. Ein frischer Namespace wird beim Anlegen des ersten Projekts gemeinsam mit dessen Daten atomar auf Version 2 gesetzt. Der Formatwechsel ist eine eigene Aktion im Projektmenü. Ein leerer Namespace in Version 2 führt zu einem Fehler, auch bei vorhandener Legacy-Datei.
 
 Für Projekte in Format 2 verwendet die HA-Speicherschicht kompaktes UTF-8-JSON. Die Exportdatei passt dadurch in das Rohtextlimit des Imports. Beide Formate teilen die Prüfung auf doppelte JSON-Schlüssel und nicht endliche Zahlen. Import und Speichern übernehmen ausschließlich Dokumente in der aktuellen Namespace-Version. Die Statusantwort zu Format 2 enthält die Anlagenanzahl und strukturierte Hinweise zu offenen Zuordnungen und Messungen. Ein veralteter Schreibzugriff nach einem Schemawechsel lädt den aktuellen Stand und meldet einen Konflikt.
 

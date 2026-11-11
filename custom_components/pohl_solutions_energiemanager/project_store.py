@@ -248,16 +248,36 @@ class ProjectStore:
         return {**self.export(), **self.status()}
 
     async def async_ensure_project(self, name: str, project_id: str) -> None:
+        """Create fresh format 2 atomically; preserve every existing project."""
         async with self._lock:
             if not self._loaded:
                 raise RuntimeError("Project storage must be loaded before creating a project")
             if self._project is None:
-                candidate = validate_project({
-                    "format": "pohl-energy-project", "schema_version": 1,
+                candidate = validate_project_v2({
+                    "format": "pohl-energy-project", "schema_version": 2,
                     "id": project_id, "name": name, "mode": "planning_only",
+                    "plants": [],
                     **{key: [] for key in COLLECTIONS}, "settings": {},
                 })
-                await self._async_commit(candidate)
+                try:
+                    loaded, cancelled = await self._async_durable_call(self._sync_create_project, candidate)
+                except (StorageConflict, StorageSchemaError) as err:
+                    await self._async_reload_conflict(err)
+                self._apply_loaded(loaded)
+                if cancelled:
+                    raise asyncio.CancelledError
+
+    def _sync_create_project(self, candidate):
+        if self._namespace.schema_version != 1:
+            raise StorageSchemaError("Neues Projekt benötigt einen leeren ursprünglichen Namensbereich")
+        # migrate checks create-only revision and the complete existing key set
+        # in one transaction. A competing project or any other document prevents
+        # creation; no active-v2/schema-v1 intermediate state can be committed.
+        namespace = self._namespace.migrate(2, {"active": (None, candidate)})
+        persisted = namespace.get("active")
+        if persisted is None or validate_project_v2(persisted.data) != candidate:
+            raise OSError("New format-2 project could not be confirmed in SQLite")
+        return self._sync_load()
 
     def _sync_commit(self, candidate, expected):
         stored = self._namespace.put("active", candidate, expected_revision=expected)
