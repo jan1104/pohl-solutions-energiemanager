@@ -2,6 +2,8 @@
 
 ## 0.6.0 — vorbereitet, 2026-11-12
 
+- Gemeinsame SQLite-Datenbank ausdrücklich als konsistente, geprüfte Kopie sichern. Bestehende Ziele werden nie überschrieben; alle Projekt-/Modulbereiche und Revisionen bleiben erhalten. Noch keine automatische Sicherung, HA-Bedienung oder Wiederherstellung.
+
 - Fachmodule erhalten ausdrücklich einen asynchronen, fest an Projekt und Modul gebundenen Zugang zur gemeinsamen SQLite-Konfigurationsdatenbank. Schreibdaten werden vor Worker-Übergabe kopiert, Revisionen geprüft und laufende Arbeit bei Abbruch abgewartet. Noch keine automatische Modulaktivierung oder Messhistorie.
 
 - Beim Hinzufügen eines Modbus-Geräts die eigene Unit-ID (1–247) direkt eingeben. Das optionale Feld erscheint nur für Modbus-Verbindungen; keine Adresse wird angenommen oder vom vorherigen Gerät übernommen.

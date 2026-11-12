@@ -7,9 +7,12 @@ or connection is opened on construction. This does not replace HA ProjectStore.
 from contextlib import contextmanager
 from dataclasses import dataclass
 import json
+import os
 from pathlib import Path
 import re
 import sqlite3
+import tempfile
+from time import monotonic
 
 from .project import MAX_BYTES, _json_tree
 
@@ -108,6 +111,53 @@ class SQLiteStorage:
             except BaseException:
                 connection.rollback()
                 raise
+
+    def backup(self, destination):
+        """Explicit consistent, create-only SQLite snapshot of all namespaces.
+
+        Uses a private temporary file and atomic hard-link publication in the
+        destination directory. No overwrite fallback or automatic restore.
+        Run in an executor; the same timeout bounds backup retries and checks.
+        Filesystem power-loss durability is not established by this API.
+        """
+        destination = Path(destination).absolute()
+        if os.path.lexists(destination):
+            raise FileExistsError("Backup destination already exists")
+        deadline = monotonic() + self.timeout
+
+        def progress(status, remaining, total):
+            if monotonic() >= deadline:
+                raise TimeoutError("SQLite backup exceeded its time budget")
+
+        temporary = None
+        try:
+            # Validate before creating even a temporary destination. BEGIN pins
+            # the checked read snapshot while other connections may write.
+            with self._connection() as source:
+                source.execute("BEGIN")
+                self._check_database(source)
+                descriptor, name = tempfile.mkstemp(prefix=".pohl-backup-", suffix=".tmp",
+                                                     dir=destination.parent)
+                os.close(descriptor)
+                temporary = Path(name)
+                target = sqlite3.connect(temporary.as_uri() + "?mode=rw", uri=True,
+                                         timeout=self.timeout, isolation_level=None)
+                try:
+                    source.backup(target, pages=256, progress=progress, sleep=0.01)
+                    target.set_progress_handler(lambda: int(monotonic() >= deadline), 1000)
+                    self._check_database(target)
+                    if target.execute("PRAGMA quick_check").fetchall() != [("ok",)]:
+                        raise StorageSchemaError("Backup database integrity check failed")
+                    progress(0, 0, 0)
+                finally:
+                    target.close()
+            # Atomic create-only publication. Even a destination created during
+            # copying is preserved. Unsupported hard links fail explicitly.
+            os.link(temporary, destination)
+            return destination
+        finally:
+            if temporary is not None:
+                temporary.unlink()
 
     @contextmanager
     def _transaction(self):
