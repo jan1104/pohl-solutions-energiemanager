@@ -35,6 +35,8 @@ V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberf
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
 
+Belegter Diagnosefehler 12.11.2026: Die Statusschleife rief sämtliche registrierten Modulhandler auf und quittierte deren Fehler. Sie ist nun auf die drei eingebauten Diagnosehandler begrenzt. Zusätzliche Fachmodule werden ausschließlich mit ihrem vorhandenen Zustand angezeigt. Grundmodulversion 0.1.1; HA-Smoke prüft Aufrufzähler und unveränderte Zustände bei verfügbaren, deaktivierten, fehlgeschlagenen und inkompatiblen Testmodulen. Keine neue Oberfläche oder Gerätekommunikation.
+
 Grundspeicher 12.11.2026: Eine ausdrücklich gestartete SQLite-Sicherung kopiert alle Projekt-/Modulbereiche samt Revisionen konsistent, prüft die Kopie und veröffentlicht sie ohne Überschreiben eines bestehenden Ziels. Temporäre Testdaten prüfen auch bestätigte WAL-Inhalte, parallele unbestätigte Änderungen, Fehler und Zeitlimit. Keine neue Oberfläche, automatische Sicherung, Wiederherstellung oder Geräteverbindung. Die HA-Bedienung und der Restore-Ablauf bleiben offen.
 
 Grundmodul-Priorität 12.11.2026: Ein ausdrücklicher asynchroner Modulkontext stellt die vorhandene gemeinsame SQLite-Datenbank für Fachmodulkonfiguration bereit. Der HA-ProjectStore liefert den Zugang mit fester Projekt-/Modul-/Schema-Zuordnung. Reservierte Kernbereiche bleiben geschützt; ein Projektwechsel leitet bestehende Kontexte nicht um. Schreibdaten werden vor der Worker-Warteschlange geprüft/kopiert und bereits übergebene Arbeit bei Abbruch vollständig abgewartet. Keine neue Oberfläche, Historie, Modulaktivierung oder Geräteverbindung. Nächste Schritte bleiben konkrete Fachschemas, Aktivierungs-/Lebensdauerverwaltung und zentrale Messhistorien.

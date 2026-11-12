@@ -2,6 +2,8 @@
 
 ## 0.6.0 — vorbereitet, 2026-11-12
 
+- Grundmodul 0.1.1: Statusabrufe führen keine zusätzlich registrierten Fachmodulhandler mehr aus und quittieren deren Fehler nicht. Die drei eingebauten Diagnoseprüfungen und die Anzeige aller Modulzustände bleiben erhalten.
+
 - Gemeinsame SQLite-Datenbank ausdrücklich als konsistente, geprüfte Kopie sichern. Bestehende Ziele werden nie überschrieben; alle Projekt-/Modulbereiche und Revisionen bleiben erhalten. Noch keine automatische Sicherung, HA-Bedienung oder Wiederherstellung.
 
 - Fachmodule erhalten ausdrücklich einen asynchronen, fest an Projekt und Modul gebundenen Zugang zur gemeinsamen SQLite-Konfigurationsdatenbank. Schreibdaten werden vor Worker-Übergabe kopiert, Revisionen geprüft und laufende Arbeit bei Abbruch abgewartet. Noch keine automatische Modulaktivierung oder Messhistorie.

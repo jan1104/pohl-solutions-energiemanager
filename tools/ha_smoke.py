@@ -45,7 +45,7 @@ async def sqlite_migration_checks(hass):
     from custom_components.pohl_solutions_energiemanager.base_runtime import BaseRuntime
     from custom_components.pohl_solutions_energiemanager.const import DOMAIN
     from custom_components.pohl_solutions_energiemanager.core.storage import ModuleStorage
-    from custom_components.pohl_solutions_energiemanager.core.modules import ModuleManifest, ModuleVersion
+    from custom_components.pohl_solutions_energiemanager.core.modules import ModuleExecutionError, ModuleManifest, ModuleVersion
     from custom_components.pohl_solutions_energiemanager.project_store import ProjectConflictError, ProjectStore
 
     fixture = {"format": "pohl-energy-project", "schema_version": 1,
@@ -145,6 +145,38 @@ async def sqlite_migration_checks(hass):
                 assert states == {"core": "ready", "storage": "failed", "project": "blocked"}
                 assert unhealthy["database"]["project_persisted"] is False
             assert all(m["status"] == "ready" for m in (await runtime.async_system_status())["modules"])
+            # Status must report feature states without invoking or retrying
+            # their handlers. Only the built-in diagnostic reads may run here.
+            feature_calls = []
+
+            async def idle_feature(request):
+                feature_calls.append("idle")
+                return {"synthetic": True}
+
+            async def failed_feature(request):
+                feature_calls.append("failed")
+                raise ValueError("synthetic feature failure")
+
+            runtime.registry.register(ModuleManifest("idle_test", "Idle test", ModuleVersion(1, 0, 0), 1), idle_feature)
+            runtime.registry.register(ModuleManifest("failed_test", "Failed test", ModuleVersion(1, 0, 0), 1), failed_feature)
+            runtime.registry.register(ModuleManifest("blocked_test", "Blocked test", ModuleVersion(1, 0, 0), 2), idle_feature)
+            await runtime.async_system_status()
+            assert feature_calls == []
+            try:
+                await runtime.registry.async_call("failed_test")
+            except ModuleExecutionError:
+                pass
+            else:
+                raise AssertionError("Synthetic module failure was not recorded")
+            runtime.registry.set_enabled("idle_test", False)
+            for _ in range(2):
+                diagnostics = await runtime.async_system_status()
+                states = {m["id"]: m["status"] for m in diagnostics["modules"]}
+                assert states["failed_test"] == "failed"
+                assert states["idle_test"] == "disabled"
+                assert states["blocked_test"] == "blocked"
+                assert states["core"] == states["storage"] == states["project"] == "ready"
+            assert feature_calls == ["failed"]
             await runtime.async_stop()
     # Invalid legacy input must never become an empty successful migration.
     bad_payloads = [b"{broken", b'{"version":1,"version":1,"data":{}}',
@@ -850,7 +882,8 @@ async def main() -> None:
                     assert system["product_version"] == VERSION and system["planning_only"] is True
                     assert system["database"]["backend"] == "sqlite" and system["database"]["project_persisted"] is True
                     assert {module["id"] for module in system["modules"]} == {"core", "storage", "project"}
-                    assert all(module["version"] == "0.1.0" for module in system["modules"])
+                    assert {module["id"]: module["version"] for module in system["modules"]} == {
+                        "core": "0.1.1", "storage": "0.1.0", "project": "0.1.0"}
                     assert all(module["status"] == "ready" for module in system["modules"])
                     assert DATA_BASE_RUNTIME in hass.data
                     empty = await hass.services.async_call(DOMAIN, "project_status", {}, blocking=True, return_response=True)

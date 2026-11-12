@@ -71,3 +71,10 @@ Nächste zusammenhängende Schritte:
 4. Gerätebausteine schrittweise über dieselben Verträge anbinden. Ausfall-, Migrations- und Updatefälle vor Freigabe testen.
 
 18 neue Tests prüfen Versionsgrenzen, fehlende/zyklische Abhängigkeiten, unabhängige Fortführung, Fehlerquittierung, Nebenläufigkeit, Timeout/Abbruch und überholte Ergebnisse/Fehler. Keine unveränderte Betriebsfähigkeit bei beliebigem Pythonfehler behauptet.
+
+
+## Statusabruf ohne Fachmodul-Aufruf — 12.11.2026
+
+Das Grundmodul 0.1.1 begrenzt die aktive Statusprüfung auf die eigenen Diagnosehandler `core`, `storage` und `project`. Andere registrierte Module werden mit ihren tatsächlichen Registry-Zuständen aufgelistet, dabei aber weder aufgerufen noch bei einem Fehler automatisch quittiert. Bisher erfasste die Schleife auch zusätzliche registrierte Handler. Ein späterer Prognose-/Messbaustein hätte dadurch beim Öffnen des Grundmodulstatus unbeabsichtigt Arbeit ausführen können.
+
+Die vorhandene Erholung der eingebauten Speicherdiagnose bleibt erhalten. Fachmodule benötigen weiterhin ausdrückliche Aufrufe und Fehlerquittierung. `ready` bedeutet ausschließlich kompatibel/aufrufbar, nicht gestartet oder mit aktuellen Messwerten versorgt. Die HA-Laufzeitprüfung registriert synthetische verfügbare, deaktivierte, fehlerhafte und inkompatible Fachmodule und prüft, dass wiederholte Statusabrufe ihre Handler nicht ausführen und Zustände erhalten.

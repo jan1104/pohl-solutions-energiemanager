@@ -14,7 +14,7 @@ from .core.modules import (
 from .project_store import ProjectStore
 
 DATA_BASE_RUNTIME = "pohl_solutions_energiemanager_base_runtime"
-CORE_MODULE_VERSION = "0.1.0"
+CORE_MODULE_VERSION = "0.1.1"
 STORAGE_MODULE_VERSION = "0.1.0"
 PROJECT_MODULE_VERSION = "0.1.0"
 
@@ -60,15 +60,16 @@ class BaseRuntime:
         if not self._loaded:
             raise RuntimeError("Base runtime is not loaded")
         database = {"backend": "sqlite", "schema_version": 1, "project_persisted": False}
-        # A failed storage health check must not prevent returning diagnostic state.
-        for manifest in self.registry.manifests():
-            if self.registry.states()[manifest.module_id].status == "failed":
-                self.registry.reset_failure(manifest.module_id)
+        # Only these built-in handlers are diagnostic reads. Registered feature
+        # handlers may perform work; opening status must not call or retry them.
+        for module_id in ("core", "storage", "project"):
+            if self.registry.states()[module_id].status == "failed":
+                self.registry.reset_failure(module_id)
             try:
-                result = await self.registry.async_call(manifest.module_id)
+                result = await self.registry.async_call(module_id)
             except (ModuleExecutionError, ModuleUnavailable):
                 continue
-            if manifest.module_id == "storage":
+            if module_id == "storage":
                 database = result
         states = self.registry.states()
         return {
