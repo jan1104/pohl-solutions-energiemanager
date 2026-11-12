@@ -1,6 +1,8 @@
 # Änderungen
 
-## 0.6.0 — vorbereitet, 2026-11-12
+## 0.6.0 — vorbereitet, 2026-11-13
+
+- Transparentes RTU über TCP als lesenden FC03/04-Transport ergänzt: ausdrücklicher Port, serielle Geräteadresse und CRC-Prüfung. Geteilte Verbindung pro Endpunkt; widersprüchliche MBAP-/RTU-Einträge werden vor dem Senden abgewiesen. Synthetisch getestet, noch kein automatischer HA-Geräteabruf.
 
 - Grundmodul 0.1.1: Statusabrufe führen keine zusätzlich registrierten Fachmodulhandler mehr aus und quittieren deren Fehler nicht. Die drei eingebauten Diagnoseprüfungen und die Anzeige aller Modulzustände bleiben erhalten.
 

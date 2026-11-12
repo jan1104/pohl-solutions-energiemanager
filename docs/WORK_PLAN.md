@@ -1,6 +1,6 @@
 # Arbeitsplan
 
-Stand: 2026-11-12. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
+Stand: 2026-11-13. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
 
 ## Auftrag und Grenzen
 
@@ -34,6 +34,8 @@ Stand: 2026-11-12. Dieser Plan steuert die weitere Entwicklung in diesem Chat un
 V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberflächenprüfungen getestet. Die erweiterte echte HA-Laufzeitprüfung ist im GitHub-Lauf 41618373561 auf Commit e02b711 erfolgreich. Die lokale Vorschau ruft keine Preise ab; die aktive Integration kann konfigurierte Quellen lesen. Der SMARD-Nutzungsstatus ist in PRICE_SOURCES.md dokumentiert.
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
+
+Kommunikationsgrundlage 13.11.2026: Der bisher nur konfigurierbare transparente RTU-over-TCP-Tunnel hat einen lesenden FC03/04-Transport erhalten. Er nutzt die vorhandene Warteschlange und Verbindungslebensdauer, verlangt Port und serielle Unit-ID ausdrücklich und prüft CRC sowie Antwortgrenzen. Gemeinsame Endpunkte dürfen keine widersprüchlichen MBAP-/RTU-Konfigurationen erhalten. Tests laufen ausschließlich gegen synthetische Loopback-Server; keine USB-/Buszeit-/Gateway-Kompatibilitätsbehauptung. HA-Anbindung und übrige Protokolle bleiben offen. Details RTU_OVER_TCP.md.
 
 Belegter Diagnosefehler 12.11.2026: Die Statusschleife rief sämtliche registrierten Modulhandler auf und quittierte deren Fehler. Sie ist nun auf die drei eingebauten Diagnosehandler begrenzt. Zusätzliche Fachmodule werden ausschließlich mit ihrem vorhandenen Zustand angezeigt. Grundmodulversion 0.1.1; HA-Smoke prüft Aufrufzähler und unveränderte Zustände bei verfügbaren, deaktivierten, fehlgeschlagenen und inkompatiblen Testmodulen. Keine neue Oberfläche oder Gerätekommunikation.
 

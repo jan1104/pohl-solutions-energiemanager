@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from ipaddress import ip_address
 
 from .transports.modbus_tcp import ReadOnlyModbusTCP
+from .transports.rtu_over_tcp import ReadOnlyRTUOverTCP
 
 
 class UnsupportedTransportError(ValueError):
@@ -37,6 +38,8 @@ class ReadOnlyConnectionManager:
 
     TCP and TCP-to-RTU gateways both use native MBAP frames. They share a client
     for identical normalized host/port, including alias configuration IDs.
+    Transparent RTU tunnels share their own raw-frame client. Mixing MBAP and
+    raw RTU on one configured endpoint is rejected before traffic.
     DNS/IP aliases and USB identities are not resolved or probed here.
     """
 
@@ -70,19 +73,38 @@ class ReadOnlyConnectionManager:
         if connection_id not in self._connections:
             raise ValueError(f"Unknown connection: {connection_id}")
         connection = self._connections[connection_id]
-        if connection.get("kind") not in ("modbus_tcp", "modbus_tcp_rtu_gateway"):
+        if connection.get("kind") not in ("modbus_tcp", "modbus_tcp_rtu_gateway", "rtu_over_tcp"):
             raise UnsupportedTransportError(f"Transport not implemented: {connection.get('kind')}")
         host = connection.get("host")
         if not isinstance(host, str) or not host:
             raise ValueError("Configure an explicit host before reading")
         port = connection.get("port")
+        raw_rtu = connection["kind"] == "rtu_over_tcp"
+        if raw_rtu and port is None:
+            raise ValueError("Configure an explicit TCP tunnel port before reading")
         port = 502 if port is None else port
         if type(port) is float and port.is_integer():
             port = int(port)
         # Validate BEFORE normalization so whitespace/URL-like input is never
         # silently repaired. Construction alone does not connect or resolve DNS.
-        candidate = ReadOnlyModbusTCP(host, port, timeout=self._timeout)
+        reader_type = ReadOnlyRTUOverTCP if raw_rtu else ReadOnlyModbusTCP
+        candidate = reader_type(host, port, timeout=self._timeout)
         key = (_host_key(host), port)
+        # Reject contradictory configured aliases before the first request,
+        # even if the other connection has never been used. Drafts stay inert.
+        for other in self._connections.values():
+            other_kind = other.get("kind")
+            if other_kind not in ("modbus_tcp", "modbus_tcp_rtu_gateway", "rtu_over_tcp"):
+                continue
+            other_host, other_port = other.get("host"), other.get("port")
+            other_raw = other_kind == "rtu_over_tcp"
+            if not isinstance(other_host, str) or not other_host or (other_raw and other_port is None):
+                continue
+            other_port = 502 if other_port is None else other_port
+            if (_host_key(other_host), other_port) == key and other_raw != raw_rtu:
+                raise ValueError("Conflicting MBAP and raw RTU framing for the same endpoint")
+        if key in self._clients and type(self._clients[key]) is not reader_type:
+            raise ValueError("Conflicting MBAP and raw RTU framing for the same endpoint")
         if key not in self._clients:
             self._clients[key] = candidate
         return self._clients[key]

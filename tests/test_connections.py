@@ -99,7 +99,7 @@ def test_construct_and_close_idle_manager_never_open_network_or_mutate_config():
     asyncio.run(run())
 
 
-@pytest.mark.parametrize("kind", ["modbus_rtu_usb", "rtu_over_tcp", "solarman", "mqtt", "ha"])
+@pytest.mark.parametrize("kind", ["modbus_rtu_usb", "solarman", "mqtt", "ha"])
 def test_unimplemented_transports_never_fall_back_to_tcp(kind):
     async def run():
         pool = ReadOnlyConnectionManager([connection("shared", 502, kind=kind)])

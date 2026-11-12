@@ -43,7 +43,7 @@ Mehrere unabhängig erzeugte Manager erkennen einander nicht. Die Anwendung muss
 
 ### Weitere Protokolle
 
-USB-RS485, rohes RTU-over-TCP, Solarman und MQTT bleiben eigene Implementierungen. TCP/Gateway verwendet MBAP, kein RTU-CRC-Framing. Der Manager lehnt noch nicht implementierte Transportarten ausdrücklich ab. Eine konfigurierte serielle Modbusroute kann bereits offline aufgelöst werden; das behauptet keinen fertigen RTU-Treiber. Zukünftige Modbusmodule sollen denselben RegisterReader-Vertrag erfüllen. MQTT braucht eine abonnierende Messwertschnittstelle statt eines erfundenen Registertransports.
+Rohes RTU-over-TCP ist als ausdrücklich lesender Transport implementiert und in die gemeinsame Verbindungsverwaltung eingebunden; es benötigt einen angegebenen Port und verwendet RTU-CRC statt MBAP. Details und Grenzen: [RTU_OVER_TCP.md](RTU_OVER_TCP.md). USB-RS485, Solarman und MQTT bleiben eigene Implementierungen. TCP/Gateway verwendet MBAP, kein RTU-CRC-Framing. Der Manager lehnt noch nicht implementierte Transportarten ausdrücklich ab. Eine konfigurierte serielle Modbusroute kann bereits offline aufgelöst werden; das behauptet keinen fertigen RTU-Treiber. Zukünftige Modbusmodule sollen denselben RegisterReader-Vertrag erfüllen. MQTT braucht eine abonnierende Messwertschnittstelle statt eines erfundenen Registertransports.
 
 ## Durchgehender fachlicher Datenfluss
 
@@ -59,7 +59,7 @@ USB-RS485, rohes RTU-over-TCP, Solarman und MQTT bleiben eigene Implementierunge
 ## Nächste Abnahmen
 
 - Manager an HA-Lebensdauer anbinden, ohne Geräteabruf im Setup/Import; bewusstes Lesen getrennt auslösen.
-- USB-RS485 und RTU-over-TCP mit eigenen Framing-/Busparametertests ergänzen; ein Master je RTU-Bus.
+- USB-RS485 ergänzen; für den implementierten RTU-over-TCP-Tunnel reale Gateway-/Busparameter belegen und prüfen. Ein Master je RTU-Bus.
 - Quellenalias-/Registerüberlappung und elektrische Messabdeckung vor Summenbildung prüfen.
 - Durchgehenden Simulator-/Replayfall vom bewusst gelesenen Wert bis zur Projektmessstelle/Bilanz prüfen; unbekannte Gerätezeit sichtbar erhalten.
 - Danach Mehrgeräteplanung und geführte Bedienung verbinden. Reale Modelle, Parameter, Verträge und Ausfallstrategien bleiben zu belegen.
