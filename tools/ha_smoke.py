@@ -45,6 +45,7 @@ async def sqlite_migration_checks(hass):
     from custom_components.pohl_solutions_energiemanager.base_runtime import BaseRuntime
     from custom_components.pohl_solutions_energiemanager.const import DOMAIN
     from custom_components.pohl_solutions_energiemanager.core.storage import ModuleStorage
+    from custom_components.pohl_solutions_energiemanager.core.modules import ModuleManifest, ModuleVersion
     from custom_components.pohl_solutions_energiemanager.project_store import ProjectConflictError, ProjectStore
 
     fixture = {"format": "pohl-energy-project", "schema_version": 1,
@@ -119,6 +120,22 @@ async def sqlite_migration_checks(hass):
             await after_cancel.async_load()
             assert after_cancel.snapshot() == first.snapshot()
             assert json.loads(first.export()["project_json"])["name"] == "Durable cancelled write"
+            # Module configuration uses the same database through HA's executor.
+            module = ModuleManifest("forecast_test", "Synthetic module", ModuleVersion(1, 0, 0), 1)
+            context = await first.async_module_context(module, schema_version=1)
+            assert context.project_id == fixture["id"]
+            assert context.storage.module_id == "forecast_test"
+            await context.storage.async_put("settings", {"synthetic": True}, expected_revision=None)
+            reopened_context = await after_cancel.async_module_context(module, schema_version=1)
+            assert (await reopened_context.storage.async_get("settings")).data == {"synthetic": True}
+            unchanged_project = first.export()
+            switched = {**cancelled_project, "id": "other-project"}
+            await first.async_import(json.dumps(switched), expected_revision=first.revision)
+            new_context = await first.async_module_context(module, schema_version=1)
+            assert new_context.project_id == "other-project"
+            assert await new_context.storage.async_get("settings") is None
+            assert (await context.storage.async_get("settings")).data == {"synthetic": True}
+            await first.async_import(unchanged_project["project_json"], expected_revision=first.revision)
             runtime = BaseRuntime(first)
             await runtime.async_start()
             assert all(m["status"] == "ready" for m in (await runtime.async_system_status())["modules"])

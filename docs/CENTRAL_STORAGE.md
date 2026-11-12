@@ -1,6 +1,6 @@
 # Zentrale Datenhaltung im Grundmodul
 
-Stand: 04.11.2026. Erste zentrale SQLite-Ablage für Modulkonfiguration ist implementiert (`core/storage.py`). Ab 0.5.0 ist der aktive HA-Projektstand angebunden; die alte Projektdatei wird einmalig übernommen und als Sicherung erhalten. Noch keine automatische Speicherung beliebiger neuer Fachmodule. Historien, allgemeine Modulmigration, Sicherung und vollständige Modulkontexte sind folgende Schritte. Aktueller Update-/Prüfablauf: TESTING_0_5.md.
+Stand: 12.11.2026. Die gemeinsame SQLite-Konfigurationsablage ist an HA angeschlossen. Neue Fachmodule können nun ausdrücklich einen festen Projekt-/Modulkontext mit asynchronem Speicherzugang erhalten. Historien, automatische Modulaktivierung, Sicherung und vollständige Laufzeitkontexte bleiben offen. Aktueller Prüfablauf: TESTING_0_6.md.
 
 ## Eigentum und Aufteilung
 
@@ -61,7 +61,18 @@ Die Datenbank liegt künftig im privaten HA-Konfigurationsbereich, nicht im Git-
 
 21 neue Tests mit temporären Datenbanken: Wiederöffnen, Projekt-/Modultrennung, zwei konkurrierende Schreiber, Revisionskonflikte, Batch-Rollback, ungültige/geheime Dokumentfelder, Schema-/Fremddatenbankerhalt, Sperrkonflikte, unveränderte Ein-/Ausgaben und Windows-/Unicode-Dateipfade. Kein Nachweis für Hardware-Stromausfall, Dateisystemkorruption oder Historienlast.
 
-Nächster Schritt: zentralen Speicherdienst als ausdrücklich initialisierten Dienst in den Modulkontext injizieren, konkrete Konfigurationsschemas definieren und danach den bisherigen HA-Projektspeicher kontrolliert migrieren. Neue Fachmodule erhalten dann automatisch ihren Zugang beim Aktivieren; sie programmieren keine eigenen Datenbankanbindungen.
+Der ausdrücklich geöffnete asynchrone Speicherzugang ist inzwischen implementiert (siehe unten). Als Nächstes folgen konkrete Fachmodulschemas und deren Aktivierungsablauf; neue Module sollen dabei denselben Zugang erhalten, statt eigene Datenbankanbindungen zu programmieren.
 
 
 Entwicklung 06.11.2026: Format-1→2-Projektwechsel mit expliziter Vorschau, Quell-SHA/Revision und erhaltenen Originaldaten vorbereitet; siehe PROJECT_SCHEMA_V2_DRAFT.md. Keine HA-Aktivierung. Temporäre Datenbanktests prüfen Neustart, konkurrierende Migrationen, ABA-/Metadatenkonflikte, Backupkollisionen und Rollback nach injiziertem Fehler beim abschließenden Schemawechsel. Kein Hardware-Stromausfallnachweis.
+
+
+## Asynchroner Modulkontext — 12.11.2026
+
+`core/module_context.py` stellt `ModuleContext` und `AsyncModuleStorage` bereit. Das Grundmodul übergibt eine bereits initialisierte `SQLiteStorage` und einen Executor. Der ausdrückliche Aufruf `async_module_context(...)` öffnet den Namensbereich; Konstruktion und Registrierung erzeugen keine Datei. Es gibt keine automatische Initialisierung oder Migration. Manifest-Codeversion und Konfigurationsschema bleiben unabhängig. Die eingebauten Modul-IDs `core`, `storage` und `project` bleiben ihren bisherigen Besitzern vorbehalten.
+
+`ProjectStore.async_module_context(manifest, schema_version=...)` stellt diesen Zugang für die ID des geladenen, gespeicherten Projekts mit dem HA-Executor bereit. Ein Kontext behält seine Projekt-ID, auch wenn anschließend ein anderes Projekt importiert wird. Er ist kein Nachweis, dass dieses Projekt gerade aktiv ist. Noch kein Fachmodul wird dadurch automatisch gestartet oder registriert.
+
+Die gewöhnliche Modulschnittstelle bietet `async_get`, `async_put` und `async_put_many`. Sie verwendet dieselbe Datenbank, Revisionsprüfung und Transaktionen wie die Projektablage. JSON-Schreibdaten werden vor Übergabe an die Worker-Warteschlange geprüft und unabhängig kopiert. Ein Taskabbruch wartet auf bereits übergebene Arbeit und wird danach weitergegeben; ein abgeschlossener Schreibvorgang kann daher trotz Abbruch gespeichert sein. Vor erneutem Schreiben den Stand lesen und dessen Revision verwenden. Kein allgemeiner SQL- oder Migrationsaufruf wird über diese Schnittstelle angeboten. Pythoncode im selben Prozess bleibt vertrauenswürdig; die Kapselung ist keine Sicherheitsgrenze.
+
+Tests mit temporärer SQLite prüfen getrennte Projekte/Module, Wiederöffnen, Schemaablehnung, Konflikte und Batch-Rollback, veränderte Eingaben während wartender Arbeit sowie wiederholten Abbruch bei erfolgreichem und fehlerhaftem Worker. Die echte HA-Laufzeitprüfung ergänzt Zugriff über den HA-Executor und den Wechsel der aktiven Projekt-ID. Messwerthistorien, Cache, Modul-Start/Stop und Versionsaktivierung sind davon getrennte nächste Schritte.

@@ -11,6 +11,7 @@ from typing import Any, NoReturn
 from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
+from .core.module_context import async_module_context
 from .core.measurement_binding import simulate_power_measurement
 from .core.project import COLLECTIONS, MAX_BYTES, export_project_json, load_project_json, project_summary, validate_project
 from .core.project_migration import commit_project_v2, preview_project_v2
@@ -147,6 +148,16 @@ class ProjectStore:
             self._loaded = True
             if cancelled:
                 raise asyncio.CancelledError
+
+    async def async_module_context(self, manifest, *, schema_version, compatible_versions=()):
+        """Explicitly supply a module with this saved project's shared database scope."""
+        async with self._lock:
+            if not self._loaded or self._project is None:
+                raise RuntimeError("A saved project is required before opening module storage")
+            return await async_module_context(
+                self._repository, self._hass.async_add_executor_job,
+                self._project["id"], manifest, schema_version=schema_version,
+                compatible_versions=compatible_versions)
 
     def _apply_loaded(self, loaded):
         self._namespace, self._document_revision, self._project, self._migration_status, self._legacy_retained = loaded

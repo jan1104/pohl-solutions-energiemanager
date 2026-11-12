@@ -2,6 +2,8 @@
 
 ## 0.6.0 — vorbereitet, 2026-11-12
 
+- Fachmodule erhalten ausdrücklich einen asynchronen, fest an Projekt und Modul gebundenen Zugang zur gemeinsamen SQLite-Konfigurationsdatenbank. Schreibdaten werden vor Worker-Übergabe kopiert, Revisionen geprüft und laufende Arbeit bei Abbruch abgewartet. Noch keine automatische Modulaktivierung oder Messhistorie.
+
 - Beim Hinzufügen eines Modbus-Geräts die eigene Unit-ID (1–247) direkt eingeben. Das optionale Feld erscheint nur für Modbus-Verbindungen; keine Adresse wird angenommen oder vom vorherigen Gerät übernommen.
 - Neue HA-Projekte beginnen direkt mit der ersten Anlage. Projekt und Speicherformat werden atomar angelegt.
 - Speichern und Wechseln der Ansicht schützen offene Formulare und ungeprüfte JSON-Änderungen vor versehentlichem Verwerfen.
