@@ -37,7 +37,7 @@ Ein `ReadOnlyConnectionManager` besitzt die Verbindungen einer Projektlaufzeit. 
 
 Profile erhalten über `for_connection` eine Lesereferenz ohne Schließfunktion. Nur der Manager beendet gemeinsame Clients. Beenden sperrt neue Aufrufe sofort und wartet auf bereits angenommene Abfragen einschließlich Warteschlange. Wiederholtes Beenden wartet auf dieselbe Bereinigung. Abbruch eines wartenden Geräts unterbricht keine andere laufende Abfrage; Abbruch eines auf Beendigung wartenden Aufrufers unterbricht die Bereinigung nicht. Eine beendete Instanz öffnet sich nicht wieder.
 
-Mehrere unabhängig erzeugte Manager erkennen einander nicht. Die Anwendung muss vor Betriebsanbindung genau einen zentralen Besitzer je Projektlaufzeit sicherstellen und ihn beim Entladen beenden. Diese HA-Lebenszyklusanbindung fehlt noch.
+Mehrere unabhängig erzeugte Manager erkennen einander nicht. Die Anwendung muss vor Betriebsanbindung genau einen zentralen Besitzer je Projektlaufzeit sicherstellen und ihn beim Entladen beenden. Die HA-Grundlaufzeit besitzt den Manager seit 13.11.2026 und erzeugt ihn erst für einen ausdrücklichen internen Leseaufruf. Details unten; eine Bedienfunktion oder automatische Erfassung ist noch nicht angeschlossen.
 
 `resolve_modbus_route(project, device_id)` validiert das Projekt und folgt ausschließlich `via_device_id`. Alle expliziten Connection-IDs entlang der Kette müssen übereinstimmen. Unit-ID kommt vom Zielgerät, niemals vom Gateway oder als angenommene 1. Projektformat 1 unterstützt 1–247; der generische TCP-Transport zusätzlich direkte TCP-Adresse 255. Pfadauflösung bestätigt keine Verdrahtung/Erreichbarkeit.
 
@@ -58,8 +58,19 @@ Rohes RTU-over-TCP ist als ausdrücklich lesender Transport implementiert und in
 
 ## Nächste Abnahmen
 
-- Manager an HA-Lebensdauer anbinden, ohne Geräteabruf im Setup/Import; bewusstes Lesen getrennt auslösen.
+- Den an die HA-Lebensdauer gebundenen Manager über eine ausdrücklich ausgelöste Leseprüfung nutzbar machen; weiterhin kein Geräteabruf im Setup/Import.
 - USB-RS485 ergänzen; für den implementierten RTU-over-TCP-Tunnel reale Gateway-/Busparameter belegen und prüfen. Ein Master je RTU-Bus.
 - Quellenalias-/Registerüberlappung und elektrische Messabdeckung vor Summenbildung prüfen.
 - Durchgehenden Simulator-/Replayfall vom bewusst gelesenen Wert bis zur Projektmessstelle/Bilanz prüfen; unbekannte Gerätezeit sichtbar erhalten.
 - Danach Mehrgeräteplanung und geführte Bedienung verbinden. Reale Modelle, Parameter, Verträge und Ausfallstrategien bleiben zu belegen.
+
+
+## HA-Besitz und ausdrückliche Leseaufrufe — 13.11.2026
+
+`BaseRuntime` besitzt höchstens einen zentralen `ReadOnlyConnectionManager`. Der neue interne Aufruf `async_read_registers(...)` verlangt die erwartete Revision des lokalen ProjectStore. Erst dieser ausdrückliche Leseaufruf erzeugt bei Bedarf den Manager und liest über die angegebene Connection-ID. Konstruktion, HA-Start, Status und Projektimport erzeugen weder Manager noch Geräteverkehr. Kein neuer Service, WebSocket-Befehl, Zeitgeber oder automatischer Abruf ist freigegeben.
+
+Mehrere Aufrufe desselben Projektstands verwenden denselben Besitzer und dessen Endpunkt-Warteschlangen. Bei einer anderen Projektrevision wird der alte Manager geschlossen und abgearbeitet, bevor ein neuer entsteht. Nach dem Warten werden Laufzeitzustand und Revision erneut geprüft. Ein Ergebnis wird verworfen, wenn zwischenzeitlich Projektstand oder Besitzer wechselten oder die Laufzeit beendet wurde. Die Revision bezieht sich auf den lokalen ProjectStore: sie ist kein Nachweis für externe Datenbankänderungen oder die Frische einer Geräteantwort. Keine Werte werden dadurch als Historie oder aktueller Plan gespeichert.
+
+HA-Unload beendet die Laufzeit dauerhaft, sperrt neue Aufrufe und wartet auf die zentrale Bereinigung einschließlich der Besitzersperre. Wiederholte Stop-Aufrufe warten auf dieselbe Aufgabe. Ein Abbruch des aufrufenden Tasks wird erst nach Abschluss dieser Arbeit weitergegeben. Nach Stop ist eine neue BaseRuntime erforderlich; ein stilles Wiederöffnen der beendeten Instanz ist nicht erlaubt.
+
+Die HA-Laufzeitprüfung verwendet eine echte Projektablage und eingesetzte synthetische Transportbesitzer. Sie prüft unveränderten Setup-/Status-/Importpfad, Wiederverwendung, überholte Ergebnisse, Besitzerwechsel und Abbruch während Stop beziehungsweise Rotation. Die getrennten Transporttests verwenden weiterhin ausschließlich Loopback-Server. Reale Geräte, Messzeiten und eine HA-Leseoberfläche bleiben gesondert zu prüfen.

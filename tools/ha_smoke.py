@@ -216,6 +216,119 @@ async def sqlite_migration_checks(hass):
             assert legacy.read_bytes() == pretty
 
 
+async def connection_lifecycle_checks(hass):
+    """Real HA/store lifecycle, injected synthetic transport, never site traffic."""
+    from custom_components.pohl_solutions_energiemanager import base_runtime
+    from custom_components.pohl_solutions_energiemanager.project_store import ProjectConflictError, ProjectStore
+
+    managers = []
+
+    class SyntheticManager:
+        def __init__(self, connections):
+            self.connections = connections
+            self.calls = []
+            self.closed = False
+            self.read_started = asyncio.Event()
+            self.read_release = asyncio.Event()
+            self.close_started = asyncio.Event()
+            self.close_release = asyncio.Event()
+            self.read_release.set()
+            self.close_release.set()
+            managers.append(self)
+
+        async def read_registers(self, connection_id, **request):
+            assert not self.closed
+            self.calls.append((connection_id, request))
+            self.read_started.set()
+            await self.read_release.wait()
+            return (7,)
+
+        async def async_close(self):
+            self.close_started.set()
+            await self.read_release.wait()
+            await self.close_release.wait()
+            self.closed = True
+
+    async def expect(error_type, awaitable):
+        try:
+            await awaitable
+        except error_type:
+            return
+        raise AssertionError(f"Expected {error_type.__name__}")
+
+    with tempfile.TemporaryDirectory() as isolated:
+        root = Path(isolated)
+        with patch.object(hass.config, "path", side_effect=lambda *parts: str(root.joinpath(*parts))), \
+                patch.object(base_runtime, "ReadOnlyConnectionManager", SyntheticManager):
+            store = ProjectStore(hass)
+            await store.async_load()
+            await store.async_ensure_project("Synthetic connections", "connection-test")
+            project = json.loads(store.export()["project_json"])
+            project["connections"] = [{"id": "test", "name": "Synthetic", "kind": "modbus_tcp",
+                                       "host": "127.0.0.1", "port": 1502}]
+            await store.async_import(json.dumps(project), expected_revision=store.revision)
+            runtime = base_runtime.BaseRuntime(store)
+            await runtime.async_start()
+            await runtime.async_system_status()
+            assert managers == []  # No owner/client/traffic as a setup side effect.
+
+            def read(owner=runtime, revision=None):
+                return owner.async_read_registers("test", expected_revision=revision or store.revision,
+                                                  unit_id=1, address=0, count=1)
+
+            assert await read() == await read() == (7,)
+            assert len(managers) == 1 and len(managers[0].calls) == 2
+            await expect(ProjectConflictError, read(revision="obsolete"))
+            assert len(managers[0].calls) == 2
+            managers[0].read_started.clear()
+            managers[0].read_release.clear()
+            pending = asyncio.create_task(read())
+            await managers[0].read_started.wait()
+            project["name"] = "Changed during synthetic read"
+            await store.async_import(json.dumps(project), expected_revision=store.revision)
+            managers[0].read_release.set()
+            await expect(ProjectConflictError, pending)
+            assert await read() == (7,)
+            assert len(managers) == 2 and managers[0].closed
+
+            # Cancellation while stop waits for ownership must still finish cleanup.
+            await runtime._connection_lock.acquire()
+            stopping = asyncio.create_task(runtime.async_stop())
+            await asyncio.sleep(0)
+            stopping.cancel()
+            await asyncio.sleep(0)
+            assert not stopping.done()
+            stopping.cancel()
+            await asyncio.sleep(0)
+            assert not stopping.done()
+            runtime._connection_lock.release()
+            await expect(asyncio.CancelledError, stopping)
+            assert managers[-1].closed
+            await runtime.async_stop()
+            await expect(RuntimeError, read())
+            await expect(RuntimeError, runtime.async_start())
+
+            # Stop during a draining configuration change prevents replacement.
+            runtime = base_runtime.BaseRuntime(store)
+            await runtime.async_start()
+            assert await read(owner=runtime) == (7,)
+            previous = managers[-1]
+            previous.close_release.clear()
+            project["name"] = "Changed before rotation"
+            await store.async_import(json.dumps(project), expected_revision=store.revision)
+            rotating = asyncio.create_task(read(owner=runtime))
+            await previous.close_started.wait()
+            stopping = asyncio.create_task(runtime.async_stop())
+            await asyncio.sleep(0)
+            stopping.cancel()
+            await asyncio.sleep(0)
+            assert not stopping.done()
+            previous.close_release.set()
+            await expect(ProjectConflictError, rotating)
+            await expect(asyncio.CancelledError, stopping)
+            assert previous.closed and len(managers) == 3
+
+
 async def fresh_project_creation_checks(hass):
     from threading import Event
 
@@ -682,6 +795,7 @@ async def main() -> None:
         runner = None
         try:
             await sqlite_migration_checks(hass)
+            await connection_lifecycle_checks(hass)
             await fresh_project_creation_checks(hass)
             await sqlite_project_version_checks(hass)
             await cancelled_project_migration_check(hass)
@@ -883,7 +997,7 @@ async def main() -> None:
                     assert system["database"]["backend"] == "sqlite" and system["database"]["project_persisted"] is True
                     assert {module["id"] for module in system["modules"]} == {"core", "storage", "project"}
                     assert {module["id"]: module["version"] for module in system["modules"]} == {
-                        "core": "0.1.1", "storage": "0.1.0", "project": "0.1.0"}
+                        "core": "0.1.2", "storage": "0.1.0", "project": "0.1.0"}
                     assert all(module["status"] == "ready" for module in system["modules"])
                     assert DATA_BASE_RUNTIME in hass.data
                     empty = await hass.services.async_call(DOMAIN, "project_status", {}, blocking=True, return_response=True)

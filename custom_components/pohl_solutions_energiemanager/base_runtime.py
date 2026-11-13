@@ -1,7 +1,10 @@
 """Actual in-process base modules backed by the active SQLite project store."""
 
+import asyncio
+import json
 from typing import Any
 
+from .adapters.connections import ReadOnlyConnectionManager
 from .const import NAME, VERSION
 from .core.modules import (
     ModuleDependency,
@@ -11,21 +14,43 @@ from .core.modules import (
     ModuleUnavailable,
     ModuleVersion,
 )
-from .project_store import ProjectStore
+from .project_store import ProjectConflictError, ProjectStore
 
 DATA_BASE_RUNTIME = "pohl_solutions_energiemanager_base_runtime"
-CORE_MODULE_VERSION = "0.1.1"
+CORE_MODULE_VERSION = "0.1.2"
 STORAGE_MODULE_VERSION = "0.1.0"
 PROJECT_MODULE_VERSION = "0.1.0"
 
 
+async def _async_drain(job):
+    """Complete owned cleanup, including lock waits, before propagating abort."""
+    cancelled = False
+    while not job.done():
+        try:
+            await asyncio.shield(job)
+        except asyncio.CancelledError:
+            cancelled = True
+        except Exception:
+            break
+    if cancelled:
+        if not job.cancelled():
+            job.exception()
+        raise asyncio.CancelledError
+    return job.result()
+
+
 class BaseRuntime:
-    """Base availability is independent of forecasts and has no device transport."""
+    """Base services own lazy read-only transport; setup never reads devices."""
 
     def __init__(self, store: ProjectStore) -> None:
         self._store = store
         self.registry = ModuleRegistry()
         self._loaded = False
+        self._stop_task = None
+        self._stopped = False
+        self._connection_lock = asyncio.Lock()
+        self._connections = None
+        self._connection_revision = None
         core_version = ModuleVersion.parse(CORE_MODULE_VERSION)
         storage_version = ModuleVersion.parse(STORAGE_MODULE_VERSION)
         project_version = ModuleVersion.parse(PROJECT_MODULE_VERSION)
@@ -48,13 +73,62 @@ class BaseRuntime:
         return self._store.snapshot()
 
     async def async_start(self) -> None:
+        if self._stopped:
+            raise RuntimeError("Stopped base runtime cannot restart; create a new runtime")
         self._loaded = True
         await self.async_system_status()
 
+    async def _async_close_connections(self):
+        if self._connections is None:
+            return
+        await _async_drain(asyncio.create_task(self._connections.async_close()))
+        self._connections = None
+        self._connection_revision = None
+
     async def async_stop(self) -> None:
         self._loaded = False
+        self._stopped = True
         for manifest in self.registry.manifests():
             self.registry.set_enabled(manifest.module_id, False)
+        if self._stop_task is None:
+            self._stop_task = asyncio.create_task(self._async_stop_connections())
+        await _async_drain(self._stop_task)
+
+    async def _async_stop_connections(self):
+        async with self._connection_lock:
+            await self._async_close_connections()
+
+    async def async_read_registers(self, connection_id, *, expected_revision,
+                                   unit_id, address, count, function_code=3):
+        """Explicit internal read API; no service, polling or automatic activation.
+
+        Bind to the local ProjectStore revision. Configuration changes drain the
+        old owner before creating a new one; results from obsolete owners fail.
+        This does not certify freshness of external edits or device measurements.
+        """
+        async with self._connection_lock:
+            if not self._loaded:
+                raise RuntimeError("Base runtime is not loaded")
+            if not isinstance(expected_revision, str) or expected_revision != self._store.revision:
+                raise ProjectConflictError("Projektstand vor dem Lesen aktualisieren.")
+            if self._connection_revision != expected_revision:
+                await self._async_close_connections()
+                if not self._loaded or expected_revision != self._store.revision:
+                    raise ProjectConflictError("Projektstand während des Verbindungswechsels geändert.")
+                raw = self._store.export()["project_json"]
+                if raw is None:
+                    raise ValueError("A saved project is required before reading")
+                project = json.loads(raw)
+                self._connections = ReadOnlyConnectionManager(project["connections"])
+                self._connection_revision = expected_revision
+            manager = self._connections
+        result = await manager.read_registers(connection_id, unit_id=unit_id,
+                                              address=address, count=count,
+                                              function_code=function_code)
+        if (not self._loaded or manager is not self._connections
+                or expected_revision != self._store.revision):
+            raise ProjectConflictError("Leseergebnis gehört zu einem überholten Projektstand.")
+        return result
 
     async def async_system_status(self) -> dict[str, Any]:
         if not self._loaded:
