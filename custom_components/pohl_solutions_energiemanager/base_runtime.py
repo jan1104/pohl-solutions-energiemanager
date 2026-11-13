@@ -5,6 +5,7 @@ import json
 from typing import Any
 
 from .adapters.connections import ReadOnlyConnectionManager
+from .adapters.modbus_measurement import read_modbus_power_measurement
 from .const import NAME, VERSION
 from .core.modules import (
     ModuleDependency,
@@ -17,7 +18,7 @@ from .core.modules import (
 from .project_store import ProjectConflictError, ProjectStore
 
 DATA_BASE_RUNTIME = "pohl_solutions_energiemanager_base_runtime"
-CORE_MODULE_VERSION = "0.1.2"
+CORE_MODULE_VERSION = "0.1.3"
 STORAGE_MODULE_VERSION = "0.1.0"
 PROJECT_MODULE_VERSION = "0.1.0"
 
@@ -127,6 +128,44 @@ class BaseRuntime:
                                               function_code=function_code)
         if (not self._loaded or manager is not self._connections
                 or expected_revision != self._store.revision):
+            raise ProjectConflictError("Leseergebnis gehört zu einem überholten Projektstand.")
+        return result
+
+    async def async_read_power_measurement(
+        self, measurement_id, *, expected_revision, source_id, byte_order,
+        word_order, polarity, max_age, measured_at=None, receipt_clock=None,
+    ):
+        """Explicitly read and bind one saved Modbus power mapping; no persistence.
+
+        The adapter preserves verified caller-supplied source/time metadata.
+        A transport reply alone never supplies a device measurement timestamp.
+        """
+        if not self._loaded:
+            raise RuntimeError("Base runtime is not loaded")
+        if not isinstance(expected_revision, str) or expected_revision != self._store.revision:
+            raise ProjectConflictError("Projektstand vor dem Lesen aktualisieren.")
+        raw = self._store.export()["project_json"]
+        if raw is None:
+            raise ValueError("A saved project is required before reading")
+        project = json.loads(raw)
+        runtime = self
+
+        class Reader:
+            def __init__(self, connection_id):
+                self.connection_id = connection_id
+
+            async def read_registers(self, *, unit_id, address, count, function_code=3):
+                return await runtime.async_read_registers(
+                    self.connection_id, expected_revision=expected_revision,
+                    unit_id=unit_id, address=address, count=count,
+                    function_code=function_code)
+
+        result = await read_modbus_power_measurement(
+            project, measurement_id, reader_for_connection=Reader,
+            source_id=source_id, byte_order=byte_order, word_order=word_order,
+            polarity=polarity, max_age=max_age, measured_at=measured_at,
+            receipt_clock=receipt_clock)
+        if not self._loaded or expected_revision != self._store.revision:
             raise ProjectConflictError("Leseergebnis gehört zu einem überholten Projektstand.")
         return result
 

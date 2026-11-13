@@ -2,6 +2,8 @@
 
 ## 0.6.0 — vorbereitet, 2026-11-13
 
+- Grundmodul 0.1.3: Gespeicherte Modbus-Leistungsmessstellen intern über den gemeinsamen HA-Verbindungsbesitzer lesen und mit Einheit, Skalierung und Herkunft zuordnen. Unbekannte Gerätezeit bleibt ungültig; Ergebnisse geänderter Projektstände werden verworfen. Noch keine Leseoberfläche oder Messhistorie.
+
 - Grundmodul 0.1.2: Gemeinsame lesende Verbindungen an die HA-Lebensdauer angebunden. Ausschließlich ein ausdrücklicher interner Leseaufruf erzeugt den Manager; Projektwechsel und Unload schließen ihn geordnet. Überholte Ergebnisse werden verworfen. Noch keine Leseoberfläche oder automatische Geräteerfassung.
 
 - Transparentes RTU über TCP als lesenden FC03/04-Transport ergänzt: ausdrücklicher Port, serielle Geräteadresse und CRC-Prüfung. Geteilte Verbindung pro Endpunkt; widersprüchliche MBAP-/RTU-Einträge werden vor dem Senden abgewiesen. Synthetisch getestet, noch kein automatischer HA-Geräteabruf.

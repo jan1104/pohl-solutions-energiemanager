@@ -54,3 +54,16 @@ Die Tests verwenden eingesetzte Testreader und einen synthetischen Modbus-Server
 
 
 Die Registergrenze wird bereits bei der Projektprüfung berücksichtigt. Bei 32-Bit-Datenformaten ist 65534 die höchste Startadresse, bei 16-Bit-Formaten 65535. Dies gilt für FC03 und FC04. Bestehende Konfigurationen mit einem überlaufenden Registerbereich müssen anhand der Geräteunterlagen korrigiert werden. Der Import meldet die betroffene Quellenadresse.
+
+
+## Messstellenlesen über die HA-Grundlaufzeit — 13.11.2026
+
+`BaseRuntime.async_read_power_measurement(...)` verbindet eine gespeicherte Modbus-Leistungsmessstelle mit dem zentralen Verbindungsbesitzer und dem vorhandenen Dekodierungs-/Bindungsadapter. Der Aufruf ist ausschließlich eine interne, ausdrückliche API. Es gibt weiterhin keinen zusätzlichen Service, WebSocket-Befehl, Zeitgeber, Live-Sensor oder automatischen Geräteabruf.
+
+Die erwartete lokale Projektrevision muss passen. Messstellen-/Geräte-/Connection-Zuordnung, Registeradresse, FC03/04, Datentyp und Kanal-Skalierung kommen aus dem gespeicherten Projekt. Die geprüfte Byte-/Wortreihenfolge, Ausrichtung, kanonische Quellenkennung und Altersgrenze bleiben ausdrücklich anzugeben; sie werden nicht aus Gerätemarke, Connection-ID oder plausiblen Zahlen geraten. Eine nicht aufrufbare Empfangsuhr wird bereits vor dem Zugriff abgelehnt.
+
+Der Reader-Proxy verwendet dieselbe projektrevisionsgebundene Grundlaufzeit wie ausdrückliche Registerlesungen. Ergebnisse eines geänderten Projektstands oder einer beendeten Laufzeit werden verworfen. Die Registerdekodierung liefert den Rohwert vor Kanalskalierung; der Binder wendet Skalierung, W/kW-Umrechnung und Ausrichtung jeweils einmal an. Herkunft und Messstellenbezug bleiben im Ergebnis erhalten.
+
+Ein Registerwert beweist keine Geräte-Messzeit. Ohne eine unabhängig gelieferte Messzeit bleibt das normalisierte Ergebnis ungültig und trägt den Hinweis `missing_time`; die Empfangszeit ersetzt diesen Nachweis nicht. Es werden keine Resultate als Historie oder Plan gespeichert. Auch die lokale Projektrevision ersetzt keine erneute Prüfung möglicher externer Datenbankänderungen.
+
+Die echte HA-Laufzeitprüfung verwendet eine reale Projektablage und synthetische Readerantworten. Sie prüft FC/Registerbreite/Zieladresse, Quellenherkunft, einzelne Skalierung und Vorzeichen, unbekannte Messzeit sowie den Projektwechsel während einer Abfrage. Tatsächliche Geräte-/Zeitparameter, eine Leseoberfläche und zentrale Messhistorien bleiben offen.

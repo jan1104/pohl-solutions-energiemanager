@@ -54,6 +54,8 @@ async def read_modbus_power_measurement(
         raise ValueError("A canonical source ID is required")
     if not isinstance(max_age, timedelta) or max_age < timedelta(0):
         raise ValueError("Age limit must be a nonnegative timedelta")
+    if receipt_clock is not None and not callable(receipt_clock):
+        raise ValueError("Receipt clock must be callable")
     if measured_at is not None:
         measured_at = _instant(measured_at)
 

@@ -74,3 +74,6 @@ Mehrere Aufrufe desselben Projektstands verwenden denselben Besitzer und dessen 
 HA-Unload beendet die Laufzeit dauerhaft, sperrt neue Aufrufe und wartet auf die zentrale Bereinigung einschließlich der Besitzersperre. Wiederholte Stop-Aufrufe warten auf dieselbe Aufgabe. Ein Abbruch des aufrufenden Tasks wird erst nach Abschluss dieser Arbeit weitergegeben. Nach Stop ist eine neue BaseRuntime erforderlich; ein stilles Wiederöffnen der beendeten Instanz ist nicht erlaubt.
 
 Die HA-Laufzeitprüfung verwendet eine echte Projektablage und eingesetzte synthetische Transportbesitzer. Sie prüft unveränderten Setup-/Status-/Importpfad, Wiederverwendung, überholte Ergebnisse, Besitzerwechsel und Abbruch während Stop beziehungsweise Rotation. Die getrennten Transporttests verwenden weiterhin ausschließlich Loopback-Server. Reale Geräte, Messzeiten und eine HA-Leseoberfläche bleiben gesondert zu prüfen.
+
+
+Grundmodul 0.1.3 bindet zusätzlich die gespeicherte Modbus-Leistungsmessstelle über `async_read_power_measurement(...)` an denselben Besitzer. Registerroute und Kanalumrechnung stammen aus dem Projekt; geprüfte Reihenfolge, Quellenidentität, Ausrichtung und Zeitnachweise sind weiterhin ausdrücklich erforderlich. Details: RUNTIME_METERING.md. Kein automatischer Abruf und keine Ergebnisablage.

@@ -102,7 +102,7 @@ def test_receipt_time_never_makes_missing_or_invalid_measurement_time_valid(read
     assert f"synthetic-meter: {issue}" in result.measurement.value.issues
 
 
-@pytest.mark.parametrize("case", ["source", "unit", "range", "order", "polarity", "clock", "source_id"])
+@pytest.mark.parametrize("case", ["source", "unit", "range", "order", "polarity", "clock", "receipt_clock", "source_id"])
 def test_invalid_mapping_rejected_before_getting_reader(read, case):
     project = fixture()
     kwargs = {}
@@ -118,6 +118,8 @@ def test_invalid_mapping_rejected_before_getting_reader(read, case):
         kwargs["polarity"] = True
     elif case == "clock":
         kwargs["measured_at"] = NOW.replace(tzinfo=None)
+    elif case == "receipt_clock":
+        kwargs["receipt_clock"] = NOW
     elif case == "source_id":
         kwargs["source_id"] = ""
     factory = Mock()

@@ -328,6 +328,54 @@ async def connection_lifecycle_checks(hass):
             await expect(asyncio.CancelledError, stopping)
             assert previous.closed and len(managers) == 3
 
+            # Bind a saved power mapping through the same runtime-owned reader.
+            from custom_components.pohl_solutions_energiemanager.core.project_v2 import migrate_project_v1_to_v2
+            project = migrate_project_v1_to_v2(json.loads((ROOT / "examples/simple-project.json").read_text(encoding="utf-8")))
+            project["devices"][0].update(connection_id="connection_main", unit_id=7)
+            project["channels"][0].update(unit="W", phase="total", source={
+                "kind": "modbus", "address": 100, "function_code": 4, "data_type": "s16", "scale": 0.5})
+            await store.async_import(json.dumps(project), expected_revision=store.revision)
+            runtime = base_runtime.BaseRuntime(store)
+            await runtime.async_start()
+            saved_before_read = store.export()
+            synthetic_now = datetime(2026, 11, 13, tzinfo=timezone.utc)
+
+            def power(**overrides):
+                return runtime.async_read_power_measurement("grid_primary", **({
+                    "expected_revision": store.revision, "source_id": "synthetic-meter-channel",
+                    "byte_order": "big", "word_order": "big", "polarity": -1,
+                    "max_age": timedelta(seconds=10), "receipt_clock": lambda: synthetic_now,
+                } | overrides))
+
+            await expect(ProjectConflictError, power(expected_revision="obsolete"))
+            await expect(ValueError, power(receipt_clock=synthetic_now))
+            assert len(managers) == 3
+            unknown_time = await power()
+            assert unknown_time.route.connection_id == "connection_main"
+            assert unknown_time.route.unit_id == 7
+            assert unknown_time.decoded_value == 7
+            assert not unknown_time.measurement.value.valid
+            assert unknown_time.measurement.value.oldest_measurement is None
+            assert "synthetic-meter-channel: missing_time" in unknown_time.measurement.value.issues
+            measured = synthetic_now - timedelta(seconds=2)
+            bound = (await power(measured_at=measured)).measurement
+            assert bound.value.valid and isclose(bound.value.power_kw, -0.0035)
+            assert bound.raw_unit == "W" and bound.scale == 0.5 and bound.polarity == -1
+            assert bound.value.sources == ("synthetic-meter-channel",)
+            assert bound.value.oldest_measurement == measured and bound.received_at == synthetic_now
+            assert managers[-1].calls == [("connection_main", {
+                "unit_id": 7, "address": 100, "count": 1, "function_code": 4})] * 2
+            assert len(managers) == 4 and store.export() == saved_before_read
+            managers[-1].read_started.clear()
+            managers[-1].read_release.clear()
+            pending = asyncio.create_task(power(measured_at=measured))
+            await managers[-1].read_started.wait()
+            project["name"] = "Changed during synthetic power read"
+            await store.async_import(json.dumps(project), expected_revision=store.revision)
+            managers[-1].read_release.set()
+            await expect(ProjectConflictError, pending)
+            await runtime.async_stop()
+
 
 async def fresh_project_creation_checks(hass):
     from threading import Event
@@ -997,7 +1045,7 @@ async def main() -> None:
                     assert system["database"]["backend"] == "sqlite" and system["database"]["project_persisted"] is True
                     assert {module["id"] for module in system["modules"]} == {"core", "storage", "project"}
                     assert {module["id"]: module["version"] for module in system["modules"]} == {
-                        "core": "0.1.2", "storage": "0.1.0", "project": "0.1.0"}
+                        "core": "0.1.3", "storage": "0.1.0", "project": "0.1.0"}
                     assert all(module["status"] == "ready" for module in system["modules"])
                     assert DATA_BASE_RUNTIME in hass.data
                     empty = await hass.services.async_call(DOMAIN, "project_status", {}, blocking=True, return_response=True)
