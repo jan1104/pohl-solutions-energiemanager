@@ -38,6 +38,78 @@ async def seed_v1_project(hass, name, project_id):
     return fixture
 
 
+def assert_cached_project_revision(store):
+    """Count hash calls rather than inventing timing/resource benchmarks."""
+    from hashlib import sha256
+    from custom_components.pohl_solutions_energiemanager import project_store
+
+    exported = store.export()
+    project = json.loads(exported["project_json"]) if exported["project_json"] is not None else None
+    canonical = json.dumps(project, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
+    expected = sha256(canonical.encode("utf-8")).hexdigest()
+    with patch.object(project_store, "_project_revision", side_effect=AssertionError("Unchanged snapshot was rehashed")):
+        for _ in range(1000):
+            assert store.revision == expected
+        for _ in range(3):
+            assert store.status()["revision"] == store.export()["revision"] == store.snapshot()["revision"] == expected
+    if project is not None:
+        project["name"] = "Only a parsed export changed"
+        status = store.status()
+        original_name = status["summary"]["name"]
+        status["summary"]["name"] = "Only a returned summary changed"
+        assert store.status()["summary"]["name"] == original_name
+        assert store.revision == expected
+
+
+async def revision_cache_checks(hass):
+    """Exercise every normal snapshot adoption path against real HA/SQLite."""
+    from custom_components.pohl_solutions_energiemanager.core.project_v2 import migrate_project_v1_to_v2
+    from custom_components.pohl_solutions_energiemanager.project_store import ProjectConflictError, ProjectStore
+
+    with tempfile.TemporaryDirectory() as isolated:
+        root = Path(isolated)
+        with patch.object(hass.config, "path", side_effect=lambda *parts: str(root.joinpath(*parts))):
+            store = ProjectStore(hass)
+            assert_cached_project_revision(store)
+            await store.async_load()
+            assert_cached_project_revision(store)
+            await store.async_ensure_project("Cached project", "cached-project")
+            assert_cached_project_revision(store)
+            initial = store.revision
+            project = json.loads(store.export()["project_json"])
+            project["settings"] = {"synthetic_large_text": "abcdef" * 20000}
+            await store.async_import(json.dumps(project), expected_revision=initial)
+            assert store.revision != initial
+            assert_cached_project_revision(store)
+            peer = ProjectStore(hass)
+            await peer.async_load()
+            obsolete = peer.revision
+            project["name"] = "Changed by first writer"
+            await store.async_import(json.dumps(project), expected_revision=store.revision)
+            try:
+                await peer.async_import(json.dumps(project), expected_revision=obsolete)
+            except ProjectConflictError:
+                pass
+            else:
+                raise AssertionError("Competing write did not reload current revision")
+            assert peer.revision == store.revision
+            assert_cached_project_revision(peer)
+            fixture = migrate_project_v1_to_v2(json.loads((ROOT / "examples/simple-project.json").read_text(encoding="utf-8")))
+            fixture["channels"][0]["source"] = {"kind": "ha", "entity_id": "sensor.synthetic_power"}
+            await store.async_import(json.dumps(fixture), expected_revision=store.revision)
+            try:
+                await peer.async_simulate_measurement(peer.revision, "grid_primary", 5, 1)
+            except ProjectConflictError:
+                pass
+            else:
+                raise AssertionError("Simulation did not refresh a changed snapshot")
+            assert peer.revision == store.revision
+            assert_cached_project_revision(peer)
+            result = await peer.async_simulate_measurement(peer.revision, "grid_primary", 5, 1)
+            assert result["simulated"] and result["kw"] == 5
+            assert_cached_project_revision(peer)
+
+
 async def sqlite_migration_checks(hass):
     """Use real HA executor and real SQLite, isolated from the integration project."""
     from threading import Event
@@ -119,6 +191,8 @@ async def sqlite_migration_checks(hass):
             after_cancel = ProjectStore(hass)
             await after_cancel.async_load()
             assert after_cancel.snapshot() == first.snapshot()
+            assert_cached_project_revision(first)
+            assert_cached_project_revision(after_cancel)
             assert json.loads(first.export()["project_json"])["name"] == "Durable cancelled write"
             # Module configuration uses the same database through HA's executor.
             module = ModuleManifest("forecast_test", "Synthetic module", ModuleVersion(1, 0, 0), 1)
@@ -703,6 +777,8 @@ async def cancelled_project_migration_check(hass):
             reloaded = ProjectStore(hass)
             await reloaded.async_load()
             assert reloaded.snapshot() == store.snapshot()
+            assert_cached_project_revision(store)
+            assert_cached_project_revision(reloaded)
             assert json.loads(reloaded.export()["project_json"]) == json.loads(preview["project_json"])
 
 
@@ -842,6 +918,7 @@ async def main() -> None:
         extra_coordinators = []
         runner = None
         try:
+            await revision_cache_checks(hass)
             await sqlite_migration_checks(hass)
             await connection_lifecycle_checks(hass)
             await fresh_project_creation_checks(hass)
@@ -1045,7 +1122,7 @@ async def main() -> None:
                     assert system["database"]["backend"] == "sqlite" and system["database"]["project_persisted"] is True
                     assert {module["id"] for module in system["modules"]} == {"core", "storage", "project"}
                     assert {module["id"]: module["version"] for module in system["modules"]} == {
-                        "core": "0.1.3", "storage": "0.1.0", "project": "0.1.0"}
+                        "core": "0.1.3", "storage": "0.1.0", "project": "0.1.1"}
                     assert all(module["status"] == "ready" for module in system["modules"])
                     assert DATA_BASE_RUNTIME in hass.data
                     empty = await hass.services.async_call(DOMAIN, "project_status", {}, blocking=True, return_response=True)

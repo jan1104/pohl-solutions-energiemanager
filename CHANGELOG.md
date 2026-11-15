@@ -1,6 +1,8 @@
 # Änderungen
 
-## 0.6.0 — vorbereitet, 2026-11-13
+## 0.6.0 — vorbereitet, 2026-11-15
+
+- Projektverwaltung 0.1.1: Inhaltskennung pro übernommenem Projektstand wiederverwenden. Reine Revisionsabfragen serialisieren und hashen den gesamten Projektbaum nicht mehr wiederholt; Import-/Konflikt-/Migrationsschutz bleibt erhalten.
 
 - Grundmodul 0.1.3: Gespeicherte Modbus-Leistungsmessstellen intern über den gemeinsamen HA-Verbindungsbesitzer lesen und mit Einheit, Skalierung und Herkunft zuordnen. Unbekannte Gerätezeit bleibt ungültig; Ergebnisse geänderter Projektstände werden verworfen. Noch keine Leseoberfläche oder Messhistorie.
 

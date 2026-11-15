@@ -62,6 +62,7 @@ class ProjectStore:
         self._namespace = None
         self._document_revision: int | None = None
         self._project: dict[str, Any] | None = None
+        self._revision = _project_revision(None)
         self._lock = asyncio.Lock()
         self._loaded = False
         self._migration_status = "not_needed"
@@ -159,8 +160,18 @@ class ProjectStore:
                 self._project["id"], manifest, schema_version=schema_version,
                 compatible_versions=compatible_versions)
 
+    def _adopt_project(self, project):
+        # Project objects stay private and are replaced, never edited in place.
+        # Read-path revision checks must not reserialize a potentially 2 MiB tree.
+        revision = _project_revision(project)
+        self._project = project
+        self._revision = revision
+
     def _apply_loaded(self, loaded):
-        self._namespace, self._document_revision, self._project, self._migration_status, self._legacy_retained = loaded
+        namespace, document_revision, project, status, retained = loaded
+        self._adopt_project(project)
+        self._namespace, self._document_revision = namespace, document_revision
+        self._migration_status, self._legacy_retained = status, retained
 
     async def async_import(self, project_json: str, expected_revision: str | None = None) -> dict[str, Any]:
         async with self._lock:
@@ -244,7 +255,8 @@ class ProjectStore:
             )
             # A fresh same-schema snapshot also lets the normal Get recover from
             # a concurrent edit. The simulation never writes the document.
-            self._document_revision, self._project, result = checked
+            self._document_revision, project, result = checked
+            self._adopt_project(project)
             if cancelled:
                 raise asyncio.CancelledError
             if result is None:
@@ -253,7 +265,7 @@ class ProjectStore:
 
     @property
     def revision(self) -> str:
-        return _project_revision(self._project)
+        return self._revision
 
     def snapshot(self) -> dict[str, Any]:
         return {**self.export(), **self.status()}
@@ -309,7 +321,7 @@ class ProjectStore:
             persisted, cancelled = await self._async_durable_call(self._sync_commit, candidate, self._document_revision)
         except (StorageConflict, StorageSchemaError) as err:
             await self._async_reload_conflict(err)
-        self._project = _validate_stored(persisted.data, self._namespace)
+        self._adopt_project(_validate_stored(persisted.data, self._namespace))
         self._document_revision = persisted.revision
         if cancelled:
             raise asyncio.CancelledError
