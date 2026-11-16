@@ -1,6 +1,8 @@
 # Änderungen
 
-## 0.6.0 — vorbereitet, 2026-11-15
+## 0.6.0 — vorbereitet, 2026-11-16
+
+- Projektverwaltung 0.1.2: Exporttext und Statuszusammenfassung für unveränderte Projektstände wiederverwenden. Ausgabeformate bleiben erhalten; verschachtelte zurückgegebene Daten können den gespeicherten Zustand nicht verändern.
 
 - Projektverwaltung 0.1.1: Inhaltskennung pro übernommenem Projektstand wiederverwenden. Reine Revisionsabfragen serialisieren und hashen den gesamten Projektbaum nicht mehr wiederholt; Import-/Konflikt-/Migrationsschutz bleibt erhalten.
 

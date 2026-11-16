@@ -10,7 +10,7 @@ from pathlib import Path
 import sys
 import tempfile
 from types import MappingProxyType
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -47,7 +47,16 @@ def assert_cached_project_revision(store):
     project = json.loads(exported["project_json"]) if exported["project_json"] is not None else None
     canonical = json.dumps(project, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
     expected = sha256(canonical.encode("utf-8")).hexdigest()
-    with patch.object(project_store, "_project_revision", side_effect=AssertionError("Unchanged snapshot was rehashed")):
+    if project is not None:
+        v2 = project["schema_version"] == 2
+        export = project_store.export_project_v2_json if v2 else project_store.export_project_json
+        summarize = project_store.project_summary_v2 if v2 else project_store.project_summary
+        assert exported["project_json"] == export(project)
+        assert store.status()["summary"] == summarize(project)
+    forbidden = {name: Mock(side_effect=AssertionError("Unchanged snapshot was rebuilt")) for name in (
+        "_project_revision", "export_project_json", "export_project_v2_json",
+        "project_summary", "project_summary_v2")}
+    with patch.multiple(project_store, **forbidden):
         for _ in range(1000):
             assert store.revision == expected
         for _ in range(3):
@@ -55,9 +64,15 @@ def assert_cached_project_revision(store):
     if project is not None:
         project["name"] = "Only a parsed export changed"
         status = store.status()
-        original_name = status["summary"]["name"]
+        original_summary = json.loads(json.dumps(store.status()["summary"]))
         status["summary"]["name"] = "Only a returned summary changed"
-        assert store.status()["summary"]["name"] == original_name
+        status["summary"]["counts"]["devices"] = -1
+        status["summary"]["warnings"].append("Only a returned warning changed")
+        if "issues" in status["summary"]:
+            if status["summary"]["issues"]:
+                status["summary"]["issues"][0]["code"] = "Only a returned issue changed"
+            status["summary"]["issues"].append({"code": "synthetic_returned_issue"})
+        assert store.status()["summary"] == original_summary
         assert store.revision == expected
 
 
@@ -1122,7 +1137,7 @@ async def main() -> None:
                     assert system["database"]["backend"] == "sqlite" and system["database"]["project_persisted"] is True
                     assert {module["id"] for module in system["modules"]} == {"core", "storage", "project"}
                     assert {module["id"]: module["version"] for module in system["modules"]} == {
-                        "core": "0.1.3", "storage": "0.1.0", "project": "0.1.1"}
+                        "core": "0.1.3", "storage": "0.1.0", "project": "0.1.2"}
                     assert all(module["status"] == "ready" for module in system["modules"])
                     assert DATA_BASE_RUNTIME in hass.data
                     empty = await hass.services.async_call(DOMAIN, "project_status", {}, blocking=True, return_response=True)

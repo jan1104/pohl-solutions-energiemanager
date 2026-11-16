@@ -1,6 +1,6 @@
 # Arbeitsplan
 
-Stand: 2026-11-15. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
+Stand: 2026-11-16. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
 
 ## Auftrag und Grenzen
 
@@ -34,6 +34,8 @@ Stand: 2026-11-15. Dieser Plan steuert die weitere Entwicklung in diesem Chat un
 V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberflächenprüfungen getestet. Die erweiterte echte HA-Laufzeitprüfung ist im GitHub-Lauf 41618373561 auf Commit e02b711 erfolgreich. Die lokale Vorschau ruft keine Preise ab; die aktive Integration kann konfigurierte Quellen lesen. Der SMARD-Nutzungsstatus ist in PRICE_SOURCES.md dokumentiert.
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
+
+Projektverwaltung 0.1.2 am 16.11.2026: Unveränderte Export-/Statuszugriffe validieren und serialisieren den vollständigen privaten Projektbaum nicht mehr erneut. Exporttext und Zusammenfassung werden zusammen mit der Inhaltskennung bei Übernahme erzeugt; alle Ausgabeformate bleiben gleich. Zurückgegebene verschachtelte Zusammenfassungen werden vollständig kopiert. Die HA-Prüfung sperrt alle fünf Berechnungsfunktionen bei reinen Lesezugriffen und vergleicht gegen bisherige Ausgaben. Keine neue Oberfläche, Datenbankmigration oder Geräteabfrage.
 
 Projektverwaltung 0.1.1 am 15.11.2026: Die Inhaltskennung wird pro übernommenem Projektstand einmal berechnet und für reine Revisionsabfragen wiederverwendet. Bisher wurde dabei jedes Mal der vollständige Projektbaum serialisiert und gehasht, auch mehrfach je Leseaufruf. Ein gemeinsamer Übernahmepfad aktualisiert den Wert bei Laden, Import, Migration, Konfliktnachladen und Simulation vor möglichen Abbruch-/Konfliktfehlern. SHA-Vertrag und numerische SQLite-CAS unverändert. HA-Tests prüfen kanonische Gleichheit und ausbleibende Hashaufrufe; keine erfundenen Pi-Leistungswerte. Keine neue Oberfläche oder Geräteabfrage.
 

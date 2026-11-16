@@ -1,6 +1,7 @@
 """Persist the single active project in SQLite; retain legacy HA storage read-only."""
 
 import asyncio
+from copy import deepcopy
 import json
 from hashlib import sha256
 from os import fstat
@@ -63,6 +64,8 @@ class ProjectStore:
         self._document_revision: int | None = None
         self._project: dict[str, Any] | None = None
         self._revision = _project_revision(None)
+        self._project_json = None
+        self._summary = None
         self._lock = asyncio.Lock()
         self._loaded = False
         self._migration_status = "not_needed"
@@ -164,8 +167,18 @@ class ProjectStore:
         # Project objects stay private and are replaced, never edited in place.
         # Read-path revision checks must not reserialize a potentially 2 MiB tree.
         revision = _project_revision(project)
+        project_json = summary = None
+        if project is not None:
+            v2 = project["schema_version"] == 2
+            export = export_project_v2_json if v2 else export_project_json
+            summarize = project_summary_v2 if v2 else project_summary
+            project_json = export(project)
+            summary = summarize(project)
+        # Publish one complete presentation snapshot, with no suspension point.
         self._project = project
         self._revision = revision
+        self._project_json = project_json
+        self._summary = summary
 
     def _apply_loaded(self, loaded):
         namespace, document_revision, project, status, retained = loaded
@@ -341,12 +354,10 @@ class ProjectStore:
                     "legacy_retained": self._legacy_retained}
 
     def export(self) -> dict[str, Any]:
-        export = export_project_v2_json if self._project and self._project["schema_version"] == 2 else export_project_json
         return {"planning_only": True, "revision": self.revision,
-                "project_json": export(self._project) if self._project is not None else None}
+                "project_json": self._project_json}
 
     def status(self) -> dict[str, Any]:
-        summarize = project_summary_v2 if self._project and self._project["schema_version"] == 2 else project_summary
         return {"planning_only": True, "revision": self.revision,
                 "has_project": self._project is not None,
-                "summary": summarize(self._project) if self._project is not None else None}
+                "summary": deepcopy(self._summary)}
