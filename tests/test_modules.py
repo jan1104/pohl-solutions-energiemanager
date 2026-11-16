@@ -231,3 +231,18 @@ def test_obsolete_failure_cannot_poison_current_module_after_dependency_recovery
         assert registry.states()["planner"].status == "ready"
         assert registry.states()["report"].status == "ready"
     asyncio.run(run())
+
+def test_registration_preflight_is_pure_and_final_registration_rechecks():
+    registry = ModuleRegistry()
+    original = registry.states()
+    registry.validate_registration(manifest('forecast'), echo)
+    assert registry.states() == original == {}
+    with pytest.raises(ValueError):
+        registry.validate_registration(manifest('forecast'), lambda request: request)
+    assert registry.states() == {}
+    registry.register(manifest('forecast'), echo)
+    with pytest.raises(ValueError, match='already registered'):
+        registry.validate_registration(manifest('forecast'), echo)
+    with pytest.raises(ValueError, match='already registered'):
+        registry.register(manifest('forecast'), echo)
+    assert len(registry.manifests()) == 1

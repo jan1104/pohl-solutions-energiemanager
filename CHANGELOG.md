@@ -2,6 +2,8 @@
 
 ## 0.6.0 — vorbereitet, 2026-11-16
 
+- Grundmodul 0.1.4: Ausdrücklich registrierte Fachmodule erhalten den gemeinsamen projektgebundenen Datenbankkontext. Registrierung und Status führen keine Fachhandler aus; Projektwechsel und Stop verhindern überholte Aktivierung oder Ergebnisse. Noch keine automatische Modulverwaltung oder Gerätefreigabe.
+
 - Projektverwaltung 0.1.2: Exporttext und Statuszusammenfassung für unveränderte Projektstände wiederverwenden. Ausgabeformate bleiben erhalten; verschachtelte zurückgegebene Daten können den gespeicherten Zustand nicht verändern.
 
 - Projektverwaltung 0.1.1: Inhaltskennung pro übernommenem Projektstand wiederverwenden. Reine Revisionsabfragen serialisieren und hashen den gesamten Projektbaum nicht mehr wiederholt; Import-/Konflikt-/Migrationsschutz bleibt erhalten.

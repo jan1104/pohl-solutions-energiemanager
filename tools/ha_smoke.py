@@ -466,6 +466,118 @@ async def connection_lifecycle_checks(hass):
             await runtime.async_stop()
 
 
+async def module_context_registration_checks(hass):
+    """Explicit module/context composition with real HA SQLite, synthetic handlers."""
+    from custom_components.pohl_solutions_energiemanager.base_runtime import BaseRuntime
+    from custom_components.pohl_solutions_energiemanager.core.modules import ModuleDependency, ModuleManifest, ModuleUnavailable, ModuleVersion
+    from custom_components.pohl_solutions_energiemanager.project_store import ProjectStore
+
+    def manifest(key):
+        return ModuleManifest(key, "Synthetic context module", ModuleVersion(1, 0, 0), 1, (
+            ModuleDependency("storage", ModuleVersion(0, 1, 0), ModuleVersion(0, 2, 0)),))
+
+    async def expect(error, operation):
+        try:
+            await operation
+        except error:
+            return
+        raise AssertionError(f"Expected {error.__name__}")
+
+    with tempfile.TemporaryDirectory() as isolated:
+        root = Path(isolated)
+        with patch.object(hass.config, "path", side_effect=lambda *parts: str(root.joinpath(*parts))):
+            store = ProjectStore(hass)
+            await store.async_load()
+            await store.async_ensure_project("Synthetic modules", "module-context-a")
+            runtime = BaseRuntime(store)
+            await runtime.async_start()
+            calls, started, release = [], asyncio.Event(), asyncio.Event()
+
+            async def handler(context, request):
+                calls.append((context.project_id, request))
+                if request == "wait":
+                    started.set()
+                    await release.wait()
+                return (await context.storage.async_get("settings")).data
+
+            with patch.object(store, "async_module_context", new=AsyncMock(side_effect=AssertionError("Invalid registration touched storage"))):
+                await expect(ValueError, runtime.async_register_module(manifest("invalid_handler"), lambda c, r: r, schema_version=1))
+                missing_dependency = ModuleManifest("missing_storage", "Synthetic", ModuleVersion(1, 0, 0), 1)
+                await expect(ValueError, runtime.async_register_module(missing_dependency, handler, schema_version=1))
+            context = await runtime.async_register_module(manifest("synthetic_context"), handler, schema_version=1)
+            assert context.project_id == store.project_id == "module-context-a"
+            assert calls == []
+            await runtime.async_system_status()
+            assert calls == []
+            await context.storage.async_put("settings", {"value": 42}, expected_revision=None)
+            assert await runtime.registry.async_call("synthetic_context", "peek") == {"value": 42}
+            with patch.object(store, "async_module_context", new=AsyncMock(side_effect=AssertionError("Duplicate registration touched storage"))):
+                await expect(ValueError, runtime.async_register_module(manifest("synthetic_context"), handler, schema_version=1))
+            project = json.loads(store.export()["project_json"])
+            project["name"] = "Same project, changed name"
+            await store.async_import(json.dumps(project), expected_revision=store.revision)
+            assert await runtime.registry.async_call("synthetic_context", "peek") == {"value": 42}
+            pending = asyncio.create_task(runtime.registry.async_call("synthetic_context", "wait"))
+            await started.wait()
+            project["name"] = "Changed during module request"
+            await store.async_import(json.dumps(project), expected_revision=store.revision)
+            release.set()
+            await expect(ModuleUnavailable, pending)
+            assert runtime.registry.states()["synthetic_context"].status == "disabled"
+            runtime.registry.set_enabled("synthetic_context", True)
+            assert await runtime.registry.async_call("synthetic_context", "peek") == {"value": 42}
+            before_switch = len(calls)
+            project["id"] = "module-context-b"
+            await store.async_import(json.dumps(project), expected_revision=store.revision)
+            await expect(ModuleUnavailable, runtime.registry.async_call("synthetic_context", "peek"))
+            assert len(calls) == before_switch
+            assert (await context.storage.async_get("settings")).data == {"value": 42}
+            other_context = await store.async_module_context(manifest("synthetic_context"), schema_version=1)
+            assert other_context.project_id == "module-context-b"
+            assert await other_context.storage.async_get("settings") is None
+            await runtime.async_stop()
+
+            # Stop owns the registration lock too; an in-flight preparation
+            # cannot publish a live handler after shutdown has begun.
+            runtime = BaseRuntime(store)
+            await runtime.async_start()
+            prepared, finish = asyncio.Event(), asyncio.Event()
+            original_open = store.async_module_context
+
+            async def delayed_open(*args, **kwargs):
+                result = await original_open(*args, **kwargs)
+                prepared.set()
+                await finish.wait()
+                return result
+
+            with patch.object(store, "async_module_context", side_effect=delayed_open):
+                pending = asyncio.create_task(runtime.async_register_module(manifest("delayed_context"), handler, schema_version=1))
+                await prepared.wait()
+                stopping = asyncio.create_task(runtime.async_stop())
+                await asyncio.sleep(0)
+                stopping.cancel()
+                await asyncio.sleep(0)
+                assert not stopping.done()
+                finish.set()
+                await expect(ModuleUnavailable, pending)
+                await expect(asyncio.CancelledError, stopping)
+            assert "delayed_context" not in runtime.registry.states()
+            await runtime.async_stop()
+
+            runtime = BaseRuntime(store)
+            await runtime.async_start()
+            prepared, finish = asyncio.Event(), asyncio.Event()
+            with patch.object(store, "async_module_context", side_effect=delayed_open):
+                pending = asyncio.create_task(runtime.async_register_module(manifest("changed_context"), handler, schema_version=1))
+                await prepared.wait()
+                project["name"] = "Changed while preparing context"
+                await store.async_import(json.dumps(project), expected_revision=store.revision)
+                finish.set()
+                await expect(ModuleUnavailable, pending)
+            assert "changed_context" not in runtime.registry.states()
+            await runtime.async_stop()
+
+
 async def fresh_project_creation_checks(hass):
     from threading import Event
 
@@ -936,6 +1048,7 @@ async def main() -> None:
             await revision_cache_checks(hass)
             await sqlite_migration_checks(hass)
             await connection_lifecycle_checks(hass)
+            await module_context_registration_checks(hass)
             await fresh_project_creation_checks(hass)
             await sqlite_project_version_checks(hass)
             await cancelled_project_migration_check(hass)
@@ -1137,7 +1250,7 @@ async def main() -> None:
                     assert system["database"]["backend"] == "sqlite" and system["database"]["project_persisted"] is True
                     assert {module["id"] for module in system["modules"]} == {"core", "storage", "project"}
                     assert {module["id"]: module["version"] for module in system["modules"]} == {
-                        "core": "0.1.3", "storage": "0.1.0", "project": "0.1.2"}
+                        "core": "0.1.4", "storage": "0.1.0", "project": "0.1.2"}
                     assert all(module["status"] == "ready" for module in system["modules"])
                     assert DATA_BASE_RUNTIME in hass.data
                     empty = await hass.services.async_call(DOMAIN, "project_status", {}, blocking=True, return_response=True)

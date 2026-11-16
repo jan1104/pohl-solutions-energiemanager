@@ -277,6 +277,10 @@ class ProjectStore:
             return result
 
     @property
+    def project_id(self) -> str | None:
+        return self._project["id"] if self._project is not None else None
+
+    @property
     def revision(self) -> str:
         return self._revision
 

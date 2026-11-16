@@ -81,3 +81,21 @@ Die vorhandene Erholung der eingebauten Speicherdiagnose bleibt erhalten. Fachmo
 
 
 Grundmodul 0.1.2 (13.11.2026) besitzt nun zusätzlich den gemeinsamen, erst bei ausdrücklichem internem Lesen erzeugten Verbindungsmanager. Beim HA-Unload wird dessen Bereinigung einschließlich wartender Besitzersperre abgearbeitet. Dies sind noch keine allgemeinen Fachmodul-Start-/Stop-Hooks und kein automatischer Geräteabruf. Beendete Laufzeiten werden nicht wieder gestartet. Siehe SYSTEM_LOGIC.md.
+
+
+## Ausdrückliche Fachmodulregistrierung mit Datenbankkontext — 16.11.2026
+
+Grundmodul 0.1.4 bietet intern `BaseRuntime.async_register_module(manifest, handler, schema_version=...)`. Vertrauenswürdiger Anwendungscode registriert damit einen asynchronen Handler mit der Form `handler(context, request)`. Die Grundlaufzeit öffnet den vorhandenen gemeinsamen SQLite-Bereich für das gespeicherte Projekt und Modul und übergibt diesen Kontext bei späteren ausdrücklichen Aufrufen. Es gibt keinen Download, Dateiscan, dynamischen Import, Gerätezugriff oder Handler-Aufruf während der Registrierung. Noch kein Fachmodul wird automatisch entdeckt oder aktiviert.
+
+Die ursprüngliche Handlerfunktion, Duplikate und Kapazitätsgrenzen werden vor Datenbankarbeit geprüft; die endgültige Registrierung prüft erneut. Das Modul muss Kernel-API 1 und eine ausdrückliche, zur vorhandenen Version passende `storage`-Abhängigkeit deklarieren. Deren Abhängigkeit zum Grundmodul gilt weiterhin. Codeversion und Konfigurationsschema bleiben getrennt. Die neue reine Registry-Funktion `validate_registration` führt keinen Handler aus und verändert den Bestand nicht.
+
+Registrierungen sind serialisiert. Nach dem Öffnen des Kontexts müssen Laufzeit, Projekt-ID und Projektrevision unverändert sein. Bei Abbruch oder zwischenzeitlichem Wechsel kann ein leerer Datenbank-Namensbereich bestehen bleiben; es wird aber kein Handler nachträglich aktiviert. Stop sperrt neue Registrierungen sofort und wartet auch bei Taskabbruch auf bereits laufende Vorbereitungen, bevor die Bereinigung endet.
+
+Der Kontext bleibt an seine ursprüngliche Projekt-ID gebunden. Änderungen derselben Projekt-ID zwischen zwei Aufrufen sind erlaubt. Ändert sich der Projektstand während eines Handler-Aufrufs, wird dessen Ergebnis verworfen und das Modul deaktiviert, ohne einen Ausführungsfehler zu erfinden. Ein neuer Aufruf erfordert dann ausdrückliche Wiederfreigabe durch Anwendungscode. Bei einer fremden aktiven Projekt-ID wird der Handler gar nicht erst aufgerufen; ein neuer Kontext benötigt eine neue Laufzeit. Eine Rückkehr zur ursprünglichen Projekt-ID kann dieselbe Bindung nach ausdrücklicher Wiederfreigabe weiterverwenden. Die Registry bleibt auf genau eine Implementierung pro Modul-ID begrenzt.
+
+Bereits abgeschlossene Konfigurationsschreibvorgänge werden durch diese Ergebnisprüfung nicht rückgängig gemacht; sie bleiben ausschließlich im ursprünglichen Projektbereich. Die kooperative Registry ersetzt weiterhin keine Prozessisolation oder allgemeinen Gerätetreiber-Start-/Stop-Hooks. Diese API enthält keine Aktorfreigabe.
+
+Die HA-Prüfung verwendet echte temporäre SQLite-Projekte und synthetische Handler. Sie prüft Kontextübergabe, gemeinsame Ablage, keine Ausführung bei Registrierung/Status, Prüfung vor Speicherzugriff, Wiederverwendung bei gleichbleibender Projekt-ID, Ablehnung überholter Ergebnisse und fremder Bindung sowie Stop während einer wartenden Vorbereitung.
+
+
+Stop wartet in diesem Schritt auf Registrierungsvorbereitung und Transportbereinigung, aber nicht automatisch auf beliebige bereits laufende Fachhandler. Diese müssen ihren eigenen kooperativen Taskablauf beachten. Deren überholte Ausgaben werden verworfen; bereits erfolgte Schreibvorgänge im ursprünglichen Konfigurationsbereich bleiben bestehen. Allgemeine Fachmodul-Taskbesitzer und Gerätetreiber-Hooks sind weiterhin offen.

@@ -18,7 +18,7 @@ from .core.modules import (
 from .project_store import ProjectConflictError, ProjectStore
 
 DATA_BASE_RUNTIME = "pohl_solutions_energiemanager_base_runtime"
-CORE_MODULE_VERSION = "0.1.3"
+CORE_MODULE_VERSION = "0.1.4"
 STORAGE_MODULE_VERSION = "0.1.0"
 PROJECT_MODULE_VERSION = "0.1.2"
 
@@ -49,6 +49,7 @@ class BaseRuntime:
         self._loaded = False
         self._stop_task = None
         self._stopped = False
+        self._module_lock = asyncio.Lock()
         self._connection_lock = asyncio.Lock()
         self._connections = None
         self._connection_revision = None
@@ -96,8 +97,56 @@ class BaseRuntime:
         await _async_drain(self._stop_task)
 
     async def _async_stop_connections(self):
-        async with self._connection_lock:
-            await self._async_close_connections()
+        async with self._module_lock:
+            async with self._connection_lock:
+                await self._async_close_connections()
+
+    async def async_register_module(self, manifest, handler, *, schema_version,
+                                    compatible_versions=()):
+        """Explicit trusted-code registration with the shared configuration scope.
+
+        Registration never invokes the handler. The handler receives (context,
+        request); no module is downloaded, discovered or started automatically.
+        """
+        async with self._module_lock:
+            if not self._loaded:
+                raise RuntimeError("Base runtime is not loaded")
+            self.registry.validate_registration(manifest, handler)
+            if manifest.api_major != self.registry.API_MAJOR:
+                raise ValueError("Module requires an unsupported context API")
+            dependency = next((d for d in manifest.dependencies if d.module_id == "storage"), None)
+            version = ModuleVersion.parse(STORAGE_MODULE_VERSION)
+            if dependency is None or not dependency.minimum <= version < dependency.maximum_exclusive:
+                raise ValueError("A compatible explicit storage dependency is required")
+            project_id, revision = self._store.project_id, self._store.revision
+            context = await self._store.async_module_context(
+                manifest, schema_version=schema_version,
+                compatible_versions=compatible_versions)
+            if (not self._loaded or self._store.project_id != project_id
+                    or self._store.revision != revision):
+                raise ModuleUnavailable("Project changed while preparing module context")
+
+            def check_scope(expected_revision=None):
+                if (not self._loaded or self._store.project_id != project_id
+                        or (expected_revision is not None and self._store.revision != expected_revision)):
+                    self.registry.set_enabled(manifest.module_id, False)
+                    raise ModuleUnavailable("Module context or result is no longer current")
+
+            async def contextual(request):
+                check_scope()
+                call_revision = self._store.revision
+                try:
+                    result = await handler(context, request)
+                except Exception:
+                    check_scope(call_revision)
+                    raise
+                check_scope(call_revision)
+                return result
+
+            # Recheck duplicate/limit after awaited preparation as the public
+            # registry may also have been changed by trusted code meanwhile.
+            self.registry.register(manifest, contextual)
+            return context
 
     async def async_read_registers(self, connection_id, *, expected_revision,
                                    unit_id, address, count, function_code=3):

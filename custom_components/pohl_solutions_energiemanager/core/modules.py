@@ -110,7 +110,8 @@ class ModuleRegistry:
     def __init__(self):
         self._entries: dict[str, _Entry] = {}
 
-    def register(self, manifest: ModuleManifest, handler):
+    def validate_registration(self, manifest: ModuleManifest, handler):
+        """Pure preflight shared by immediate and asynchronously prepared modules."""
         if not isinstance(manifest, ModuleManifest):
             raise ValueError("Module manifest required")
         if manifest.module_id in self._entries:
@@ -119,6 +120,8 @@ class ModuleRegistry:
             raise ValueError("Module registry limit is 128")
         if not (inspect.iscoroutinefunction(handler) or inspect.iscoroutinefunction(getattr(handler, "__call__", None))):
             raise ValueError("Module handler must be async")
+    def register(self, manifest: ModuleManifest, handler):
+        self.validate_registration(manifest, handler)
         self._entries[manifest.module_id] = _Entry(manifest, handler)
         self._reconcile()
 
