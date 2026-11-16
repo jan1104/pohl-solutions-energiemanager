@@ -74,3 +74,36 @@ async def read_modbus_power_measurement(
         polarity=polarity, now=received_at, max_age=max_age, max_skew=timedelta(0),
     )
     return ModbusPowerRead(route, decoded, bound)
+
+async def simulate_modbus_power_measurement(
+    project, measurement_id, registers, *, byte_order, word_order, polarity,
+):
+    """Use supplied synthetic register words; never construct a transport."""
+    if (not isinstance(registers, list) or not 1 <= len(registers) <= 2
+            or any(type(value) is not int or not 0 <= value <= 65535 for value in registers)):
+        raise ValueError("Ein oder zwei ganze Registerwerte von 0 bis 65535 angeben.")
+    words = tuple(registers)
+
+    class SyntheticReader:
+        async def read_registers(self, *, unit_id, address, count, function_code=3):
+            if len(words) != count:
+                raise ValueError(f"Der konfigurierte Datentyp benötigt genau {count} Registerwerte.")
+            return words
+
+    synthetic_time = datetime(2000, 1, 1, tzinfo=timezone.utc)
+    result = await read_modbus_power_measurement(
+        project, measurement_id, reader_for_connection=lambda _: SyntheticReader(),
+        source_id="synthetic-register-simulation", byte_order=byte_order,
+        word_order=word_order, polarity=polarity, max_age=timedelta(0),
+        measured_at=synthetic_time, receipt_clock=lambda: synthetic_time)
+    bound = result.measurement
+    if not bound.value.valid:
+        raise ValueError("Die simulierte Registerantwort ergibt keine gültige Leistung.")
+    return {
+        "simulated": True, "measurement_id": bound.measurement_id,
+        "channel_id": bound.channel_id, "raw_unit": bound.raw_unit,
+        "scale": bound.scale, "polarity": polarity, "kw": bound.value.power_kw,
+        "source_kind": bound.source_kind, "registers": list(words),
+        "decoded_value": result.decoded_value, "connection_id": result.route.connection_id,
+        "unit_id": result.route.unit_id, "byte_order": byte_order, "word_order": word_order,
+    }

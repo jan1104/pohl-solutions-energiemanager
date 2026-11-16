@@ -87,7 +87,11 @@
           <p class="project-muted">Geben Sie einen Beispielwert vor Skalierung und Umrechnung ein. Der Test ruft keine Messwerte ab.</p>
           <form id="project-simulation-form">
             <div class="project-add-grid">
-              <label><span id="simulation-raw-label">Testwert</span><input id="simulation-raw" type="number" step="any" inputmode="decimal" required></label>
+              <label id="simulation-mode-field" hidden>Eingabe<select id="simulation-mode"><option value="raw">Berechneten Rohwert prüfen</option><option value="registers">Registerantwort prüfen</option></select></label>
+              <label id="simulation-raw-field"><span id="simulation-raw-label">Testwert</span><input id="simulation-raw" type="number" step="any" inputmode="decimal" required></label>
+              <label id="simulation-register-field" hidden><span id="simulation-register-label">Registerwerte (dezimal)</span><input id="simulation-registers" inputmode="numeric" placeholder="Zum Beispiel 0, 2500" required disabled></label>
+              <label id="simulation-byte-field" hidden>Byte-Reihenfolge<select id="simulation-byte-order" required disabled><option value="">Bitte wählen</option><option value="big">Höheres Byte zuerst (Big Endian)</option><option value="little">Niedrigeres Byte zuerst (Little Endian)</option></select></label>
+              <label id="simulation-word-field" hidden>Wort-Reihenfolge<select id="simulation-word-order" required disabled><option value="">Bitte wählen</option><option value="big">Höheres Wort zuerst</option><option value="little">Niedrigeres Wort zuerst</option></select></label>
               <label>Ausrichtung<select id="simulation-polarity" required>
                 <option value="">Bitte wählen</option>
                 <option value="1">Vorzeichen beibehalten (+1)</option>
@@ -99,6 +103,7 @@
               <strong id="simulation-kw"></strong>
               <p id="simulation-calculation"></p>
               <p id="simulation-direction"></p>
+              <p id="simulation-route" hidden></p>
             </div>
           </form>
         </section>

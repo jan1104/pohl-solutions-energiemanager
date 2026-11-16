@@ -12,7 +12,11 @@
     // Backend diagnostics remain reachable even if loading the project fails.
     ['section-tab-project', 'section-tab-system', 'system-open-project'].forEach(id => { $(id).disabled = false; });
     $('system-refresh').disabled = !embedded || systemBusy;
-    if (!disabled) $('project-object-rename').disabled = !$('project-object').value;
+    if (!disabled) {
+      $('project-object-rename').disabled = !$('project-object').value;
+      // Restore mode-specific required controls after the global busy lock.
+      if (simulationMeasurement) renderSimulationFields();
+    }
   }
   let requestCounter = 0; const pending = new Map();
   function haRequest(operation, fields = {}) {
@@ -500,6 +504,23 @@
       throw new Error('Bitte das Projekt vor dem Test speichern.');
     }
   }
+  function renderSimulationFields() {
+    const measurement = byId('measurements', simulationMeasurement);
+    const channel = measurement && byId('channels', measurement.channel_id);
+    const modbus = channel?.source.kind === 'modbus';
+    const registers = modbus && $('simulation-mode').value === 'registers';
+    $('simulation-mode-field').hidden = !modbus;
+    $('simulation-raw-field').hidden = registers;
+    $('simulation-raw').disabled = registers;
+    for (const [field, input] of [['simulation-register-field', 'simulation-registers'],
+      ['simulation-byte-field', 'simulation-byte-order'], ['simulation-word-field', 'simulation-word-order']]) {
+      $(field).hidden = !registers;
+      $(input).disabled = !registers;
+    }
+    const count = ['u32', 's32', 'float32'].includes(channel?.source.data_type) ? 2 : 1;
+    $('simulation-register-label').textContent = `Registerwerte (dezimal, ${count} ${count === 1 ? 'Wert' : 'Werte'})`;
+    $('simulation-result').hidden = true;
+  }
   function openSimulation(measurementId) {
     ensureSimulationSource();
     const measurement = byId('measurements', measurementId);
@@ -507,8 +528,9 @@
     simulationMeasurement = measurementId;
     $('project-simulation-channel').textContent = `${measurement.name} · ${channel.name}`;
     $('simulation-raw-label').textContent = `Testwert (${channel.unit})`;
-    $('simulation-raw').value = '';
-    $('simulation-polarity').value = '';
+    $('simulation-mode').value = 'raw';
+    for (const id of ['simulation-raw', 'simulation-registers', 'simulation-byte-order', 'simulation-word-order', 'simulation-polarity']) $(id).value = '';
+    renderSimulationFields();
     $('simulation-result').hidden = true;
     renderProjectLayout();
     $('simulation-raw').focus();
@@ -520,6 +542,10 @@
   });
   $('simulation-raw').addEventListener('input', () => { $('simulation-result').hidden = true; });
   $('simulation-polarity').addEventListener('change', () => { $('simulation-result').hidden = true; });
+  $('simulation-mode').addEventListener('change', renderSimulationFields);
+  for (const id of ['simulation-registers', 'simulation-byte-order', 'simulation-word-order']) {
+    $(id).addEventListener(id === 'simulation-registers' ? 'input' : 'change', () => { $('simulation-result').hidden = true; });
+  }
   const formatSimulation = number => number.toLocaleString('de-DE', {
     maximumSignificantDigits: 12,
     notation: Math.abs(number) >= 1e9 || (number !== 0 && Math.abs(number) < 1e-6) ? 'scientific' : 'standard',
@@ -530,20 +556,47 @@
     if (!simulationMeasurement) return;
     const measurement = byId('measurements', simulationMeasurement);
     const channel = byId('channels', measurement.channel_id);
-    const text = $('simulation-raw').value;
-    const raw = text === '' ? NaN : Number(text);
     const polarity = Number($('simulation-polarity').value);
-    if (!Number.isFinite(raw) || ![-1, 1].includes(polarity)) throw new Error('Testwert und Ausrichtung angeben.');
+    if (![-1, 1].includes(polarity)) throw new Error('Ausrichtung angeben.');
+    const registerMode = channel.source.kind === 'modbus' && $('simulation-mode').value === 'registers';
+    const request = {expected_revision: baseRevision, measurement_id: measurement.id, polarity};
+    if (registerMode) {
+      const text = $('simulation-registers').value.trim();
+      const words = text ? text.split(/[\s,;]+/) : [];
+      const count = ['u32', 's32', 'float32'].includes(channel.source.data_type) ? 2 : 1;
+      if (words.length !== count || words.some(word => !/^\d{1,5}$/.test(word) || Number(word) > 65535)) {
+        throw new Error(`${count} ganze Registerwerte von 0 bis 65535 angeben.`);
+      }
+      request.registers = words.map(Number);
+      request.byte_order = $('simulation-byte-order').value;
+      request.word_order = $('simulation-word-order').value;
+      if (![request.byte_order, request.word_order].every(order => ['big', 'little'].includes(order))) {
+        throw new Error('Byte- und Wort-Reihenfolge ausdrücklich auswählen.');
+      }
+    } else {
+      const text = $('simulation-raw').value;
+      request.raw_value = text === '' ? NaN : Number(text);
+      if (!Number.isFinite(request.raw_value)) throw new Error('Gültigen Testwert angeben.');
+    }
     $('simulation-result').hidden = true;
-    const data = await exclusiveProjectRequest('simulate_measurement', {
-      expected_revision: baseRevision, measurement_id: measurement.id, raw_value: raw, polarity,
-    });
+    const data = await exclusiveProjectRequest('simulate_measurement', request);
     if (data.simulated !== true || data.measurement_id !== measurement.id || data.channel_id !== channel.id ||
         data.raw_unit !== channel.unit || data.polarity !== polarity || !Number.isFinite(data.kw) || !Number.isFinite(data.scale)) {
       throw new Error('Testergebnis passt nicht zur gewählten Messung.');
     }
     $('simulation-kw').textContent = `Simuliert: ${formatSimulation(data.kw)} kW`;
-    $('simulation-calculation').textContent = `Testwert ${formatSimulation(raw)} ${data.raw_unit} · Faktor ${formatSimulation(data.scale)} · Ausrichtung ${polarity === 1 ? '+1' : '−1'}`;
+    if (registerMode && (!Number.isFinite(data.decoded_value) || data.source_kind !== 'modbus' ||
+        data.byte_order !== request.byte_order || data.word_order !== request.word_order ||
+        !Array.isArray(data.registers) || data.registers.length !== request.registers.length ||
+        [...data.registers].some((word, i) => word !== request.registers[i]) ||
+        typeof data.connection_id !== 'string' || !/^[a-zA-Z0-9_-]{1,80}$/.test(data.connection_id) ||
+        !Number.isInteger(data.unit_id) || data.unit_id < 1 || data.unit_id > 247)) {
+      throw new Error('Registerergebnis passt nicht zur gewählten Simulation.');
+    }
+    const raw = registerMode ? data.decoded_value : request.raw_value;
+    $('simulation-calculation').textContent = `${registerMode ? 'Dekodierter Rohwert' : 'Testwert'} ${formatSimulation(raw)} ${data.raw_unit} · Faktor ${formatSimulation(data.scale)} · Ausrichtung ${polarity === 1 ? '+1' : '−1'}`;
+    $('simulation-route').hidden = !registerMode;
+    $('simulation-route').textContent = registerMode ? `Simulierter Leseweg: ${data.connection_id} · Unit-ID ${data.unit_id}` : '';
     $('simulation-direction').textContent = measurement.role === 'grid'
       ? (data.kw > 0 ? 'Netzbezug' : data.kw < 0 ? 'Einspeisung' : 'Keine Nettoleistung') : '';
     $('simulation-direction').hidden = !$('simulation-direction').textContent;

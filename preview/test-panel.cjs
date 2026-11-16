@@ -478,11 +478,17 @@ test('measurement simulation uses the saved configuration and keeps the result o
   assert.equal(request.raw_value, 2500);
   assert.equal(request.polarity, -1);
   t.reply(request, simulatedPower); await reading;
+  assert.equal(field('simulation-raw').disabled, false);
+  for (const id of ['simulation-registers', 'simulation-byte-order', 'simulation-word-order']) assert.equal(field(id).disabled, true);
   assert.equal(field('simulation-kw').textContent, 'Simuliert: -1,25 kW');
   assert.equal(field('simulation-direction').textContent, 'Einspeisung');
   assert.deepEqual(JSON.parse(field('project-json').value), fixture);
   field('simulation-raw').handlers.get('input')();
   assert.equal(field('simulation-result').hidden, true);
+  const failed = submit();
+  t.reply(t.outgoing.at(-1), 'Synthetic simulation failure', false); await failed;
+  assert.equal(field('simulation-raw').disabled, false);
+  for (const id of ['simulation-registers', 'simulation-byte-order', 'simulation-word-order']) assert.equal(field(id).disabled, true);
 });
 
 
@@ -551,3 +557,112 @@ for (const version of [1, 2]) {
     });
   }
 }
+
+const simulatedRegisters = {...simulatedPower, kw: 1.25, registers: [15606, 65535], decoded_value: -2500,
+  connection_id: 'connection_main', unit_id: 2, byte_order: 'little', word_order: 'little'};
+
+test('register simulation bridge rejects ambiguous inputs and forwards only explicit read-only words', async () => {
+  const revision = 'a'.repeat(64);
+  const fields = {expected_revision: revision, measurement_id: 'grid_primary',
+    registers: [15606, 65535], byte_order: 'little', word_order: 'little', polarity: -1};
+  const t = setup(req => req.type.endsWith('/simulate_measurement')
+    ? {...simulatedRegisters, credentials: 'ignore', revision: 'ignore'} : {revision, project_json: '{}'});
+  await t.request('load', {}, 'load');
+  for (const [i, invalid] of [{raw_value: 2500}, {registers: []}, {registers: [1, 2, 3]},
+    {registers: [true]}, {registers: [65536]}, {registers: [-1]}, {registers: ['1']},
+    {registers: [1.5]}, {registers: Array(2)}, {byte_order: ''}, {word_order: 'auto'}].entries()) {
+    await t.request('simulate_measurement', {...fields, ...invalid}, `invalid-register-${i}`);
+    assert.equal(t.sent.at(-1).data.ok, false);
+  }
+  await t.request('simulate_measurement', {expected_revision: revision, measurement_id: 'grid_primary',
+    raw_value: 2500, polarity: -1, byte_order: 'big'}, 'ambiguous-raw');
+  assert.equal(t.calls.length, 1);
+  await t.request('simulate_measurement', {...fields, project_json: 'ignore', unit_id: 99}, 'registers');
+  assert.deepEqual(JSON.parse(JSON.stringify(t.calls.at(-1))), {type: 'pohl_energy/project/simulate_measurement', ...fields});
+  assert.deepEqual(JSON.parse(JSON.stringify(t.sent.at(-1).data.data)), simulatedRegisters);
+  assert.equal(t.panel._revision, revision);
+  for (const [i, invalid] of [{registers: [65535, 1]}, {decoded_value: Infinity}, {unit_id: 255},
+    {source_kind: 'ha'}, {byte_order: 'big'}, {connection_id: '<script>'}].entries()) {
+    t.panel.hass = {callWS: async () => ({...simulatedRegisters, ...invalid})};
+    await t.request('simulate_measurement', fields, `bad-register-response-${i}`);
+    assert.equal(t.sent.at(-1).data.ok, false);
+  }
+});
+
+test('register form requires configured word count and explicit order, preserves raw mode and never changes project', async () => {
+  const t = editorSetup(), field = id => t.elements.get(id);
+  const v1 = JSON.parse(fs.readFileSync(require('node:path').join(__dirname, '../examples/simple-project.json'), 'utf8'));
+  const fixture = require('./project-model.js').migrateProjectV1ToV2(v1);
+  fixture.channels[0].unit = 'W';
+  fixture.channels[0].source = {kind: 'modbus', address: 100, function_code: 4, data_type: 's32', scale: 0.5};
+  t.reply(t.outgoing.at(-1), {project_json: JSON.stringify(fixture), revision: 'a'.repeat(64)});
+  await Promise.resolve(); await Promise.resolve();
+  await t.click('tab-measurement');
+  const row = field('project-view').children.find(e => e.className === 'project-row');
+  const action = row.children.find(e => e.className === 'project-toolbar').children.find(e => e.textContent === 'Mit Testwert prüfen');
+  await action.handlers.get('click')();
+  assert.equal(field('simulation-mode-field').hidden, false);
+  assert.equal(field('simulation-mode').value, 'raw');
+  assert.equal(field('simulation-registers').disabled, true);
+  assert.equal(field('simulation-raw').disabled, false);
+  field('simulation-mode').value = 'registers';
+  field('simulation-mode').handlers.get('change')();
+  assert.equal(field('simulation-raw').disabled, true);
+  assert.equal(field('simulation-registers').disabled, false);
+  assert.equal(field('simulation-byte-order').value, '');
+  assert.match(field('simulation-register-label').textContent, /2 Werte/);
+  field('simulation-polarity').value = '-1';
+  const submit = () => field('project-simulation-form').handlers.get('submit')({preventDefault() {}});
+  for (const words of ['', '65535', '65535, 65536', '65535, 1.5', '65535, 1e3']) {
+    field('simulation-registers').value = words;
+    await submit();
+    assert.equal(t.outgoing.length, 1);
+  }
+  field('simulation-registers').value = '15606, 65535';
+  await submit();
+  assert.equal(t.outgoing.length, 1);
+  field('simulation-byte-order').value = field('simulation-word-order').value = 'little';
+  const pending = submit(), request = t.outgoing.at(-1);
+  assert.deepEqual(JSON.parse(JSON.stringify(request.registers)), [15606, 65535]);
+  assert.equal(request.raw_value, undefined);
+  assert.equal(request.byte_order, 'little');
+  assert.equal(request.word_order, 'little');
+  t.reply(request, simulatedRegisters); await pending;
+  assert.equal(field('simulation-raw').disabled, true);
+  for (const id of ['simulation-registers', 'simulation-byte-order', 'simulation-word-order']) assert.equal(field(id).disabled, false);
+  assert.equal(field('simulation-kw').textContent, 'Simuliert: 1,25 kW');
+  assert.match(field('simulation-calculation').textContent, /Dekodierter Rohwert -2.500 W/);
+  assert.equal(field('simulation-route').textContent, 'Simulierter Leseweg: connection_main · Unit-ID 2');
+  assert.equal(field('simulation-route').hidden, false);
+  assert.deepEqual(JSON.parse(field('project-json').value), fixture);
+  field('simulation-registers').handlers.get('input')();
+  assert.equal(field('simulation-result').hidden, true);
+  const failed = submit();
+  t.reply(t.outgoing.at(-1), 'Synthetic register failure', false); await failed;
+  assert.equal(field('simulation-raw').disabled, true);
+  for (const id of ['simulation-registers', 'simulation-byte-order', 'simulation-word-order']) assert.equal(field(id).disabled, false);
+  field('simulation-mode').value = 'raw';
+  field('simulation-mode').handlers.get('change')();
+  assert.equal(field('simulation-byte-order').disabled, true);
+  assert.equal(field('simulation-registers').disabled, true);
+  assert.equal(field('simulation-raw').disabled, false);
+});
+
+test('register-answer options stay hidden for a non-Modbus measurement', async () => {
+  const t = editorSetup(), field = id => t.elements.get(id);
+  const v1 = JSON.parse(fs.readFileSync(require('node:path').join(__dirname, '../examples/simple-project.json'), 'utf8'));
+  const fixture = require('./project-model.js').migrateProjectV1ToV2(v1);
+  fixture.channels[0].source = {kind: 'ha', entity_id: 'sensor.synthetic_power'};
+  t.reply(t.outgoing.at(-1), {project_json: JSON.stringify(fixture), revision: 'a'.repeat(64)});
+  await Promise.resolve(); await Promise.resolve();
+  await t.click('tab-measurement');
+  const row = field('project-view').children.find(e => e.className === 'project-row');
+  const action = row.children.find(e => e.className === 'project-toolbar').children.find(e => e.textContent === 'Mit Testwert prüfen');
+  await action.handlers.get('click')();
+  assert.equal(field('simulation-mode-field').hidden, true);
+  assert.equal(field('simulation-register-field').hidden, true);
+  assert.equal(field('simulation-registers').disabled, true);
+  assert.equal(field('simulation-byte-order').disabled, true);
+  assert.equal(field('simulation-word-order').disabled, true);
+  assert.equal(field('simulation-raw').disabled, false);
+});

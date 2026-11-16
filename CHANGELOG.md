@@ -1,6 +1,8 @@
 # Änderungen
 
-## 0.6.0 — vorbereitet, 2026-11-16
+## 0.6.0 — vorbereitet, 2026-11-17
+
+- Projektverwaltung 0.1.3: Modbus-Messkanäle optional mit manuell gelieferten Registerantworten simulieren. Explizite Reihenfolge, dekodierter Rohwert und zugeordneter Leseweg; Rohwertprüfung bleibt Standard. Keine Geräteverbindung oder Ergebnisspeicherung. Visuelle Desktop-/Mobilabnahme vor Release noch offen.
 
 - Grundmodul 0.1.5: Gemeinsame HA-Dienste, Panel und Datenreferenzen auch nach Fehlern oder Abbruch beim letzten Runtime-/Coordinator-Abbau entfernen. Weitere aktive Einträge bleiben erhalten; Fehler werden weiterhin weitergegeben.
 

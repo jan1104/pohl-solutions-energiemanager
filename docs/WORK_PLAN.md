@@ -1,6 +1,6 @@
 # Arbeitsplan
 
-Stand: 2026-11-16. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
+Stand: 2026-11-17. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
 
 ## Auftrag und Grenzen
 
@@ -34,6 +34,8 @@ Stand: 2026-11-16. Dieser Plan steuert die weitere Entwicklung in diesem Chat un
 V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberflächenprüfungen getestet. Die erweiterte echte HA-Laufzeitprüfung ist im GitHub-Lauf 41618373561 auf Commit e02b711 erfolgreich. Die lokale Vorschau ruft keine Preise ab; die aktive Integration kann konfigurierte Quellen lesen. Der SMARD-Nutzungsstatus ist in PRICE_SOURCES.md dokumentiert.
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
+
+Projektverwaltung 0.1.3 / Registersimulation am 17.11.2026: Im vorhandenen Messkanaltest kann bei Modbus optional eine Registerantwort mit ausdrücklicher Byte-/Wort-Reihenfolge eingegeben werden. Route, Dekodierung und einzelne Kanalumrechnung nutzen denselben Adapter über einen synthetischen Reader. Rohwertprüfung bleibt Standard; kein Gerätezugriff oder Speichern. Tests prüfen Eingabevarianten, Berechtigungen, Route, Grenzen, Konflikte und unveränderte Datenbank. Visuelle Desktop-/Mobilabnahme noch offen: In-App-Browser nicht verfügbar, native Browsersteuerung durch URL-Richtlinienprüfung des Werkzeugs beendet; kein Umgehen dieser Einschränkung und kein Release.
 
 Belegter Unload-Fehler / Grundmodul 0.1.5 am 16.11.2026: Fehler oder Abbruch beim Stop der letzten Runtime beziehungsweise Coordinator-Abmeldung konnten gemeinsame Panel-/Dienst-/Speicherreferenzen zurücklassen. Die gemeinsame Bereinigung läuft nun in `finally`; weitere aktive Einträge behalten ihre Ressourcen. HA-Prüfungen injizieren Signale nach echtem Abbau und prüfen Dienste, Panel, Datenreferenzen, WebSocket-Status sowie den zweiten aktiven Eintrag. Keine Geräteabfrage, Dateilöschung oder neue Oberfläche.
 

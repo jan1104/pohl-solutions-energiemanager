@@ -137,3 +137,70 @@ def test_reader_failure_and_malformed_response_do_not_produce_power(read):
     malformed = Mock(read_registers=AsyncMock(return_value=(2500,)))
     with pytest.raises(ValueError, match="Wrong register count"):
         asyncio.run(read(fixture(), lambda _: malformed, measured_at=NOW))
+
+@pytest.fixture(scope="module")
+def register_simulation():
+    package = ModuleType("_pohl_register_simulation_test")
+    package.__path__ = [str(Path(__file__).resolve().parents[1] /
+                            "custom_components/pohl_solutions_energiemanager")]
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setitem(sys.modules, package.__name__, package)
+        adapter = import_module(f"{package.__name__}.adapters.modbus_measurement")
+        yield adapter.simulate_modbus_power_measurement
+
+
+def test_register_simulation_decodes_routes_and_scales_without_transport(register_simulation, monkeypatch):
+    connect = AsyncMock(side_effect=AssertionError("Simulation opened a connection"))
+    monkeypatch.setattr(asyncio, "open_connection", connect)
+    project = fixture()
+    before = deepcopy(project)
+    words = [0x3CF6, 0xFFFF]
+    result = asyncio.run(register_simulation(project, "grid_primary", words,
+        byte_order="little", word_order="little", polarity=-1))
+    assert result == {
+        "simulated": True, "measurement_id": "grid_primary", "channel_id": "power_grid",
+        "raw_unit": "W", "scale": 0.5, "polarity": -1, "kw": 1.25,
+        "source_kind": "modbus", "registers": words, "decoded_value": -2500,
+        "connection_id": "connection_main", "unit_id": 2,
+        "byte_order": "little", "word_order": "little",
+    }
+    assert project == before
+    result["registers"][0] = 0
+    assert words == [0x3CF6, 0xFFFF]
+    connect.assert_not_called()
+
+
+@pytest.mark.parametrize("case", ["empty", "many", "bool", "float", "negative", "overflow", "width", "order", "polarity", "unit", "source", "nan"])
+def test_register_simulation_rejects_invalid_inputs(register_simulation, case, monkeypatch):
+    connect = AsyncMock(side_effect=AssertionError("Simulation opened a connection"))
+    monkeypatch.setattr(asyncio, "open_connection", connect)
+    project, words = fixture(), [0x3CF6, 0xFFFF]
+    options = {"byte_order": "little", "word_order": "little", "polarity": -1}
+    invalid = {"empty": [], "many": [0, 0, 0], "bool": [True], "float": [1.0],
+               "negative": [-1], "overflow": [65536], "width": [1]}
+    if case in invalid:
+        words = invalid[case]
+    elif case == "order":
+        options["byte_order"] = "auto"
+    elif case == "polarity":
+        options["polarity"] = True
+    elif case == "unit":
+        project["devices"][0].pop("unit_id")
+    elif case == "source":
+        project["channels"][0]["source"] = {"kind": "ha", "entity_id": "sensor.synthetic"}
+    elif case == "nan":
+        project["channels"][0]["source"]["data_type"] = "float32"
+        words = [0x7FC0, 0]
+        options.update(byte_order="big", word_order="big")
+    with pytest.raises(ValueError):
+        asyncio.run(register_simulation(project, "grid_primary", words, **options))
+    connect.assert_not_called()
+
+def test_register_simulation_accepts_one_uint16_word(register_simulation):
+    project = fixture()
+    project['channels'][0]['source']['data_type'] = 'u16'
+    result = asyncio.run(register_simulation(project, 'grid_primary', [65535],
+        byte_order='big', word_order='big', polarity=1))
+    assert result['decoded_value'] == 65535
+    assert result['kw'] == 32.7675
+    assert result['registers'] == [65535]

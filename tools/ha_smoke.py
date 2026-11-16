@@ -994,6 +994,7 @@ async def websocket_measurement_simulation_checks(hass, admin_ws, non_admin_ws, 
 
     project["channels"][0].update(unit="W", source={"kind": "modbus", "address": 0,
                                                    "function_code": 4, "data_type": "s32", "scale": 0.5})
+    project["devices"][0].update(connection_id="connection_main", unit_id=2)
     saved = await admin_ws("pohl_energy/project/set", project_json=json.dumps(project),
                            expected_revision=args["expected_revision"])
     assert saved["success"], saved
@@ -1015,6 +1016,29 @@ async def websocket_measurement_simulation_checks(hass, admin_ws, non_admin_ws, 
     assert (await admin_ws("pohl_energy/project/get"))["result"] == snapshot
     assert await hass.async_add_executor_job(database.read_bytes) == before
 
+    register_args = {"expected_revision": snapshot["revision"], "measurement_id": "grid_primary",
+                     "registers": [0, 2500], "byte_order": "big", "word_order": "big", "polarity": -1}
+    denied = await non_admin_ws(command, **register_args)
+    assert denied["error"]["code"] == "unauthorized", denied
+    with patch("asyncio.open_connection", new=AsyncMock(side_effect=AssertionError("Register simulation opened a connection"))) as connect:
+        simulated = await admin_ws(command, **register_args)
+        assert simulated["success"], simulated
+        assert simulated["result"] == {**response["result"], "registers": [0, 2500],
+            "decoded_value": 2500, "connection_id": "connection_main", "unit_id": 2,
+            "byte_order": "big", "word_order": "big"}
+        for changes in ({"raw_value": 2500}, {"registers": [1]}, {"registers": []},
+                        {"registers": [True, 0]}, {"registers": [65536, 0]},
+                        {"registers": [0, 0, 0]}, {"byte_order": "auto"}):
+            rejected = await admin_ws(command, **{**register_args, **changes})
+            assert not rejected["success"], rejected
+        missing_order = {key: value for key, value in register_args.items() if key != "word_order"}
+        assert not (await admin_ws(command, **missing_order))["success"]
+        stale_registers = await admin_ws(command, **{**register_args, "expected_revision": "0" * 64})
+        assert stale_registers["error"]["code"] == "conflict", stale_registers
+        connect.assert_not_called()
+    assert (await admin_ws("pohl_energy/project/get"))["result"] == snapshot
+    assert await hass.async_add_executor_job(database.read_bytes) == before
+
     # An identical save advances the SQLite revision, but the mapping is still
     # the one the caller confirmed. A changed SHA instead requires a new preview.
     peer = ProjectStore(hass)
@@ -1032,6 +1056,8 @@ async def websocket_measurement_simulation_checks(hass, admin_ws, non_admin_ws, 
     refreshed = (await admin_ws("pohl_energy/project/get"))["result"]
     assert refreshed == peer.snapshot()
     assert refreshed["revision"] != snapshot["revision"]
+    register_conflict = await admin_ws(command, **register_args)
+    assert register_conflict["error"]["code"] == "conflict", register_conflict
     retried = await admin_ws(command, **{**args, "expected_revision": refreshed["revision"]})
     assert retried["result"] == {**response["result"], "scale": 1.0, "kw": -2.5}
     assert await hass.async_add_executor_job(database.read_bytes) == before
@@ -1315,7 +1341,7 @@ async def main() -> None:
                     assert system["database"]["backend"] == "sqlite" and system["database"]["project_persisted"] is True
                     assert {module["id"] for module in system["modules"]} == {"core", "storage", "project"}
                     assert {module["id"]: module["version"] for module in system["modules"]} == {
-                        "core": "0.1.5", "storage": "0.1.0", "project": "0.1.2"}
+                        "core": "0.1.5", "storage": "0.1.0", "project": "0.1.3"}
                     assert all(module["status"] == "ready" for module in system["modules"])
                     assert DATA_BASE_RUNTIME in hass.data
                     empty = await hass.services.async_call(DOMAIN, "project_status", {}, blocking=True, return_response=True)

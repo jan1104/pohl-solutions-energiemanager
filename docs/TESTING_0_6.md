@@ -38,3 +38,14 @@ Die aktive Projektablage liegt unter `.storage/pohl_solutions_energiemanager.sql
 Der Releasekandidat wird mit Python-, Browserlogik-, Archiv- und echten HA-Laufzeitprüfungen getestet. Die visuelle Prüfung verwendet synthetische Projektangaben auf Desktop und Mobil. Tests mit Modbus-Antworten verwenden einen lokalen Testserver. Tatsächliche Gerätekompatibilität und Messwertgüte benötigen eine gesonderte Prüfung mit belegten Parametern.
 
 Der Einrichtungsablauf wurde bei Desktop- und Mobilbreite über die Browseroberfläche geprüft. Bei der ersten Prüfung des Kandidaten am 11.11.2026 schlug die Screenshotaufnahme fehl. Das ergänzte Geräteformular mit Unit-ID wurde am 12.11.2026 bei 1440 × 900 und 390 × 844 Pixeln anhand von Screenshots geprüft; das synthetische Messgerät ließ sich anschließend speichern.
+
+
+## Modbus-Registerantwort ohne Gerät prüfen
+
+Im gespeicherten Projekt muss die Messstelle eine Modbus-Quelle besitzen. Das zugehörige Gerät benötigt seine eigene Unit-ID und einen eindeutigen Kommunikationsweg; Host/Port werden für diese Simulation nicht angesprochen. Unter **Messungen → Mit Testwert prüfen** bleibt die Prüfung eines berechneten Rohwerts der Standard. Bei einer Modbus-Quelle lässt sich ausdrücklich **Registerantwort prüfen** wählen.
+
+Die angezeigte Anzahl ganzer Registerwerte von 0 bis 65535 eingeben. Byte- und Wort-Reihenfolge anhand der Geräteunterlagen auswählen; es wird keine Reihenfolge angenommen. Die Ausrichtung ebenfalls auswählen. **Testwert berechnen** zeigt die simulierte kW-Leistung, den dekodierten Rohwert und den zugeordneten Leseweg mit Unit-ID. Die Registerwerte sind eine manuell gelieferte Testantwort, kein Telegramm und kein Nachweis für Erreichbarkeit, korrekte Verdrahtung oder aktuelle Messdaten. Es wird weder ein Gerät angesprochen noch ein Ergebnis gespeichert.
+
+Synthetisches Beispiel: `15606, 65535` bei Datentyp `s32`, Byte-/Wort-Reihenfolge jeweils `little` ergibt −2500 als dekodierten Rohwert. Bei Einheit W, Kanalfaktor 0,5 und Ausrichtung −1 ist das Ergebnis +1,25 kW. Dieses Beispiel gehört ausschließlich zum Test und ist kein Herstellerprofil.
+
+**Prüfstand 17.11.2026:** Die Formular-/Bridge-Logik wird automatisiert geprüft; echte HA-WebSocket-/SQLite-Prüfungen kontrollieren Berechtigungen, Varianten, Konflikte und unveränderte Datei. Die neue visuelle Desktop-/Mobilprüfung ist noch offen: der In-App-Browser war nicht verfügbar und die native Browsersteuerung wurde vom Werkzeug wegen fehlender URL-Richtlinienunterstützung beendet. Dieser Schutz wurde nicht umgangen. Vor einem HACS-Release muss die neue Ansicht visuell geprüft werden.

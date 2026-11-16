@@ -161,7 +161,10 @@ async def ws_project_migrate(hass, connection, msg):
     vol.Required("type"): "pohl_energy/project/simulate_measurement",
     vol.Required("expected_revision"): vol.Match(r"[0-9a-f]{64}\Z"),
     vol.Required("measurement_id"): vol.Match(r"[a-zA-Z0-9_-]{1,80}\Z"),
-    vol.Required("raw_value"): vol.Any(int, float),
+    vol.Optional("raw_value"): vol.Any(int, float),
+    vol.Optional("registers"): vol.All(vol.Length(min=1, max=2), [vol.All(int, vol.Range(min=0, max=65535))]),
+    vol.Optional("byte_order"): vol.In(("big", "little")),
+    vol.Optional("word_order"): vol.In(("big", "little")),
     vol.Required("polarity"): vol.All(int, vol.In((-1, 1))),
 })
 @websocket_api.require_admin
@@ -172,9 +175,20 @@ async def ws_simulate_measurement(hass, connection, msg):
         if store is None:
             return
         try:
-            result = await store.async_simulate_measurement(
-                msg["expected_revision"], msg["measurement_id"], msg["raw_value"], msg["polarity"],
-            )
+            raw, registers = "raw_value" in msg, "registers" in msg
+            if raw == registers:
+                raise ValueError("Entweder einen Testwert oder Registerwerte angeben.")
+            if raw:
+                if "byte_order" in msg or "word_order" in msg:
+                    raise ValueError("Reihenfolge nur für Registerwerte angeben.")
+                result = await store.async_simulate_measurement(
+                    msg["expected_revision"], msg["measurement_id"], msg["raw_value"], msg["polarity"],
+                )
+            else:
+                result = await store.async_simulate_registers(
+                    msg["expected_revision"], msg["measurement_id"], msg["registers"],
+                    msg.get("byte_order"), msg.get("word_order"), msg["polarity"],
+                )
         except ProjectConflictError as err:
             connection.send_error(msg["id"], "conflict", str(err))
         except ValueError as err:

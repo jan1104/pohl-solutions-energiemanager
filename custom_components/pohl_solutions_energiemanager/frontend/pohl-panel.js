@@ -68,10 +68,17 @@
         this._reply(msg.id, false, 'Für die Umstellung ist ein geprüfter Projektstand erforderlich.');
         return;
       }
+      const registerSimulation = simulation && Object.hasOwn(msg, 'registers');
+      const validWords = words => Array.isArray(words) && words.length >= 1 && words.length <= 2 &&
+        [...words].every(word => Number.isInteger(word) && word >= 0 && word <= 65535);
+      const registerInput = registerSimulation && !Object.hasOwn(msg, 'raw_value') && validWords(msg.registers) &&
+        [msg.byte_order, msg.word_order].every(order => ['big', 'little'].includes(order));
+      const rawInput = !registerSimulation && Number.isFinite(msg.raw_value) &&
+        !Object.hasOwn(msg, 'byte_order') && !Object.hasOwn(msg, 'word_order');
       if (simulation && (!this._loaded || typeof msg.expected_revision !== 'string' || !/^[a-f0-9]{64}$/.test(msg.expected_revision) ||
           typeof msg.measurement_id !== 'string' || !/^[a-zA-Z0-9_-]{1,80}$/.test(msg.measurement_id) ||
-          !Number.isFinite(msg.raw_value) || ![-1, 1].includes(msg.polarity))) {
-        this._reply(msg.id, false, 'Gespeicherten Messkanal, gültigen Testwert und Ausrichtung angeben.');
+          !(registerInput || rawInput) || ![-1, 1].includes(msg.polarity))) {
+        this._reply(msg.id, false, 'Gespeicherten Messkanal, gültigen Testwert oder Registerantwort und Ausrichtung angeben.');
         return;
       }
       if (statusRead) this._systemBusy = true; else this._busy = true; let timeout;
@@ -79,7 +86,9 @@
         let request;
         if (simulation) {
           request = {type: 'pohl_energy/project/simulate_measurement', expected_revision: msg.expected_revision,
-            measurement_id: msg.measurement_id, raw_value: msg.raw_value, polarity: msg.polarity};
+            measurement_id: msg.measurement_id, polarity: msg.polarity};
+          if (registerSimulation) Object.assign(request, {registers: [...msg.registers], byte_order: msg.byte_order, word_order: msg.word_order});
+          else request.raw_value = msg.raw_value;
         } else if (migration) {
           request = {type: `pohl_energy/project/${msg.operation}`, expected_revision: msg.expected_revision};
           if (!migrationPreview) request.source_revision = msg.source_revision;
@@ -96,7 +105,19 @@
             throw new Error('Ungültige Antwort zur simulierten Messung.');
           }
           const {simulated, measurement_id, channel_id, raw_unit, scale, polarity, kw, source_kind} = data;
-          this._reply(msg.id, true, {simulated, measurement_id, channel_id, raw_unit, scale, polarity, kw, source_kind});
+          const result = {simulated, measurement_id, channel_id, raw_unit, scale, polarity, kw, source_kind};
+          if (registerSimulation) {
+            if (source_kind !== 'modbus' || !Number.isFinite(data.decoded_value) || !validWords(data.registers) ||
+                data.registers.length !== msg.registers.length || data.registers.some((word, i) => word !== msg.registers[i]) ||
+                data.byte_order !== msg.byte_order || data.word_order !== msg.word_order ||
+                typeof data.connection_id !== 'string' || !/^[a-zA-Z0-9_-]{1,80}$/.test(data.connection_id) ||
+                !Number.isInteger(data.unit_id) || data.unit_id < 1 || data.unit_id > 247) {
+              throw new Error('Ungültige Antwort zur simulierten Registermessung.');
+            }
+            const {registers, decoded_value, connection_id, unit_id, byte_order, word_order} = data;
+            Object.assign(result, {registers: [...registers], decoded_value, connection_id, unit_id, byte_order, word_order});
+          }
+          this._reply(msg.id, true, result);
           return;
         }
         if (!data || typeof data.revision !== 'string' || !(data.project_json === null || typeof data.project_json === 'string')) throw new Error('Unvollständige Antwort von Home Assistant.');

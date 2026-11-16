@@ -11,6 +11,7 @@ from typing import Any, NoReturn
 
 from homeassistant.core import HomeAssistant
 
+from .adapters.modbus_measurement import simulate_modbus_power_measurement
 from .const import DOMAIN
 from .core.module_context import async_module_context
 from .core.measurement_binding import simulate_power_measurement
@@ -243,18 +244,44 @@ class ProjectStore:
                 raise asyncio.CancelledError
             return self.snapshot()
 
-    def _sync_simulate_measurement(self, expected_revision, measurement_id, raw_value, polarity):
+    def _sync_simulation_snapshot(self):
         try:
             current = self._namespace.get("active")
         except StorageSchemaError as err:
             raise ProjectConflictError("Das gespeicherte Projektformat wurde geändert. Integration neu laden.") from err
         if current is None:
             raise ValueError("Für den Test wird ein gespeichertes Projekt benötigt.")
-        project = _validate_stored(current.data, self._namespace)
+        return current.revision, _validate_stored(current.data, self._namespace)
+
+    async def async_simulate_registers(
+        self, expected_revision, measurement_id, registers, byte_order, word_order, polarity,
+    ):
+        """Read saved mapping and simulate supplied words without device traffic."""
+        # Detach the tiny argument list before any executor queue suspension.
+        if (not isinstance(registers, list) or not 1 <= len(registers) <= 2
+                or any(type(v) is not int or not 0 <= v <= 65535 for v in registers)):
+            raise ValueError("Ein oder zwei ganze Registerwerte von 0 bis 65535 angeben.")
+        registers = list(registers)
+        async with self._lock:
+            if not self._loaded:
+                raise RuntimeError("Project storage must be loaded before simulation")
+            checked, cancelled = await self._async_durable_call(self._sync_simulation_snapshot)
+            self._document_revision, project = checked
+            self._adopt_project(project)
+            if cancelled:
+                raise asyncio.CancelledError
+            if self.revision != expected_revision:
+                raise ProjectConflictError("Das gespeicherte Projekt wurde geändert. Projekt neu laden und den Test wiederholen.")
+            return await simulate_modbus_power_measurement(
+                project, measurement_id, registers, byte_order=byte_order,
+                word_order=word_order, polarity=polarity)
+
+    def _sync_simulate_measurement(self, expected_revision, measurement_id, raw_value, polarity):
+        revision, project = self._sync_simulation_snapshot()
         if _project_revision(project) != expected_revision:
-            return current.revision, project, None
+            return revision, project, None
         result = simulate_power_measurement(project, measurement_id, raw_value, polarity=polarity)
-        return current.revision, project, result
+        return revision, project, result
 
     async def async_simulate_measurement(
         self, expected_revision: str, measurement_id: str, raw_value: float, polarity: int,

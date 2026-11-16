@@ -67,3 +67,12 @@ Der Reader-Proxy verwendet dieselbe projektrevisionsgebundene Grundlaufzeit wie 
 Ein Registerwert beweist keine Geräte-Messzeit. Ohne eine unabhängig gelieferte Messzeit bleibt das normalisierte Ergebnis ungültig und trägt den Hinweis `missing_time`; die Empfangszeit ersetzt diesen Nachweis nicht. Es werden keine Resultate als Historie oder Plan gespeichert. Auch die lokale Projektrevision ersetzt keine erneute Prüfung möglicher externer Datenbankänderungen.
 
 Die echte HA-Laufzeitprüfung verwendet eine reale Projektablage und synthetische Readerantworten. Sie prüft FC/Registerbreite/Zieladresse, Quellenherkunft, einzelne Skalierung und Vorzeichen, unbekannte Messzeit sowie den Projektwechsel während einer Abfrage. Tatsächliche Geräte-/Zeitparameter, eine Leseoberfläche und zentrale Messhistorien bleiben offen.
+
+
+## Simulierte Registerantwort im Panel — 17.11.2026
+
+Der vorhandene ausdrückliche Test einer gespeicherten Messstelle unterstützt optional eine Modbus-Registerantwort. Die ein oder zwei manuell gelieferten uint16-Wörter werden über einen rein synthetischen Reader durch die vorhandene Route, Dekodierung und Leistungsbindung geführt. Es wird kein Transportbesitzer erzeugt und keine Netzwerkverbindung geöffnet. Byte-/Wort-Reihenfolge und Ausrichtung sind ausdrücklich zu wählen. Die normale Rohwertprüfung bleibt der Standard; die zusätzlichen Felder erscheinen nur im Registermodus einer Modbus-Quelle.
+
+Derselbe adminpflichtige `simulate_measurement`-Befehl akzeptiert entweder `raw_value` oder `registers` samt `byte_order` und `word_order`. Gemischte Eingaben sind ungültig. Wortanzahl, Wertebereich und Datentyp werden geprüft. Die Zuordnung stammt aus dem frisch gelesenen gespeicherten Projekt und erfordert dessen bestätigte Inhaltskennung. Ein geänderter Stand meldet einen Konflikt und aktualisiert die lokale Projektansicht wie beim bestehenden Rohwerttest.
+
+Das sichtbar simulierte Ergebnis enthält zusätzlich den dekodierten Rohwert und die aufgelöste Connection-ID/Unit-ID. Interne synthetische Zeitangaben dienen ausschließlich dieser Berechnung; das Resultat gelangt nicht in Messhistorie, Echtdaten oder Planung. Ein Telegramm-/CRC-Test und ein realer Geräteabruf sind nicht Teil dieser Formularprüfung. Prüfung und noch offene visuelle Abnahme: TESTING_0_6.md.
