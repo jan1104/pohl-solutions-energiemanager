@@ -45,13 +45,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def _async_remove_shared_resources(hass: HomeAssistant) -> None:
     runtime = hass.data.pop(DATA_BASE_RUNTIME, None)
-    if runtime is not None:
-        await runtime.async_stop()
-    async_remove_panel(hass)
-    for service in (SERVICE_REPLAN, "import_project", "export_project", "project_status"):
-        hass.services.async_remove(DOMAIN, service)
-    hass.data.pop(DATA_PROJECT_STORE, None)
-    hass.data.pop(DOMAIN, None)
+    try:
+        if runtime is not None:
+            await runtime.async_stop()
+    finally:
+        # Stop drains owned work before propagating cancellation. Shared UI and
+        # service references must still disappear when its caller is aborted.
+        async_remove_panel(hass)
+        for service in (SERVICE_REPLAN, "import_project", "export_project", "project_status"):
+            hass.services.async_remove(DOMAIN, service)
+        hass.data.pop(DATA_PROJECT_STORE, None)
+        hass.data.pop(DOMAIN, None)
 
 
 async def _async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -116,10 +120,12 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if not await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
             return False
         coordinator = hass.data.get(DOMAIN, {}).pop(entry.entry_id, None)
-        if coordinator is not None:
-            await coordinator.async_shutdown()
-        if not hass.data.get(DOMAIN):
-            await _async_remove_shared_resources(hass)
+        try:
+            if coordinator is not None:
+                await coordinator.async_shutdown()
+        finally:
+            if not hass.data.get(DOMAIN):
+                await _async_remove_shared_resources(hass)
         return True
 
 

@@ -99,3 +99,12 @@ Die HA-Prüfung verwendet echte temporäre SQLite-Projekte und synthetische Hand
 
 
 Stop wartet in diesem Schritt auf Registrierungsvorbereitung und Transportbereinigung, aber nicht automatisch auf beliebige bereits laufende Fachhandler. Diese müssen ihren eigenen kooperativen Taskablauf beachten. Deren überholte Ausgaben werden verworfen; bereits erfolgte Schreibvorgänge im ursprünglichen Konfigurationsbereich bleiben bestehen. Allgemeine Fachmodul-Taskbesitzer und Gerätetreiber-Hooks sind weiterhin offen.
+
+
+## Gemeinsame HA-Bereinigung bei Fehlern — 16.11.2026
+
+Grundmodul 0.1.5 entfernt die gemeinsamen Panel-, Dienst- und Speicherreferenzen auch dann, wenn der Stop der letzten Grundlaufzeit einen Fehler oder Abbruch weitergibt. Die letzte Coordinator-Abmeldung ruft die gemeinsame Bereinigung ebenfalls in einem `finally` auf. Bisher konnte nach dem Entfernen des Runtime-/Coordinator-Eintrags der übrige Abbau übersprungen werden; das Panel und Dienste blieben dann ohne vollständige Laufzeit zurück.
+
+Andere noch aktive Integrationseinträge behalten ihre gemeinsamen Ressourcen. Scheitert bereits die Plattformabmeldung mit `False`, bleibt der bisherige Bestand weiterhin erhalten. Statische Routen und registrierte WebSocket-Handler bleiben wie bisher für einen erneuten Start bestehen; nach vollständigem Entladen antworten diese mit `not_loaded`. Die Projektdateien werden nicht entfernt und Fehler-/Abbruchsignale nicht als erfolgreicher Unload ausgegeben.
+
+Die HA-Prüfung injiziert Fehler und Abbruchsignale nach dem tatsächlichen Runtime-/Coordinator-Abbau und prüft die gemeinsame Bereinigung sowie einen weiterhin aktiven zweiten Eintrag. Dies belegt den Schutz der gemeinsamen Registrierungen, keine allgemeine Fehlerfreiheit beliebiger fremder Coordinator-Implementierungen oder beliebiger gleichzeitiger Bereinigungsfehler.

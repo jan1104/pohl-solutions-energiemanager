@@ -2,6 +2,8 @@
 
 ## 0.6.0 — vorbereitet, 2026-11-16
 
+- Grundmodul 0.1.5: Gemeinsame HA-Dienste, Panel und Datenreferenzen auch nach Fehlern oder Abbruch beim letzten Runtime-/Coordinator-Abbau entfernen. Weitere aktive Einträge bleiben erhalten; Fehler werden weiterhin weitergegeben.
+
 - Grundmodul 0.1.4: Ausdrücklich registrierte Fachmodule erhalten den gemeinsamen projektgebundenen Datenbankkontext. Registrierung und Status führen keine Fachhandler aus; Projektwechsel und Stop verhindern überholte Aktivierung oder Ergebnisse. Noch keine automatische Modulverwaltung oder Gerätefreigabe.
 
 - Projektverwaltung 0.1.2: Exporttext und Statuszusammenfassung für unveränderte Projektstände wiederverwenden. Ausgabeformate bleiben erhalten; verschachtelte zurückgegebene Daten können den gespeicherten Zustand nicht verändern.

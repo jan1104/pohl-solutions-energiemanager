@@ -578,6 +578,71 @@ async def module_context_registration_checks(hass):
             await runtime.async_stop()
 
 
+async def unload_shared_cleanup_checks(hass, entry, sibling, admin_ws):
+    """Cleanup registrations after injected post-shutdown errors/abort signals."""
+    from homeassistant.components import frontend
+    from custom_components.pohl_solutions_energiemanager import async_setup_entry, async_unload_entry
+    from custom_components.pohl_solutions_energiemanager.base_runtime import DATA_BASE_RUNTIME
+    from custom_components.pohl_solutions_energiemanager.const import DOMAIN
+    from custom_components.pohl_solutions_energiemanager.panel import PANEL_URL
+    from custom_components.pohl_solutions_energiemanager.project_store import DATA_PROJECT_STORE
+
+    async def expect(error, operation):
+        try:
+            await operation
+        except error:
+            return
+        raise AssertionError(f"Expected {error.__name__}")
+
+    async def assert_unloaded():
+        assert DOMAIN not in hass.data
+        assert DATA_BASE_RUNTIME not in hass.data and DATA_PROJECT_STORE not in hass.data
+        for service in ("replan", "import_project", "export_project", "project_status"):
+            assert not hass.services.has_service(DOMAIN, service)
+        assert PANEL_URL not in hass.data[frontend.DATA_PANELS]
+        response = await admin_ws("pohl_energy/project/get")
+        assert response["error"]["code"] == "not_loaded"
+
+    for target in ("runtime", "coordinator"):
+        for error in (OSError, asyncio.CancelledError):
+            assert await async_setup_entry(hass, entry)
+            owner = hass.data[DATA_BASE_RUNTIME] if target == "runtime" else hass.data[DOMAIN][entry.entry_id]
+            method = "async_stop" if target == "runtime" else "async_shutdown"
+            original = getattr(owner, method)
+
+            async def fail_after_cleanup():
+                await original()
+                raise error("Synthetic shutdown signal after owned work")
+
+            with patch.object(owner, method, side_effect=fail_after_cleanup):
+                await expect(error, async_unload_entry(hass, entry))
+            await assert_unloaded()
+
+    # A failed non-last coordinator must not remove the shared resources used
+    # by the sibling. Then the sibling can still unload them normally.
+    assert await async_setup_entry(hass, entry)
+    assert await async_setup_entry(hass, sibling)
+    shared_runtime = hass.data[DATA_BASE_RUNTIME]
+    shared_store = hass.data[DATA_PROJECT_STORE]
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    original = coordinator.async_shutdown
+
+    async def non_last_failure():
+        await original()
+        raise OSError("Synthetic non-last coordinator shutdown signal")
+
+    with patch.object(coordinator, "async_shutdown", side_effect=non_last_failure):
+        await expect(OSError, async_unload_entry(hass, entry))
+    assert hass.data[DATA_BASE_RUNTIME] is shared_runtime
+    assert hass.data[DATA_PROJECT_STORE] is shared_store
+    assert set(hass.data[DOMAIN]) == {sibling.entry_id}
+    assert PANEL_URL in hass.data[frontend.DATA_PANELS]
+    assert hass.services.has_service(DOMAIN, "project_status")
+    assert (await admin_ws("pohl_energy/project/get"))["success"]
+    assert await async_unload_entry(hass, sibling)
+    await assert_unloaded()
+
+
 async def fresh_project_creation_checks(hass):
     from threading import Event
 
@@ -1250,7 +1315,7 @@ async def main() -> None:
                     assert system["database"]["backend"] == "sqlite" and system["database"]["project_persisted"] is True
                     assert {module["id"] for module in system["modules"]} == {"core", "storage", "project"}
                     assert {module["id"]: module["version"] for module in system["modules"]} == {
-                        "core": "0.1.4", "storage": "0.1.0", "project": "0.1.2"}
+                        "core": "0.1.5", "storage": "0.1.0", "project": "0.1.2"}
                     assert all(module["status"] == "ready" for module in system["modules"])
                     assert DATA_BASE_RUNTIME in hass.data
                     empty = await hass.services.async_call(DOMAIN, "project_status", {}, blocking=True, return_response=True)
@@ -1370,6 +1435,7 @@ async def main() -> None:
                     await websocket_measurement_simulation_checks(hass, admin_ws, non_admin_ws, migrated_snapshot)
                 finally:
                     assert await async_unload_entry(hass, project_entry)
+                await unload_shared_cleanup_checks(hass, project_entry, other_entry, admin_ws)
                 await fresh_runtime_project_checks(hass, admin_ws)
             coordinator = PohlEnergyCoordinator(hass, entry)
             result = await coordinator._async_update_data()
