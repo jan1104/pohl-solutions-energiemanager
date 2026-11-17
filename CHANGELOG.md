@@ -1,5 +1,9 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- Zugestellte MQTT-JSON-Leistungsnachrichten rein zuordnen: exaktes Topic, begrenzter Objektpfad, Einheiten und Quellenherkunft. Ungültige oder mehrdeutige Payloads abweisen; fehlende Gerätezeit bleibt ungültig, auch bei retained-Nachrichten. Noch keine Brokeranbindung oder automatische Erfassung.
+
 ## 0.6.0 — 2026-11-17
 
 - Projektverwaltung 0.1.3: Modbus-Messkanäle optional mit manuell gelieferten Registerantworten simulieren. Explizite Reihenfolge, dekodierter Rohwert und zugeordneter Leseweg; Rohwertprüfung bleibt Standard. Keine Geräteverbindung oder Ergebnisspeicherung. Desktop-/Mobilansicht mit synthetischen Daten geprüft.
