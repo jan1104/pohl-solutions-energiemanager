@@ -4,7 +4,7 @@ Die Grundversion umfasst Projektverwaltung, Speicherung, Geräte- und Messquelle
 
 ## Installation
 
-1. Nach Bereitstellung des Releases in HACS Version **0.6.0** auswählen und Home Assistant neu starten.
+1. In HACS Version **0.6.0** auswählen und Home Assistant neu starten.
 2. Den bestehenden Integrationseintrag beim Update behalten. Die Browserseite anschließend neu laden.
 3. Als Administrator links **Energiemanager** öffnen. Unter **Grundmodul** wird die Produktversion angezeigt.
 
@@ -48,4 +48,4 @@ Die angezeigte Anzahl ganzer Registerwerte von 0 bis 65535 eingeben. Byte- und W
 
 Synthetisches Beispiel: `15606, 65535` bei Datentyp `s32`, Byte-/Wort-Reihenfolge jeweils `little` ergibt −2500 als dekodierten Rohwert. Bei Einheit W, Kanalfaktor 0,5 und Ausrichtung −1 ist das Ergebnis +1,25 kW. Dieses Beispiel gehört ausschließlich zum Test und ist kein Herstellerprofil.
 
-**Prüfstand 17.11.2026:** Die Formular-/Bridge-Logik wird automatisiert geprüft; echte HA-WebSocket-/SQLite-Prüfungen kontrollieren Berechtigungen, Varianten, Konflikte und unveränderte Datei. Die neue visuelle Desktop-/Mobilprüfung ist noch offen: der In-App-Browser war nicht verfügbar und die native Browsersteuerung wurde vom Werkzeug wegen fehlender URL-Richtlinienunterstützung beendet. Dieser Schutz wurde nicht umgangen. Vor einem HACS-Release muss die neue Ansicht visuell geprüft werden.
+**Prüfstand 17.11.2026:** 418 Python-Tests und 18 Untertests sowie 83 JavaScript-Tests bestehen lokal; ein Windows-Symlinktest ist mangels Berechtigung ausgelassen und läuft auf Linux CI. Die echte HA-2026.1.0-WebSocket-/SQLite-Prüfung kontrolliert Berechtigungen, Varianten, Konflikte und unveränderte Datei. Die zuvor blockierte visuelle Prüfung konnte anschließend im wieder verfügbaren In-App-Browser abgeschlossen werden: Desktop 1440 × 900 und Mobil 390 × 844, synthetischer Registertest mit +1,25 kW, wiederholtes Berechnen und Wechsel zur einfachen Rohwertprüfung mit −1,25 kW. Es wurde eine lokale HA-Oberflächen-Testumgebung mit synthetischen Antworten verwendet, keine reale Anlage.

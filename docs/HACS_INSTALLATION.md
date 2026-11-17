@@ -1,6 +1,6 @@
 # Installation und Updates über HACS
 
-Vorbereitete Grundversion **0.6.0**. Das neue Release wird getrennt bereitgestellt. Nach dem Update HA neu starten und den Browser neu laden. Bestehenden Integrationseintrag behalten. Die Prüfschritte stehen in [TESTING_0_6.md](TESTING_0_6.md).
+Geprüfte HACS-Grundversion **0.6.0**. Release und Integrationspaket: [v0.6.0](https://github.com/jan1104/pohl-solutions-energiemanager/releases/tag/v0.6.0). Nach dem Update HA neu starten und den Browser neu laden. Bestehenden Integrationseintrag behalten. Die Prüfschritte stehen in [TESTING_0_6.md](TESTING_0_6.md).
 
 HACS verwendet öffentliche GitHub-Repositories. Das Repository wurde vom Nutzer öffentlich gestellt; Sichtbarkeit am 03.11.2026 bestätigt. Persönliche Konfiguration bleibt außerhalb des Repositorys. [Offizielle HACS-Einschränkung](https://hacs.xyz/docs/faq/private_repositories/), geprüft am 03.11.2026.
 
