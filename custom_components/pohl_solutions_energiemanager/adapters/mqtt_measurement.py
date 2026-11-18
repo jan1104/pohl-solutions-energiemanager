@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 import json
 
+from ..core.connection_routes import MQTTRoute, resolve_mqtt_route
 from ..core.measurement_binding import BoundPowerMeasurement, RawPowerReading, bind_power_measurement
 from ..core.metering import _finite_number
 from ..core.project_v2 import validate_project_document
@@ -17,6 +18,40 @@ class MQTTPowerMessage:
     decoded_value: float
     retained: bool
     measurement: BoundPowerMeasurement
+
+
+@dataclass(frozen=True, slots=True)
+class ConnectedMQTTPowerMessage:
+    route: MQTTRoute
+    message: MQTTPowerMessage
+
+
+def bind_connected_mqtt_power_message(
+    project: dict, measurement_id: str, *, connection_id: str,
+    topic: str, payload: str | bytes, source_id: str, received_at: datetime,
+    now: datetime, max_age: timedelta, polarity: int, retained: bool,
+    measured_at: datetime | None = None,
+) -> ConnectedMQTTPowerMessage:
+    """Bind delivered connection identity before topic/value/time processing.
+
+    The caller must obtain connection_id from its trusted connection owner,
+    never from the message payload. No broker is contacted or authenticated here.
+    """
+    snapshot = validate_project_document(project)
+    measurement = next((m for m in snapshot["measurements"] if m["id"] == measurement_id), None)
+    if measurement is None:
+        raise ValueError("Unknown power measurement")
+    channel = next(c for c in snapshot["channels"] if c["id"] == measurement["channel_id"])
+    if channel["source"]["kind"] != "mqtt":
+        raise ValueError("Power measurement requires an explicit MQTT source")
+    route = resolve_mqtt_route(snapshot, channel["device_id"])
+    if not isinstance(connection_id, str) or connection_id != route.connection_id:
+        raise ValueError("Message connection does not match the configured device route")
+    message = bind_mqtt_power_message(
+        snapshot, measurement_id, topic=topic, payload=payload, source_id=source_id,
+        received_at=received_at, now=now, max_age=max_age, polarity=polarity,
+        retained=retained, measured_at=measured_at)
+    return ConnectedMQTTPowerMessage(route, message)
 
 
 def _unique_object(pairs):

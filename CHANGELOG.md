@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+- MQTT-Nachrichten optional an den gespeicherten Kommunikationsweg binden: Verbindung vor Topic und Payload prüfen, Logger-Ketten auflösen und gleichnamige Topics verschiedener Verbindungen trennen. Gemeinsame Wegprüfung mit Modbus; weiterhin keine Brokerverbindung oder automatische Erfassung.
+
 - MQTT-Eingabeprüfung: Auch durch JSON-Escapes eingeschleuste einzelne Unicode-Surrogate in Schlüsseln und Metadaten abweisen. Gültige Zeichenpaare bleiben lesbar; Fehler geben keine Nachrichteninhalte preis.
 
 - Zugestellte MQTT-JSON-Leistungsnachrichten rein zuordnen: exaktes Topic, begrenzter Objektpfad, Einheiten und Quellenherkunft. Ungültige oder mehrdeutige Payloads abweisen; fehlende Gerätezeit bleibt ungültig, auch bei retained-Nachrichten. Noch keine Brokeranbindung oder automatische Erfassung.

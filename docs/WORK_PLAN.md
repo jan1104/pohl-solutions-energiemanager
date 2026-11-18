@@ -1,6 +1,6 @@
 # Arbeitsplan
 
-Stand: 2026-11-17. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
+Stand: 2026-11-18. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
 
 ## Auftrag und Grenzen
 
@@ -34,6 +34,10 @@ Stand: 2026-11-17. Dieser Plan steuert die weitere Entwicklung in diesem Chat un
 V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberflächenprüfungen getestet. Die erweiterte echte HA-Laufzeitprüfung ist im GitHub-Lauf 41618373561 auf Commit e02b711 erfolgreich. Die lokale Vorschau ruft keine Preise ab; die aktive Integration kann konfigurierte Quellen lesen. Der SMARD-Nutzungsstatus ist in PRICE_SOURCES.md dokumentiert.
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
+
+Kommunikationsherkunft am 18.11.2026 (unveröffentlicht): Ein neuer reiner MQTT-Einstieg prüft die zugestellte Verbindungskennung gegen den gesamten gespeicherten Geräte-/Loggerweg vor der Payload-Verarbeitung. Gleiche Topics verschiedener Verbindungen bleiben getrennt. MQTT und Modbus verwenden denselben Wegprüfer; nur Modbus verlangt eine eigene Unit-ID. Elektrische Eltern werden nie als Kommunikationsweg verwendet. Tests prüfen beide Projektformate, direkte und mehrstufige Wege, wiederholte/fehlende/widersprüchliche Referenzen, falsche Verbindungen/Transportarten, unveränderte Daten und Zeitqualität. Kein Brokerzugriff, keine neue Oberfläche und kein Release. Details MQTT_MEASUREMENT_BINDING.md.
+
+Prüfung der Kommunikationsherkunft: lokal 503 Python-Tests und 18 Untertests erfolgreich, ein Windows-Symlink-Test mangels Berechtigung übersprungen; Ruff erfolgreich. Unabhängige Codeprüfung ohne blockierenden Befund. Keine Änderung der Oberfläche oder des Speicherformats.
 
 Stabilitätskorrektur am 18.11.2026 (unveröffentlicht): Die MQTT-UTF-8-Prüfung erfasst nun auch dekodierte Schlüssel und Zeichenketten. Einzelne Surrogate konnten zuvor über JSON-Escapes in ansonsten gültigen UTF-8-Nachrichten passieren. Synthetische Text-/Byte-Tests prüfen verschachtelte Metadaten, Schlüssel, ungültige Paare, gültige Unicode-Paare und unveränderte Leistungs-/Zeitzuordnung. Keine zusätzliche Pfadsprache: Bestehende punktgetrennte Schlüssel bleiben unverändert; eine spätere Erweiterung muss ausdrücklich konfiguriert werden. Kein Brokerzugriff oder neues Release.
 

@@ -12,6 +12,16 @@ Die UTF-8-Prüfung gilt auch nach der JSON-Dekodierung für sämtliche Schlüsse
 
 Ohne `json_path` beziehungsweise bei `null` muss die JSON-Wurzel selbst eine endliche Zahl sein. Mit Pfad werden durch Punkte getrennte, wörtliche Objektschlüssel gelesen, beispielsweise `meter.power` aus `{"meter":{"power":2500}}`. Leerzeichen in Schlüsseln werden beibehalten. Leere Segmente, Array-Zugriffe, Ausdrücke und Schlüssel mit eingebettetem Punkt werden nicht als zusätzliche Pfadsprache interpretiert. Ein fehlender oder nicht numerischer Zielwert ist ein Fehler. Zeichenketten wie `"2500"`, Boolean und `null` werden nicht als Leistung umgedeutet.
 
+## Kommunikationsweg vor dem Topic prüfen
+
+Für Nachrichten eines Verbindungsbesitzers gibt es `bind_connected_mqtt_power_message(...)`. Zusätzlich zu den bisherigen Eingaben verlangt dieser Einstieg eine ausdrückliche `connection_id`. Er ermittelt die gespeicherte MQTT-Verbindung des Messgeräts und vergleicht sie exakt mit der zugestellten Verbindung, bevor er den Payload dekodiert. Dasselbe Topic auf einem anderen konfigurierten Broker darf dadurch keine Messstelle versorgen.
+
+Die gemeinsame reine Routenprüfung folgt ausschließlich `via_device_id` vom Messgerät über Logger/Gateways. Im gesamten Weg muss genau eine eindeutige Verbindungskennung vorkommen; wiederholte Referenzen auf dieselbe Verbindung sind erlaubt. Fehlende oder widersprüchliche Referenzen und andere Transportarten werden abgewiesen. Elektrische `parent_id`, Messort und Bereich liefern keine Kommunikationsverbindung. Eine Modbus-Unit-ID ist für MQTT nicht erforderlich. Modbus verwendet denselben Wegprüfer und behält seine zusätzliche Pflicht zur eigenen Unit-ID.
+
+Das unveränderliche Ergebnis enthält die aufgelöste Route und das bisherige Nachrichtenergebnis (`route`, `message`). Der bisherige `bind_mqtt_power_message(...)` bleibt die niedrigere reine Payload-/Messstellenprüfung und prüft für sich keine Brokerherkunft. Spätere Verbindungsbesitzer müssen den neuen verbindungsgebundenen Einstieg verwenden und die Verbindungskennung aus ihrer eigenen Zuordnung liefern, niemals aus einem Payload-Feld. Ein frei übergebener String beweist keine authentifizierte Brokerherkunft. Verschiedene gespeicherte Verbindungskennungen werden auch dann getrennt behandelt, wenn sie auf denselben Host zeigen; Endpunkte werden hier nicht zusammengeführt. Die kanonische physische Quellenkennung bleibt eine zusätzliche ausdrückliche Adaptereingabe.
+
+Beide Einstiege bleiben ohne Brokerzugriff, Speicherung, Abonnement oder Hintergrundaufgabe. Eine noch unvollständige Projektverbindung lässt sich weiter konfigurieren; sie liefert über den verbindungsgebundenen Einstieg noch keinen Wert.
+
 ## Einheit, Zeit und Qualität
 
 Der dekodierte Rohwert wird dem bestehenden Messstellen-Binder übergeben. Einheit W/kW, Ausrichtung, Messort, Phase und Quellenbezug stammen aus demselben Vertrag wie bei anderen Leistungsadaptern. Die bestehende MQTT-Quellenkonfiguration hat keinen zusätzlichen Skalierungsfaktor; der Binder verwendet Faktor 1. Es wird kein neuer MQTT-Skalierungsparameter eingeführt.

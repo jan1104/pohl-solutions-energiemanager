@@ -176,3 +176,131 @@ def test_valid_surrogate_pairs_and_unicode_keys_remain_supported(adapter, as_byt
     result = bind(adapter, fixture, payload=payload.encode('utf-8') if as_bytes else payload)
     assert result.measurement.value.valid and result.measurement.value.power_kw == -2.5
     assert result.measurement.value.oldest_measurement == NOW - timedelta(seconds=2)
+
+
+def connected_project(version=2, *, gateway=False):
+    fixture = project(version)
+    fixture['connections'][0]['kind'] = 'mqtt'
+    meter = fixture['devices'][0]
+    if gateway:
+        meter['via_device_id'] = 'logger'
+        fixture['devices'].append({
+            'id': 'logger', 'name': 'Synthetischer Logger', 'kind': 'gateway',
+            'area_id': 'area_main', 'node_id': 'storage',
+            'connection_id': 'connection_main',
+        })
+    else:
+        meter['connection_id'] = 'connection_main'
+    return fixture
+
+
+def connected_bind(adapter, fixture=None, **overrides):
+    return adapter.bind_connected_mqtt_power_message(
+        fixture or connected_project(), 'grid_primary', **dict({
+            'connection_id': 'connection_main', 'topic': 'synthetic/meter/power',
+            'payload': '{"power":2500}', 'source_id': 'synthetic-meter-channel',
+            'received_at': NOW, 'now': NOW, 'max_age': timedelta(seconds=30),
+            'polarity': -1, 'retained': False, 'measured_at': NOW - timedelta(seconds=2),
+        }, **overrides))
+
+
+@pytest.mark.parametrize('version', [1, 2])
+@pytest.mark.parametrize('gateway', [False, True])
+def test_connection_binding_uses_communication_path_without_io(adapter, version, gateway, monkeypatch):
+    connect = Mock(side_effect=AssertionError('Connection binding opened a socket'))
+    monkeypatch.setattr('socket.socket', connect)
+    fixture = connected_project(version, gateway=gateway)
+    before = deepcopy(fixture)
+    result = connected_bind(adapter, fixture)
+    assert result.route.connection_id == 'connection_main'
+    assert result.message == bind(adapter, fixture)
+    assert fixture == before
+    with pytest.raises(FrozenInstanceError):
+        result.route.connection_id = 'other'
+    connect.assert_not_called()
+
+
+@pytest.mark.parametrize('delivered', ['other_broker', ' connection_main', 'connection_main ', None, 1])
+def test_same_topic_on_other_connection_cannot_supply_measurement(adapter, delivered, monkeypatch):
+    fixture = connected_project()
+    fixture['connections'].append({'id': 'other_broker', 'name': 'Zweiter Broker', 'kind': 'mqtt'})
+    parse = Mock(side_effect=AssertionError('Wrong-route payload was parsed'))
+    monkeypatch.setattr(adapter, '_parse_payload', parse)
+    with pytest.raises(ValueError, match='connection does not match'):
+        connected_bind(adapter, fixture, connection_id=delivered)
+    parse.assert_not_called()
+
+
+def test_repeated_reference_and_deep_gateway_path_are_unambiguous(adapter):
+    fixture = connected_project(gateway=True)
+    fixture['devices'][0]['connection_id'] = 'connection_main'
+    fixture['devices'][-1]['via_device_id'] = 'upstream'
+    fixture['devices'].append({
+        'id': 'upstream', 'name': 'Synthetischer Zugang', 'kind': 'gateway',
+        'area_id': 'area_main', 'node_id': 'main', 'connection_id': 'connection_main',
+    })
+    assert connected_bind(adapter, fixture).message.measurement.value.power_kw == -2.5
+
+
+@pytest.mark.parametrize('electrical_parent', [False, True])
+def test_missing_communication_path_never_uses_electrical_parent(adapter, electrical_parent):
+    fixture = connected_project()
+    fixture['devices'][0].pop('connection_id')
+    if electrical_parent:
+        fixture['devices'][0].update(kind='battery', parent_id='hybrid')
+    with pytest.raises(ValueError, match='consistent connection'):
+        connected_bind(adapter, fixture)
+
+
+def test_conflicting_ancestor_connections_are_rejected(adapter):
+    fixture = connected_project(gateway=True)
+    fixture['connections'].append({'id': 'other_broker', 'name': 'Zweiter Broker', 'kind': 'mqtt'})
+    # Adjacent device links are individually valid, but the complete path is ambiguous.
+    fixture['devices'][-1].pop('connection_id')
+    fixture['devices'][0]['connection_id'] = 'connection_main'
+    fixture['devices'][-1]['via_device_id'] = 'upstream'
+    fixture['devices'].append({
+        'id': 'upstream', 'name': 'Synthetischer Zugang', 'kind': 'gateway',
+        'area_id': 'area_main', 'node_id': 'main', 'connection_id': 'other_broker',
+    })
+    with pytest.raises(ValueError, match='consistent connection'):
+        connected_bind(adapter, fixture)
+
+
+@pytest.mark.parametrize('kind', ['modbus_tcp', 'ha', 'solarman'])
+def test_non_mqtt_transport_cannot_supply_mqtt_measurement(adapter, kind):
+    fixture = connected_project()
+    fixture['connections'][0]['kind'] = kind
+    with pytest.raises(ValueError, match='not an MQTT transport'):
+        connected_bind(adapter, fixture)
+
+
+@pytest.mark.parametrize('overrides', [
+    {'topic': 'wrong'}, {'payload': '{"power":true}'}, {'retained': 1},
+])
+def test_route_binding_preserves_existing_message_rejections(adapter, overrides):
+    with pytest.raises(ValueError):
+        connected_bind(adapter, **overrides)
+
+
+@pytest.mark.parametrize('retained', [False, True])
+def test_connected_route_does_not_substitute_receipt_time(adapter, retained):
+    result = connected_bind(adapter, measured_at=None, retained=retained)
+    assert not result.message.measurement.value.valid
+    assert 'synthetic-meter-channel: missing_time' in result.message.measurement.value.issues
+
+
+def test_connected_binding_requires_selected_mqtt_measurement(adapter):
+    fixture = connected_project()
+    fixture['measurements'] = []
+    with pytest.raises(ValueError, match='Unknown power measurement'):
+        connected_bind(adapter, fixture)
+    fixture = connected_project()
+    fixture['channels'][0]['source'] = {'kind': 'ha', 'entity_id': 'sensor.synthetic'}
+    with pytest.raises(ValueError, match='explicit MQTT source'):
+        connected_bind(adapter, fixture)
+
+
+def test_mqtt_route_rejects_unknown_device(adapter):
+    with pytest.raises(ValueError, match='Unknown device'):
+        adapter.resolve_mqtt_route(connected_project(), 'missing')
