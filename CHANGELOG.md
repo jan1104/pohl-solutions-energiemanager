@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+- MQTT-Eingabeprüfung: Auch durch JSON-Escapes eingeschleuste einzelne Unicode-Surrogate in Schlüsseln und Metadaten abweisen. Gültige Zeichenpaare bleiben lesbar; Fehler geben keine Nachrichteninhalte preis.
+
 - Zugestellte MQTT-JSON-Leistungsnachrichten rein zuordnen: exaktes Topic, begrenzter Objektpfad, Einheiten und Quellenherkunft. Ungültige oder mehrdeutige Payloads abweisen; fehlende Gerätezeit bleibt ungültig, auch bei retained-Nachrichten. Noch keine Brokeranbindung oder automatische Erfassung.
 
 ## 0.6.0 — 2026-11-17

@@ -153,3 +153,26 @@ def test_kw_channel_does_not_apply_w_conversion_twice(adapter):
 def test_multibyte_size_and_parser_recursion_are_bounded(adapter, payload):
     with pytest.raises(ValueError, match='bounded'):
         bind(adapter, payload=payload)
+
+
+@pytest.mark.parametrize('payload', [
+    r'{"power":2500,"metadata":"\ud800"}',
+    r'{"power":2500,"metadata":["\udfff"]}',
+    r'{"power":2500,"metadata":{"\ud800":1}}',
+    r'{"power":2500,"metadata":"\ud800\ud800"}',
+    r'{"power":2500,"metadata":"\udfff\ud800"}',
+])
+@pytest.mark.parametrize('as_bytes', [False, True])
+def test_escaped_lone_surrogates_rejected_everywhere_without_disclosing_content(adapter, payload, as_bytes):
+    with pytest.raises(ValueError) as error:
+        bind(adapter, payload=payload.encode('utf-8') if as_bytes else payload)
+    assert str(error.value) == 'MQTT payload must be bounded, unambiguous finite UTF-8 JSON'
+
+
+@pytest.mark.parametrize('as_bytes', [False, True])
+def test_valid_surrogate_pairs_and_unicode_keys_remain_supported(adapter, as_bytes):
+    fixture = project(path='\U0001f600.Leistung')
+    payload = r'{"\ud83d\ude00":{"Leistung":2500},"metadata":["\ud83d\ude00","Größe"]}'
+    result = bind(adapter, fixture, payload=payload.encode('utf-8') if as_bytes else payload)
+    assert result.measurement.value.valid and result.measurement.value.power_kw == -2.5
+    assert result.measurement.value.oldest_measurement == NOW - timedelta(seconds=2)

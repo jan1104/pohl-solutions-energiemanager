@@ -35,6 +35,10 @@ V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberf
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
 
+Stabilitätskorrektur am 18.11.2026 (unveröffentlicht): Die MQTT-UTF-8-Prüfung erfasst nun auch dekodierte Schlüssel und Zeichenketten. Einzelne Surrogate konnten zuvor über JSON-Escapes in ansonsten gültigen UTF-8-Nachrichten passieren. Synthetische Text-/Byte-Tests prüfen verschachtelte Metadaten, Schlüssel, ungültige Paare, gültige Unicode-Paare und unveränderte Leistungs-/Zeitzuordnung. Keine zusätzliche Pfadsprache: Bestehende punktgetrennte Schlüssel bleiben unverändert; eine spätere Erweiterung muss ausdrücklich konfiguriert werden. Kein Brokerzugriff oder neues Release.
+
+Lokale Prüfung dieses Stands: 480 Python-Tests und 18 Untertests erfolgreich; ein symbolischer-Link-Test unter Windows mangels Berechtigung übersprungen. Ruff erfolgreich. Keine UI-Änderung; unabhängige Codeprüfung ohne blockierenden Befund. GitHub prüft zusätzlich die echte HA-Laufzeit unter Linux.
+
 MQTT-Vorbereitung am 17.11.2026 (unveröffentlicht): Ein reiner Adapter bindet ausdrücklich gelieferte UTF-8-JSON-Leistungsnachrichten an gespeicherte MQTT-Messstellen. Exaktes Topic, klar begrenzter Objektpfad, Payload-/Tiefengrenzen und keine mehrdeutigen oder nicht numerischen Werte. Gemeinsame Einheiten-/Herkunfts-/Zeitprüfung; retained oder Empfang allein ersetzen keine Geräte-Messzeit. Kein Broker, Abonnement, Dateischreiben oder neue Oberfläche. v0.6.0 bleibt das veröffentlichte HACS-Release; diese Entwicklungsänderung wird nur auf main gepusht. Details MQTT_MEASUREMENT_BINDING.md.
 
 HACS-Freigabe am 17.11.2026 vom Nutzer ausdrücklich angefordert: Grundversion 0.6.0 als normales GitHub-Release mit Integrations-ZIP bereitstellen. Lokal 418 Python-Tests, 18 Untertests und 83 JavaScript-Tests erfolgreich. Desktop-/Mobilprüfung der Register- und Rohwertsimulation im wieder verfügbaren In-App-Browser bei 1440/390 Pixeln abgeschlossen. Keine Änderungen an echten Geräten; automatische Steuerung und Mehrspeicheroptimierung bleiben außerhalb dieses Releases. Veröffentlichung erst nach grünen GitHub-Prüfungen und Paketprüfung.

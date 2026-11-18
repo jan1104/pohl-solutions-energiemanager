@@ -59,9 +59,15 @@ def _parse_payload(payload):
             if depth > MAX_JSON_DEPTH:
                 raise ValueError("Excessive JSON depth")
             if isinstance(value, dict):
+                for key in value:
+                    key.encode("utf-8")
                 pending.extend((item, depth + 1) for item in value.values())
             elif isinstance(value, list):
                 pending.extend((item, depth + 1) for item in value)
+            elif isinstance(value, str):
+                # JSON escapes can introduce lone surrogates even when the
+                # original message consists entirely of valid UTF-8 bytes.
+                value.encode("utf-8")
         return data
     except (ValueError, UnicodeError, RecursionError):
         # Do not expose payload, keys or values through diagnostics.
