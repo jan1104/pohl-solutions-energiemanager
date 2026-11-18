@@ -1,5 +1,15 @@
 # Laufzeitwerte: Herkunft und zeitliche Gültigkeit
 
+## Übergebene HA-Leistungszustände — 18.11.2026
+
+`adapters/ha_measurement.py` bietet `bind_ha_power_state(...)` als reine Grenze für bereits übergebene Zustandsdaten. Gespeicherte Quelle muss HA sein; zugestellte Entitätskennung und Einheit müssen exakt der Konfiguration entsprechen. Nur Wirkleistung in W/kW wird verarbeitet. Eine abweichende Einheit wird abgewiesen, damit eine später geänderte HA-Entität nicht unbemerkt um Faktor 1000 falsch eingeht.
+
+Der Zustand muss Text mit höchstens 128 Zeichen sein. Nach Entfernen äußerer Leerzeichen gelten ASCII-Dezimalzahlen mit optionalem Vorzeichen und Exponent, beispielsweise `-2500` oder `+2.5e0`. Nicht endliche Zahlen, Unterstriche, Unicode-Ziffern, Dezimalkomma, Einheiten im Text, Boolean sowie `unknown`/`unavailable` werden abgewiesen. Fehler enthalten keinen zugestellten Zustand. Ein echter numerischer Nullwert bleibt zulässig.
+
+Das Ergebnis ist derselbe unveränderliche `BoundPowerMeasurement` wie bei den übrigen Adaptern. Die gemeinsame Bindung rechnet W einmal nach kW um und übernimmt Ausrichtung, Herkunft und Zeitqualität. Eine unabhängig nachgewiesene Messzeit kann übergeben werden; sonst bleibt der Wert mit `missing_time` ungültig. Weder Empfang noch HA-`last_changed`/`last_updated` werden automatisch als Geräte-Messzeit verwendet. Die kanonische physische Quellenkennung muss der spätere Adapter liefern; Entitätsaliase beweisen keine unabhängigen Messquellen.
+
+Dieser Schritt importiert Home Assistant nicht und liest keine Zustandsmaschine. Kein Abonnement, Polling, Datenbankschreiben oder Planverbrauch. Synthetische Tests prüfen beide Projektformate, Identität/Einheit, W/kW, Vorzeichen, ungültige Zustände, fehlende/veraltete/zukünftige Messzeiten und unveränderte Eingaben. Eine automatische HA-Laufzeitanbindung und tatsächliche Sensorzeitverträge bleiben offen. Noch nicht im HACS-Release 0.6.0.
+
 Stand: 04.11.2026, unveröffentlichter Entwicklungsschritt nach 0.4.0. Reine Python-APIs `core/metering.py` und `core/measurement_binding.py`: Einzelne Projektmessungen können explizit an übergebene Werte gebunden werden. Noch keine HA-Oberflächen-, Polling- oder Planungsanbindung. Sie öffnen keine Verbindung und verändern keine Geräte.
 
 ## Datenvertrag

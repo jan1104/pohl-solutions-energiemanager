@@ -35,6 +35,10 @@ V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberf
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
 
+HA-Zustandsadapter am 18.11.2026 (unveröffentlicht): Ausdrücklich übergebene Zustandszeichenketten lassen sich über gespeicherte HA-Leistungsmessstellen binden. Entitätskennung und Einheit müssen exakt passen. Begrenzte ASCII-Dezimal-/Exponentzahlen, keine implizite Umdeutung von unbekannt/nicht verfügbar, Einheiten, Kommazahlen oder Boolean. Gemeinsame Leistungs-/Zeit-/Herkunftsprüfung; Empfang ersetzt keine Messzeit. Kein HA-Import, Zustandsabruf, Abonnement, Speicherung oder neue Oberfläche. Details RUNTIME_METERING.md. Automatische HA-Entitätsanbindung bleibt offen.
+
+Prüfung: 38 gezielte Adaptertests; lokal insgesamt 541 Python-Tests und 18 Untertests erfolgreich, ein Windows-Symlink-Test übersprungen. Ruff und unabhängige Codeprüfung ohne Befund. Keine UI-Änderung.
+
 Kommunikationsherkunft am 18.11.2026 (unveröffentlicht): Ein neuer reiner MQTT-Einstieg prüft die zugestellte Verbindungskennung gegen den gesamten gespeicherten Geräte-/Loggerweg vor der Payload-Verarbeitung. Gleiche Topics verschiedener Verbindungen bleiben getrennt. MQTT und Modbus verwenden denselben Wegprüfer; nur Modbus verlangt eine eigene Unit-ID. Elektrische Eltern werden nie als Kommunikationsweg verwendet. Tests prüfen beide Projektformate, direkte und mehrstufige Wege, wiederholte/fehlende/widersprüchliche Referenzen, falsche Verbindungen/Transportarten, unveränderte Daten und Zeitqualität. Kein Brokerzugriff, keine neue Oberfläche und kein Release. Details MQTT_MEASUREMENT_BINDING.md.
 
 Prüfung der Kommunikationsherkunft: lokal 503 Python-Tests und 18 Untertests erfolgreich, ein Windows-Symlink-Test mangels Berechtigung übersprungen; Ruff erfolgreich. Unabhängige Codeprüfung ohne blockierenden Befund. Keine Änderung der Oberfläche oder des Speicherformats.

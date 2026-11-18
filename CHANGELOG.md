@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+- Übergebene HA-Leistungszustände rein einer gespeicherten Messstelle zuordnen: Entität und Einheit exakt prüfen, Zahlen eindeutig dekodieren und gemeinsame Zeit-/Herkunftsprüfung nutzen. Fehlende Zustände ergeben keine Nullwerte; noch kein automatisches Lesen von HA-Entitäten.
+
 - MQTT-Nachrichten optional an den gespeicherten Kommunikationsweg binden: Verbindung vor Topic und Payload prüfen, Logger-Ketten auflösen und gleichnamige Topics verschiedener Verbindungen trennen. Gemeinsame Wegprüfung mit Modbus; weiterhin keine Brokerverbindung oder automatische Erfassung.
 
 - MQTT-Eingabeprüfung: Auch durch JSON-Escapes eingeschleuste einzelne Unicode-Surrogate in Schlüsseln und Metadaten abweisen. Gültige Zeichenpaare bleiben lesbar; Fehler geben keine Nachrichteninhalte preis.
