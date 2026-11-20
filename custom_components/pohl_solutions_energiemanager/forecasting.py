@@ -25,6 +25,50 @@ class LoadForecast:
     method: str
 
 
+@dataclass(frozen=True)
+class LoadBacktest:
+    predictions: tuple[LoadForecast, ...]
+    intervals: int
+    mae_kw: float
+    bias_kw: float
+
+
+def backtest_load_forecast(
+    observations: list[LoadObservation], starts: list[datetime], *,
+    local_zone: tzinfo, lookback_days: int = 56, min_sample_days: int = 3,
+    half_life_days: float = 21.0,
+) -> LoadBacktest:
+    """Explicit offline one-step rolling test, using completed intervals only.
+
+    Every requested target must have an actual observation and enough history.
+    No interval is silently skipped, and no result is persisted or activated.
+    """
+    if not starts:
+        raise ValueError("Rücktest benötigt mindestens ein Zielintervall.")
+    actuals = set()
+    for item in observations:
+        _aware(item.start)
+        instant = item.start.astimezone(timezone.utc)
+        if instant in actuals:
+            raise ValueError("Doppelte Messintervalle sind nicht erlaubt.")
+        actuals.add(instant)
+    previous = None
+    for start in starts:
+        _aware(start)
+        instant = start.astimezone(timezone.utc)
+        if previous is not None and instant <= previous:
+            raise ValueError("Rücktestintervalle müssen zeitlich aufsteigend sein.")
+        if instant not in actuals:
+            raise ValueError("Für jedes Rücktestintervall ist eine Lastmessung erforderlich.")
+        previous = instant
+    predictions = tuple(predict_load(
+        observations, [start], as_of=start, local_zone=local_zone,
+        lookback_days=lookback_days, min_sample_days=min_sample_days,
+        half_life_days=half_life_days)[0] for start in starts)
+    metrics = evaluate_load_forecast(list(predictions), observations)
+    return LoadBacktest(predictions, metrics['intervals'], metrics['mae_kw'], metrics['bias_kw'])
+
+
 def _aware(value: datetime, *, aligned: bool = True) -> None:
     if value.tzinfo is None or value.utcoffset() is None:
         raise ValueError("Zeitstempel benötigen eine Zeitzone.")

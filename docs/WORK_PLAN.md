@@ -35,6 +35,10 @@ V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberf
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
 
+Rollierender Lastprognose-Rücktest am 20.11.2026: `backtest_load_forecast` erzeugt für jedes ausdrücklich gewählte Zielintervall eine Prognose mit dessen Beginn als Wissensstand. Nur bereits abgeschlossene Intervalle trainieren; ein früheres Ziel kann später legitime Historie werden. UTC-Reihenfolge und vollständige Istmessungen erforderlich; fehlende Historie/Messungen führen zum Fehler statt zu selektiver Fehlerstatistik. Unveränderliches Ergebnis mit Einzelprognosen, Intervallzahl, MAE und vorzeichenbehaftetem Bias in kW. Synthetische Regressionen einschließlich Herbst-Zeitumstellung; kein Abruf, Speichern oder automatische Aktivierung. Keine Aussage zur tatsächlichen Prognosegüte. Provider-/Modulanbindung bleibt offen.
+
+Prüfung: lokal 551 Python-Tests und 18 Untertests erfolgreich, ein Windows-Symlink-Test übersprungen. Ruff erfolgreich. Der Rücktest berechnet jeden Zielzeitpunkt separat und läuft ausschließlich auf ausdrücklichen Offline-Aufruf; kein Hintergrundauftrag auf dem Raspberry Pi.
+
 Belegter Prognosefehler am 20.11.2026: Bei sehr kleiner zulässiger Halbwertszeit konnten sämtliche absoluten Altersgewichte auf Null unterlaufen. Die Quantilauswahl lieferte dann fälschlich die kleinste historische Last für alle Bänder. Gewichtung relativ zur neuesten Messung der ausgewählten Vergleichsgruppe erhält mathematisch die Gewichtsverhältnisse und mindestens ein Gewicht 1. Regressionen prüfen kurze/minimal darstellbare Halbwertszeit sowie gewöhnliche gewichtete Quantile. Keine zusätzlichen Daten, Provider, Oberfläche oder automatische Planung; keine Prognosegüte behauptet.
 
 Prüfung: lokal 544 Python-Tests und 18 Untertests erfolgreich, ein Windows-Symlink-Test übersprungen. 23 Prognosetests einschließlich Zeitumstellung erfolgreich; Ruff und unabhängige Codeprüfung ohne Befund. Keine UI-Änderung.

@@ -22,7 +22,7 @@ Auswählbare Bezugs-/Einspeisequellen, JSON-URL, HA-Sensor, Festpreis, beobachte
 - Verfügbarkeit der Preisquellen einschließlich Zeitumstellung und verzögerter Folgetagsveröffentlichung weiter überwachen und einen geeigneten produktiven Datenanbieter festlegen.
 - Separate tatsächliche Bezugs- und Einspeiseverträge abbilden.
 - PV-/Wetterprognose anbinden; historische Lastmessungen importieren.
-- Prognosen mit rollierendem Rücktest messen, MAE/Bias dokumentieren, einfache Baseline schlagen.
+- Rollierender Offline-Rücktest der Lastprognose mit Einzelprognosen, MAE/Bias und strikter vollständiger Istabdeckung implementiert (`forecasting.backtest_load_forecast`). Reale historische Daten, vergleichbare Baseline und ein Nachweis tatsächlicher Prognosegüte bleiben offen. Jeder Zielbeginn ist eigener Wissensstand; keine automatische Planung oder Datenerfassung.
 - Numerische Stabilität der historischen Lastprognose: Altersgewichte relativ zur neuesten passenden Messung normalisiert, damit kurze Halbwertszeiten nicht alle Gewichte auslöschen. Regressionsfälle synthetisch geprüft; keine Aussage zur realen Prognosegüte.
 
 ## 0.3 bis 0.5 — Projektverwaltung und native HA-Oberfläche

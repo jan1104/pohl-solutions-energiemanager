@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from forecasting import LoadForecast, LoadObservation, evaluate_load_forecast, predict_load
+from forecasting import LoadForecast, LoadObservation, backtest_load_forecast, evaluate_load_forecast, predict_load
 
 UTC = timezone.utc
 NOW = datetime(2026, 11, 3, 12, tzinfo=UTC)
@@ -79,6 +79,54 @@ def test_normalized_weights_preserve_ordinary_weighted_quantiles():
     result = predict_load(values, [NOW], as_of=NOW, local_zone=UTC,
                           half_life_days=7)[0]
     assert (result.p10_kw, result.p50_kw, result.p90_kw) == (10, 30, 30)
+
+
+def test_rolling_backtest_uses_only_completed_history_and_reports_errors():
+    from copy import deepcopy
+    starts = [NOW, NOW + timedelta(days=1)]
+    values = history() + [LoadObservation(starts[0], 1000), LoadObservation(starts[1], 12)]
+    before = deepcopy(values)
+    result = backtest_load_forecast(values, starts, local_zone=UTC)
+    assert [x.p50_kw for x in result.predictions] == [10, 10]
+    assert result.intervals == 2 and result.mae_kw == 496 and result.bias_kw == -496
+    assert values == before
+    # Target/future outliers are never included in their own training window.
+    changed = history() + [LoadObservation(starts[0], 2000), LoadObservation(starts[1], 9999)]
+    assert backtest_load_forecast(changed, starts, local_zone=UTC).predictions == result.predictions
+
+
+@pytest.mark.parametrize('starts', [[], [NOW, NOW], [NOW + timedelta(days=1), NOW]])
+def test_backtest_rejects_empty_duplicate_or_reversed_targets(starts):
+    values = history() + [LoadObservation(NOW, 10), LoadObservation(NOW + timedelta(days=1), 10)]
+    with pytest.raises(ValueError):
+        backtest_load_forecast(values, starts, local_zone=UTC)
+
+
+def test_backtest_does_not_hide_missing_actual_or_insufficient_history():
+    with pytest.raises(ValueError, match='Lastmessung erforderlich'):
+        backtest_load_forecast(history(), [NOW], local_zone=UTC)
+    with pytest.raises(ValueError, match='Zu wenig'):
+        backtest_load_forecast([LoadObservation(NOW, 10)], [NOW], local_zone=UTC)
+
+
+def test_completed_earlier_target_can_train_later_prediction():
+    later = NOW + timedelta(weeks=1)
+    values = [LoadObservation(NOW - timedelta(weeks=1), 10),
+              LoadObservation(NOW, 30), LoadObservation(later, 30)]
+    result = backtest_load_forecast(values, [NOW, later], local_zone=UTC,
+                                    min_sample_days=1, half_life_days=1)
+    assert [x.p50_kw for x in result.predictions] == [10, 30]
+    assert result.mae_kw == 10 and result.bias_kw == -10
+
+
+def test_backtest_handles_repeated_autumn_clock_labels(berlin):
+    first = datetime(2026, 10, 25, 2, 0, tzinfo=berlin, fold=0)
+    second = datetime(2026, 10, 25, 2, 0, tzinfo=berlin, fold=1)
+    values = [LoadObservation(first - timedelta(weeks=i), 10) for i in range(1, 5)]
+    values += [LoadObservation(first, 11), LoadObservation(second, 13)]
+    result = backtest_load_forecast(values, [first, second], local_zone=berlin)
+    assert result.intervals == 2 and result.mae_kw == 2 and result.bias_kw == -2
+    assert [x.start.astimezone(UTC) for x in result.predictions] == [first.astimezone(UTC), second.astimezone(UTC)]
 
 
 @pytest.fixture
