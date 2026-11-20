@@ -23,6 +23,7 @@ Auswählbare Bezugs-/Einspeisequellen, JSON-URL, HA-Sensor, Festpreis, beobachte
 - Separate tatsächliche Bezugs- und Einspeiseverträge abbilden.
 - PV-/Wetterprognose anbinden; historische Lastmessungen importieren.
 - Prognosen mit rollierendem Rücktest messen, MAE/Bias dokumentieren, einfache Baseline schlagen.
+- Numerische Stabilität der historischen Lastprognose: Altersgewichte relativ zur neuesten passenden Messung normalisiert, damit kurze Halbwertszeiten nicht alle Gewichte auslöschen. Regressionsfälle synthetisch geprüft; keine Aussage zur realen Prognosegüte.
 
 ## 0.3 bis 0.5 — Projektverwaltung und native HA-Oberfläche
 

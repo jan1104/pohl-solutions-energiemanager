@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+- Lastprognose bei sehr kurzer Halbwertszeit korrigiert: Gewichte relativ zur neuesten passenden Messung berechnen. Vollständiger numerischer Unterlauf darf nicht mehr die kleinste historische Last als alle Prognosebänder auswählen.
+
 - Übergebene HA-Leistungszustände rein einer gespeicherten Messstelle zuordnen: Entität und Einheit exakt prüfen, Zahlen eindeutig dekodieren und gemeinsame Zeit-/Herkunftsprüfung nutzen. Fehlende Zustände ergeben keine Nullwerte; noch kein automatisches Lesen von HA-Entitäten.
 
 - MQTT-Nachrichten optional an den gespeicherten Kommunikationsweg binden: Verbindung vor Topic und Payload prüfen, Logger-Ketten auflösen und gleichnamige Topics verschiedener Verbindungen trennen. Gemeinsame Wegprüfung mit Modbus; weiterhin keine Brokerverbindung oder automatische Erfassung.

@@ -62,6 +62,25 @@ def test_forecast_evaluation_reports_mae_and_signed_bias():
     assert result == {"intervals": 1, "mae_kw": 2, "bias_kw": -2}
 
 
+@pytest.mark.parametrize('half_life', [1e-6, 5e-324])
+def test_tiny_half_life_keeps_newest_sample_instead_of_smallest_load(half_life):
+    values = [LoadObservation(NOW - timedelta(weeks=i), value)
+              for i, value in [(1, 30), (2, 1), (3, 10)]]
+    result = predict_load(values, [NOW], as_of=NOW, local_zone=UTC,
+                          half_life_days=half_life)[0]
+    assert result.p10_kw == result.p50_kw == result.p90_kw == 30
+    assert result.sample_days == 3 and result.method == 'gleicher Wochentag'
+
+
+def test_normalized_weights_preserve_ordinary_weighted_quantiles():
+    # Three weekly samples with relative weights 1, 1/2, 1/4.
+    values = [LoadObservation(NOW - timedelta(weeks=i), value)
+              for i, value in [(1, 30), (2, 10), (3, 20)]]
+    result = predict_load(values, [NOW], as_of=NOW, local_zone=UTC,
+                          half_life_days=7)[0]
+    assert (result.p10_kw, result.p50_kw, result.p90_kw) == (10, 30, 30)
+
+
 @pytest.fixture
 def berlin():
     from zoneinfo import ZoneInfo, ZoneInfoNotFoundError

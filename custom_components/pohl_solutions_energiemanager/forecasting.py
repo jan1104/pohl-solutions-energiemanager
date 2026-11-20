@@ -108,7 +108,11 @@ def predict_load(
                 break
         else:
             raise ValueError(f"Zu wenig Lastmessungen für {start.isoformat()}.")
-        weighted = [(x.load_kw, 0.5 ** ((as_of - x.start).total_seconds()
+        # A common positive factor does not change weighted quantiles. Anchor
+        # at the newest candidate so small half-lives cannot erase all weights
+        # and accidentally select the smallest load as every forecast band.
+        newest = max(x.start for x in candidates)
+        weighted = [(x.load_kw, 0.5 ** ((newest - x.start).total_seconds()
                     / 86400 / half_life_days)) for x in candidates]
         result.append(LoadForecast(
             start, _weighted_quantile(weighted, .1), _weighted_quantile(weighted, .5),

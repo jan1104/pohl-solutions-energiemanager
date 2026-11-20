@@ -1,6 +1,6 @@
 # Arbeitsplan
 
-Stand: 2026-11-18. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
+Stand: 2026-11-20. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
 
 ## Auftrag und Grenzen
 
@@ -34,6 +34,10 @@ Stand: 2026-11-18. Dieser Plan steuert die weitere Entwicklung in diesem Chat un
 V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberflächenprüfungen getestet. Die erweiterte echte HA-Laufzeitprüfung ist im GitHub-Lauf 41618373561 auf Commit e02b711 erfolgreich. Die lokale Vorschau ruft keine Preise ab; die aktive Integration kann konfigurierte Quellen lesen. Der SMARD-Nutzungsstatus ist in PRICE_SOURCES.md dokumentiert.
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
+
+Belegter Prognosefehler am 20.11.2026: Bei sehr kleiner zulässiger Halbwertszeit konnten sämtliche absoluten Altersgewichte auf Null unterlaufen. Die Quantilauswahl lieferte dann fälschlich die kleinste historische Last für alle Bänder. Gewichtung relativ zur neuesten Messung der ausgewählten Vergleichsgruppe erhält mathematisch die Gewichtsverhältnisse und mindestens ein Gewicht 1. Regressionen prüfen kurze/minimal darstellbare Halbwertszeit sowie gewöhnliche gewichtete Quantile. Keine zusätzlichen Daten, Provider, Oberfläche oder automatische Planung; keine Prognosegüte behauptet.
+
+Prüfung: lokal 544 Python-Tests und 18 Untertests erfolgreich, ein Windows-Symlink-Test übersprungen. 23 Prognosetests einschließlich Zeitumstellung erfolgreich; Ruff und unabhängige Codeprüfung ohne Befund. Keine UI-Änderung.
 
 HA-Zustandsadapter am 18.11.2026 (unveröffentlicht): Ausdrücklich übergebene Zustandszeichenketten lassen sich über gespeicherte HA-Leistungsmessstellen binden. Entitätskennung und Einheit müssen exakt passen. Begrenzte ASCII-Dezimal-/Exponentzahlen, keine implizite Umdeutung von unbekannt/nicht verfügbar, Einheiten, Kommazahlen oder Boolean. Gemeinsame Leistungs-/Zeit-/Herkunftsprüfung; Empfang ersetzt keine Messzeit. Kein HA-Import, Zustandsabruf, Abonnement, Speicherung oder neue Oberfläche. Details RUNTIME_METERING.md. Automatische HA-Entitätsanbindung bleibt offen.
 
