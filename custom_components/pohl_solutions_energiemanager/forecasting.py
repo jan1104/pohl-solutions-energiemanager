@@ -123,6 +123,11 @@ def predict_load(
         seen.add(instant)
         if lower <= instant and instant + timedelta(minutes=15) <= as_of:
             history.append(LoadObservation(instant, item.load_kw))
+    by_clock = {}
+    for item in history:
+        local = item.start.astimezone(local_zone)
+        by_clock.setdefault((local.hour, local.minute), []).append(
+            (item, local.weekday(), local.date()))
     result = []
     previous: datetime | None = None
     for start in starts:
@@ -134,20 +139,16 @@ def predict_load(
             raise ValueError("Prognoseintervalle müssen zeitlich aufsteigend sein.")
         previous = instant
         target = start.astimezone(local_zone)
-        same_time = [
-            item for item in history
-            if (item.start.astimezone(local_zone).hour,
-                item.start.astimezone(local_zone).minute) == (target.hour, target.minute)
-        ]
+        same_time = by_clock.get((target.hour, target.minute), [])
         groups = [
             ("gleicher Wochentag", [x for x in same_time
-              if x.start.astimezone(local_zone).weekday() == target.weekday()]),
+              if x[1] == target.weekday()]),
             ("Werktag/Wochenende", [x for x in same_time
-              if (x.start.astimezone(local_zone).weekday() < 5) == (target.weekday() < 5)]),
+              if (x[1] < 5) == (target.weekday() < 5)]),
             ("gleiche Ortszeit", same_time),
         ]
         for method, candidates in groups:
-            day_count = len({x.start.astimezone(local_zone).date() for x in candidates})
+            day_count = len({x[2] for x in candidates})
             if day_count >= min_sample_days:
                 break
         else:
@@ -155,9 +156,10 @@ def predict_load(
         # A common positive factor does not change weighted quantiles. Anchor
         # at the newest candidate so small half-lives cannot erase all weights
         # and accidentally select the smallest load as every forecast band.
-        newest = max(x.start for x in candidates)
+        observations_for_target = [x[0] for x in candidates]
+        newest = max(x.start for x in observations_for_target)
         weighted = [(x.load_kw, 0.5 ** ((newest - x.start).total_seconds()
-                    / 86400 / half_life_days)) for x in candidates]
+                    / 86400 / half_life_days)) for x in observations_for_target]
         result.append(LoadForecast(
             start, _weighted_quantile(weighted, .1), _weighted_quantile(weighted, .5),
             _weighted_quantile(weighted, .9), day_count, method,

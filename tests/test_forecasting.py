@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, tzinfo
 
 import pytest
 
@@ -54,6 +54,30 @@ def test_local_clock_time_matching():
     local = timezone(timedelta(hours=1))
     result = predict_load(history(), [NOW.astimezone(local)], as_of=NOW, local_zone=local)
     assert result[0].p50_kw == 10
+
+
+def test_history_clock_conversion_is_shared_across_forecast_targets():
+    class CountingZone(tzinfo):
+        conversions = 0
+
+        def utcoffset(self, value):
+            return timedelta(0)
+
+        def dst(self, value):
+            return timedelta(0)
+
+        def fromutc(self, value):
+            self.conversions += 1
+            return value
+
+    zone = CountingZone()
+    values = history()
+    starts = [NOW + timedelta(days=i) for i in range(28)]
+    expected = predict_load(values, starts, as_of=NOW, local_zone=UTC)
+    result = predict_load(values, starts, as_of=NOW, local_zone=zone)
+    assert result == expected
+    # Each history instant and each target needs at most one local conversion.
+    assert zone.conversions == len(values) + len(starts)
 
 
 def test_forecast_evaluation_reports_mae_and_signed_bias():

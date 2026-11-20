@@ -24,6 +24,7 @@ Auswählbare Bezugs-/Einspeisequellen, JSON-URL, HA-Sensor, Festpreis, beobachte
 - PV-/Wetterprognose anbinden; historische Lastmessungen importieren.
 - Rollierender Offline-Rücktest der Lastprognose mit Einzelprognosen, MAE/Bias und strikter vollständiger Istabdeckung implementiert (`forecasting.backtest_load_forecast`). Reale historische Daten, vergleichbare Baseline und ein Nachweis tatsächlicher Prognosegüte bleiben offen. Jeder Zielbeginn ist eigener Wissensstand; keine automatische Planung oder Datenerfassung.
 - Numerische Stabilität der historischen Lastprognose: Altersgewichte relativ zur neuesten passenden Messung normalisiert, damit kurze Halbwertszeiten nicht alle Gewichte auslöschen. Regressionsfälle synthetisch geprüft; keine Aussage zur realen Prognosegüte.
+- Historische Ortszeiten werden pro Prognoseaufruf einmal umgerechnet und für alle Zielintervalle nach Uhrzeit gruppiert. Deterministische Aufrufzählung geprüft; Ressourcenmessung auf tatsächlicher Raspberry-Pi-Hardware weiterhin offen.
 
 ## 0.3 bis 0.5 — Projektverwaltung und native HA-Oberfläche
 

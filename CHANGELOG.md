@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+- Lastprognose berechnet die Ortszeit jeder geeigneten historischen Messung nur einmal pro Aufruf und nutzt gemeinsame Uhrzeitgruppen für alle Zielintervalle. Weniger wiederholte Zeitzonenumrechnungen bei gleichem Prognoseverfahren.
+
 - Ausdrücklichen rollierenden Lastprognose-Rücktest ergänzt: pro Zielzeit nur abgeschlossene Historie verwenden und MAE/Bias samt Einzelprognosen ausgeben. Fehlende Messungen oder Historie werden nicht übersprungen. Rein offline, keine automatische Planung.
 
 - Lastprognose bei sehr kurzer Halbwertszeit korrigiert: Gewichte relativ zur neuesten passenden Messung berechnen. Vollständiger numerischer Unterlauf darf nicht mehr die kleinste historische Last als alle Prognosebänder auswählen.

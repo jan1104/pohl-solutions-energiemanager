@@ -35,6 +35,10 @@ V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberf
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
 
+Ressourcenaufwand der Lastprognose am 20.11.2026: Geeignete Historie wird einmal nach lokaler Uhrzeit indiziert; Wochentag und lokales Datum werden dabei mitgeführt. Bisher wurden historische Zeitstempel für jedes Ziel mehrfach in Ortszeit umgerechnet. Kandidatengruppen, getrennte UTC-Intervalle bei Zeitumstellung, gezählte Kalendertage und Gewichtung bleiben erhalten. Ein deterministischer Zeitzonen-Zähltest prüft 42 historische und 28 Zielintervalle mit genau 70 Umrechnungen und identischen Prognoseergebnissen. Kein erfundener Raspberry-Pi-Laufzeitwert, kein neuer Provider oder Hintergrundauftrag.
+
+Prüfung: lokal 552 Python-Tests und 18 Untertests erfolgreich, ein Windows-Symlink-Test übersprungen. 31 Prognosetests einschließlich Rücktest und Zeitumstellung erfolgreich; Ruff ohne Befund. Keine UI-Änderung.
+
 Rollierender Lastprognose-Rücktest am 20.11.2026: `backtest_load_forecast` erzeugt für jedes ausdrücklich gewählte Zielintervall eine Prognose mit dessen Beginn als Wissensstand. Nur bereits abgeschlossene Intervalle trainieren; ein früheres Ziel kann später legitime Historie werden. UTC-Reihenfolge und vollständige Istmessungen erforderlich; fehlende Historie/Messungen führen zum Fehler statt zu selektiver Fehlerstatistik. Unveränderliches Ergebnis mit Einzelprognosen, Intervallzahl, MAE und vorzeichenbehaftetem Bias in kW. Synthetische Regressionen einschließlich Herbst-Zeitumstellung; kein Abruf, Speichern oder automatische Aktivierung. Keine Aussage zur tatsächlichen Prognosegüte. Provider-/Modulanbindung bleibt offen.
 
 Prüfung: lokal 551 Python-Tests und 18 Untertests erfolgreich, ein Windows-Symlink-Test übersprungen. Ruff erfolgreich. Der Rücktest berechnet jeden Zielzeitpunkt separat und läuft ausschließlich auf ausdrücklichen Offline-Aufruf; kein Hintergrundauftrag auf dem Raspberry Pi.
