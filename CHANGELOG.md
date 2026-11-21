@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+- Kostenrechnung weist numerisch nicht darstellbare Ergebnisse ausdrücklich ab: keine unendlichen Speicherkosten oder Verwechslung von Unterlauf mit ungenutztem Speicher. Sehr kleine Wirkungsgrade führen zu einem Eingabefehler statt Division durch Null.
+
 - Lastprognose berechnet die Ortszeit jeder geeigneten historischen Messung nur einmal pro Aufruf und nutzt gemeinsame Uhrzeitgruppen für alle Zielintervalle. Weniger wiederholte Zeitzonenumrechnungen bei gleichem Prognoseverfahren.
 
 - Ausdrücklichen rollierenden Lastprognose-Rücktest ergänzt: pro Zielzeit nur abgeschlossene Historie verwenden und MAE/Bias samt Einzelprognosen ausgeben. Fehlende Messungen oder Historie werden nicht übersprungen. Rein offline, keine automatische Planung.

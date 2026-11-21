@@ -8,6 +8,13 @@ from dataclasses import dataclass, field
 from math import isfinite
 
 
+def _finite_number(value):
+    try:
+        return not isinstance(value, bool) and isinstance(value, (int, float)) and isfinite(value)
+    except OverflowError:
+        return False
+
+
 @dataclass(frozen=True, slots=True)
 class LifecycleInputs:
     purchase_cost_eur: float
@@ -44,8 +51,12 @@ def calculate_lifecycle(inputs: LifecycleInputs) -> LifecycleResult:
     """
     for name in inputs.__dataclass_fields__:
         value = getattr(inputs, name)
-        if isinstance(value, bool) or not isinstance(value, (int, float)) or not isfinite(value):
+        if not _finite_number(value):
             raise ValueError(f"{name} must be a finite number")
+    # Normalize bounded integer inputs before arithmetic, so integer products
+    # cannot grow beyond the float range before derived-result checks run.
+    inputs = LifecycleInputs(**{name: float(getattr(inputs, name))
+                               for name in inputs.__dataclass_fields__})
     if inputs.capacity_kwh <= 0 or inputs.cycle_life <= 0 or inputs.calendar_life_years <= 0:
         raise ValueError("Capacity, cycle life and calendar life must be positive")
     if not 0 <= inputs.min_soc_pct < inputs.max_soc_pct <= 100:
@@ -59,9 +70,19 @@ def calculate_lifecycle(inputs: LifecycleInputs) -> LifecycleResult:
     years_to_cycles = inputs.cycle_life / inputs.cycles_per_year if inputs.cycles_per_year else float("inf")
     years = min(inputs.calendar_life_years, years_to_cycles)
     cycles = years * inputs.cycles_per_year
-    usable = inputs.capacity_kwh * (inputs.max_soc_pct - inputs.min_soc_pct) / 100
+    usable = inputs.capacity_kwh * ((inputs.max_soc_pct - inputs.min_soc_pct) / 100)
     output = usable * cycles * inputs.average_capacity_factor * inputs.discharge_efficiency
-    total_cost = inputs.purchase_cost_eur - inputs.residual_value_eur + inputs.annual_operating_cost_eur * years
+    operating_cost = inputs.annual_operating_cost_eur * years
+    if inputs.annual_operating_cost_eur > 0 and operating_cost == 0:
+        raise ValueError("Operating cost is below the supported numeric range")
+    total_cost = inputs.purchase_cost_eur - inputs.residual_value_eur + operating_cost
+    if (not all(_finite_number(value) for value in (usable, years, cycles, output, total_cost))
+            or usable <= 0 or years <= 0 or (inputs.cycles_per_year > 0 and output <= 0)):
+        raise ValueError("Lifecycle result exceeds the supported numeric range")
+    cost_per_output = total_cost / output if output else None
+    if cost_per_output is not None and (not _finite_number(cost_per_output)
+                                       or (total_cost > 0 and cost_per_output == 0)):
+        raise ValueError("Lifecycle cost exceeds the supported numeric range")
     limiting = "calendar" if inputs.calendar_life_years <= years_to_cycles else "cycles"
     assumptions = [
         "Szenariorechnung, keine garantierte Batterie-Lebensdauer; keine Abzinsung oder Preissteigerung.",
@@ -74,7 +95,7 @@ def calculate_lifecycle(inputs: LifecycleInputs) -> LifecycleResult:
     if output == 0:
         assumptions.append("Ohne Jahreszyklen entsteht keine abgegebene Energie und kein definierter kWh-Kostenwert.")
     return LifecycleResult(usable, years, cycles, output, total_cost,
-                           total_cost / output if output else None, limiting, assumptions)
+                           cost_per_output, limiting, assumptions)
 
 
 def delivered_energy_cost_eur_per_kwh(
@@ -90,10 +111,16 @@ def delivered_energy_cost_eur_per_kwh(
     Negative source prices are legitimate. No tariff or tax assumptions are added.
     """
     values = (source_cost_eur_kwh, charge_efficiency, discharge_efficiency, storage_cost_eur_per_output_kwh)
-    if any(isinstance(v, bool) or not isinstance(v, (int, float)) or not isfinite(v) for v in values):
+    if any(not _finite_number(v) for v in values):
         raise ValueError("Energy cost inputs must be finite numbers")
     if not 0 < charge_efficiency <= 1 or not 0 < discharge_efficiency <= 1:
         raise ValueError("Efficiencies must be fractions in (0, 1]")
     if storage_cost_eur_per_output_kwh < 0:
         raise ValueError("Storage cost must not be negative")
-    return source_cost_eur_kwh / (charge_efficiency * discharge_efficiency) + storage_cost_eur_per_output_kwh
+    round_trip = charge_efficiency * discharge_efficiency
+    if round_trip == 0:
+        raise ValueError("Round-trip efficiency is below the supported numeric range")
+    result = source_cost_eur_kwh / round_trip + storage_cost_eur_per_output_kwh
+    if not _finite_number(result):
+        raise ValueError("Delivered energy cost exceeds the supported numeric range")
+    return result

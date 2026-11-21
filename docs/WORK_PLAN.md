@@ -1,6 +1,6 @@
 # Arbeitsplan
 
-Stand: 2026-11-20. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
+Stand: 2026-11-21. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
 
 ## Auftrag und Grenzen
 
@@ -34,6 +34,10 @@ Stand: 2026-11-20. Dieser Plan steuert die weitere Entwicklung in diesem Chat un
 V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberflächenprüfungen getestet. Die erweiterte echte HA-Laufzeitprüfung ist im GitHub-Lauf 41618373561 auf Commit e02b711 erfolgreich. Die lokale Vorschau ruft keine Preise ab; die aktive Integration kann konfigurierte Quellen lesen. Der SMARD-Nutzungsstatus ist in PRICE_SOURCES.md dokumentiert.
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
+
+Numerische Kostengrenzen am 21.11.2026: Endliche Eingaben konnten unendliche Lebensdauer-/Energiekosten ergeben; kleine positive Wirkungsgrade konnten durch Produktunterlauf eine Division durch Null auslösen. Gemeinsame Prüfung endlicher Zahlen einschließlich sehr großer Ganzzahlen, normalisierte Rechenwerte und ausdrückliche Prüfung abgeleiteter Kosten/Energien. Nicht darstellbare Ergebnisse werden als ValueError abgewiesen. Null Jahreszyklen bleiben ein zulässiges Szenario ohne kWh-Kostenwert; negative Energiepreise bleiben erlaubt. SOC-Faktor vor Multiplikation bilden, um unnötigen Zwischenüberlauf bei darstellbarer Kapazität zu vermeiden. Keine geänderten Wirtschaftlichkeitsannahmen oder neuen UI-Felder.
+
+Prüfung: lokal 555 Python-Tests und 31 Untertests erfolgreich; ein Windows-Symlink-Test übersprungen. Ruff erfolgreich. Synthetische Grenzfälle und bestehende Kostenbeispiele geprüft; keine UI-Änderung. Der Codeprüfungs-Hinweis auf unterlaufende positive Stück-/Betriebskosten wurde ebenfalls mit Fehlerprüfung und Regressionen umgesetzt.
 
 Ressourcenaufwand der Lastprognose am 20.11.2026: Geeignete Historie wird einmal nach lokaler Uhrzeit indiziert; Wochentag und lokales Datum werden dabei mitgeführt. Bisher wurden historische Zeitstempel für jedes Ziel mehrfach in Ortszeit umgerechnet. Kandidatengruppen, getrennte UTC-Intervalle bei Zeitumstellung, gezählte Kalendertage und Gewichtung bleiben erhalten. Ein deterministischer Zeitzonen-Zähltest prüft 42 historische und 28 Zielintervalle mit genau 70 Umrechnungen und identischen Prognoseergebnissen. Kein erfundener Raspberry-Pi-Laufzeitwert, kein neuer Provider oder Hintergrundauftrag.
 

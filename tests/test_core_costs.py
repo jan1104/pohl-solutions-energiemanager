@@ -51,6 +51,35 @@ class LifecycleTests(unittest.TestCase):
             with self.subTest(change=change), self.assertRaises(ValueError):
                 calculate_lifecycle(replace(self.inputs, **change))
 
+    def test_unrepresentable_derived_results_fail_instead_of_reporting_infinity_or_no_use(self):
+        for change in [
+            {'annual_operating_cost_eur': 1e308},
+            {'capacity_kwh': 1e308},
+            {'capacity_kwh': 5e-324},
+            {'cycles_per_year': 5e-324, 'calendar_life_years': 5e-324},
+            {'purchase_cost_eur': 1e308, 'capacity_kwh': 1e-200},
+            {'purchase_cost_eur': 10 ** 400},
+            {'purchase_cost_eur': 5e-324},
+            {'purchase_cost_eur': 0, 'annual_operating_cost_eur': 5e-324,
+             'calendar_life_years': .5},
+            {'annual_operating_cost_eur': 10 ** 308,
+             'calendar_life_years': 10 ** 308, 'cycles_per_year': 0},
+        ]:
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                calculate_lifecycle(replace(self.inputs, **change))
+
+    def test_representable_large_capacity_does_not_overflow_soc_intermediate(self):
+        result = calculate_lifecycle(replace(self.inputs, capacity_kwh=1e307,
+            min_soc_pct=0, max_soc_pct=100, cycles_per_year=1, calendar_life_years=1))
+        self.assertEqual(result.usable_capacity_kwh, 1e307)
+        self.assertGreater(result.cost_eur_per_output_kwh, 0)
+
+    def test_unrepresentable_energy_costs_raise_value_error(self):
+        for values in [(.1, 1e-200, 1e-200, 0), (1e308, .1, .1, 0),
+                       (-1e308, .1, .1, 0), (10 ** 400, .95, .95, 0)]:
+            with self.subTest(values=values), self.assertRaises(ValueError):
+                delivered_energy_cost_eur_per_kwh(*values)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -21,6 +21,7 @@ Auswählbare Bezugs-/Einspeisequellen, JSON-URL, HA-Sensor, Festpreis, beobachte
 - Reine Laufzeitprüfung von Messwertalter, Originalmesszeit, Quellenherkunft und Ableitungen sowie explizite Einzelmessstellenbindung an übergebene Rohwerte umgesetzt. Automatische Quellenidentität, elektrische Abdeckung und lesende Adapteranbindung noch offen. Siehe [RUNTIME_METERING.md](RUNTIME_METERING.md).
 - Verfügbarkeit der Preisquellen einschließlich Zeitumstellung und verzögerter Folgetagsveröffentlichung weiter überwachen und einen geeigneten produktiven Datenanbieter festlegen.
 - Separate tatsächliche Bezugs- und Einspeiseverträge abbilden.
+- Numerische Grenzen der Kostenrechnung geprüft: nicht darstellbare abgeleitete Kosten/Energien werden abgewiesen; keine unendlichen Ergebnisse oder stille Unterlauf-Nullen. Reale Vertrags-/Lebensdauerdaten bleiben erforderlich.
 - PV-/Wetterprognose anbinden; historische Lastmessungen importieren.
 - Rollierender Offline-Rücktest der Lastprognose mit Einzelprognosen, MAE/Bias und strikter vollständiger Istabdeckung implementiert (`forecasting.backtest_load_forecast`). Reale historische Daten, vergleichbare Baseline und ein Nachweis tatsächlicher Prognosegüte bleiben offen. Jeder Zielbeginn ist eigener Wissensstand; keine automatische Planung oder Datenerfassung.
 - Numerische Stabilität der historischen Lastprognose: Altersgewichte relativ zur neuesten passenden Messung normalisiert, damit kurze Halbwertszeiten nicht alle Gewichte auslöschen. Regressionsfälle synthetisch geprüft; keine Aussage zur realen Prognosegüte.
