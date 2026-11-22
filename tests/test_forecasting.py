@@ -2,7 +2,8 @@ from datetime import datetime, timedelta, timezone, tzinfo
 
 import pytest
 
-from forecasting import LoadForecast, LoadObservation, backtest_load_forecast, evaluate_load_forecast, predict_load
+from forecasting import (LoadForecast, LoadObservation, backtest_load_forecast,
+                         compare_load_forecast, evaluate_load_forecast, predict_load)
 
 UTC = timezone.utc
 NOW = datetime(2026, 11, 3, 12, tzinfo=UTC)
@@ -141,6 +142,50 @@ def test_completed_earlier_target_can_train_later_prediction():
                                     min_sample_days=1, half_life_days=1)
     assert [x.p50_kw for x in result.predictions] == [10, 30]
     assert result.mae_kw == 10 and result.bias_kw == -10
+
+
+def test_baseline_comparison_uses_same_targets_and_signed_improvement():
+    values = history() + [LoadObservation(NOW, 10)]
+    # One unusual previous-week measurement should not move the historical median.
+    values = [LoadObservation(x.start, 30 if x.start == NOW - timedelta(days=7) else x.load_kw)
+              for x in values]
+    result = compare_load_forecast(values, [NOW], local_zone=UTC)
+    assert result.model.intervals == result.baseline.intervals == 1
+    assert result.model.mae_kw == 0 and result.baseline.mae_kw == 20
+    assert result.baseline.bias_kw == 20 and result.mae_improvement_kw == 20
+    # The baseline can also win; do not report only improvements.
+    values[-1] = LoadObservation(NOW, 30)
+    result = compare_load_forecast(values, [NOW], local_zone=UTC)
+    assert result.mae_improvement_kw == -20
+
+
+def test_missing_baseline_interval_is_not_silently_skipped():
+    values = [x for x in history() if x.start != NOW - timedelta(days=7)]
+    with pytest.raises(ValueError, match='168 Stunden'):
+        compare_load_forecast(values + [LoadObservation(NOW, 10)], [NOW], local_zone=UTC)
+
+
+def test_equal_baseline_does_not_claim_improvement():
+    result = compare_load_forecast(history() + [LoadObservation(NOW, 10)], [NOW], local_zone=UTC)
+    assert result.model.mae_kw == result.baseline.mae_kw == result.mae_improvement_kw == 0
+
+
+def test_overflowing_error_metrics_are_rejected_before_comparison():
+    starts = [NOW, NOW + timedelta(minutes=15)]
+    predictions = [LoadForecast(start, 1e308, 1e308, 1e308, 1, 'Synthetisch') for start in starts]
+    with pytest.raises(ValueError, match='Zahlenbereich'):
+        evaluate_load_forecast(predictions, [LoadObservation(start, 0) for start in starts])
+
+
+def test_baseline_elapsed_week_crosses_dst_without_guessing_local_time(berlin):
+    target = datetime(2026, 11, 1, 2, 0, tzinfo=berlin)
+    lag = target.astimezone(UTC) - timedelta(hours=168)
+    # The lag is the second 02:00, never the first occurrence on that day.
+    assert lag.astimezone(berlin).fold == 1
+    values = [LoadObservation(target - timedelta(weeks=i), 10) for i in range(1, 5)]
+    values += [LoadObservation(lag, 20), LoadObservation(target, 10)]
+    result = compare_load_forecast(values, [target], local_zone=berlin)
+    assert result.baseline.predictions[0].p50_kw == 20
 
 
 def test_backtest_handles_repeated_autumn_clock_labels(berlin):

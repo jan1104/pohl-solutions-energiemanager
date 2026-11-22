@@ -23,7 +23,7 @@ Auswählbare Bezugs-/Einspeisequellen, JSON-URL, HA-Sensor, Festpreis, beobachte
 - Separate tatsächliche Bezugs- und Einspeiseverträge abbilden.
 - Numerische Grenzen der Kostenrechnung geprüft: nicht darstellbare abgeleitete Kosten/Energien werden abgewiesen; keine unendlichen Ergebnisse oder stille Unterlauf-Nullen. Reale Vertrags-/Lebensdauerdaten bleiben erforderlich.
 - PV-/Wetterprognose anbinden; historische Lastmessungen importieren.
-- Rollierender Offline-Rücktest der Lastprognose mit Einzelprognosen, MAE/Bias und strikter vollständiger Istabdeckung implementiert (`forecasting.backtest_load_forecast`). Reale historische Daten, vergleichbare Baseline und ein Nachweis tatsächlicher Prognosegüte bleiben offen. Jeder Zielbeginn ist eigener Wissensstand; keine automatische Planung oder Datenerfassung.
+- Rollierender Offline-Rücktest mit Einzelprognosen, MAE/Bias und vollständiger Istabdeckung implementiert (`forecasting.backtest_load_forecast`). `compare_load_forecast` ergänzt eine einfache Persistenz-Baseline genau 168 Stunden zuvor mit identischen Zielintervallen. Reale historische Daten und Nachweis tatsächlicher Prognosegüte bleiben offen. Jeder Zielbeginn ist eigener Wissensstand; keine automatische Planung, Modellauswahl oder Datenerfassung.
 - Numerische Stabilität der historischen Lastprognose: Altersgewichte relativ zur neuesten passenden Messung normalisiert, damit kurze Halbwertszeiten nicht alle Gewichte auslöschen. Regressionsfälle synthetisch geprüft; keine Aussage zur realen Prognosegüte.
 - Historische Ortszeiten werden pro Prognoseaufruf einmal umgerechnet und für alle Zielintervalle nach Uhrzeit gruppiert. Deterministische Aufrufzählung geprüft; Ressourcenmessung auf tatsächlicher Raspberry-Pi-Hardware weiterhin offen.
 

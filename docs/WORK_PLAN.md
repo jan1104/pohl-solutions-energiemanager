@@ -1,6 +1,6 @@
 # Arbeitsplan
 
-Stand: 2026-11-21. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
+Stand: 2026-11-22. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
 
 ## Auftrag und Grenzen
 
@@ -34,6 +34,10 @@ Stand: 2026-11-21. Dieser Plan steuert die weitere Entwicklung in diesem Chat un
 V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberflächenprüfungen getestet. Die erweiterte echte HA-Laufzeitprüfung ist im GitHub-Lauf 41618373561 auf Commit e02b711 erfolgreich. Die lokale Vorschau ruft keine Preise ab; die aktive Integration kann konfigurierte Quellen lesen. Der SMARD-Nutzungsstatus ist in PRICE_SOURCES.md dokumentiert.
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
+
+Vergleichsprognose am 22.11.2026: `compare_load_forecast` ergänzt den ausdrücklichen Offline-Rücktest um Persistenz der Messung genau 168 verstrichene Stunden zuvor (UTC, keine lokale Kalenderwoche). Beide Ergebnisse enthalten dieselben Zielzeitpunkte und dieselbe Istabdeckung; fehlende Vergleichsmessungen führen zum Fehler statt zum Weglassen. `mae_improvement_kw` ist Vergleichs-MAE minus Modell-MAE: positiv besser, negativ schlechter, Null gleich. Die Baseline wiederholt einen Punktwert in allen Bandfeldern; dies sind keine geschätzten Unsicherheitsintervalle. Synthetische Tests prüfen Verbesserung, Verschlechterung, Gleichstand, fehlende Messung und Herbst-Zeitumstellung. Keine tatsächliche Prognosegüte, automatische Modellauswahl, Datenabfrage oder Planung behauptet.
+
+Prüfung: lokal 560 Python-Tests und 31 Untertests erfolgreich; ein Windows-Symlink-Test übersprungen. Ruff erfolgreich; keine UI-Änderung. Ein Codeprüfungs-Hinweis auf überlaufende Fehlerstatistiken wurde mit expliziter Bereichsprüfung und Regression umgesetzt: statt Infinity/NaN schlägt die Auswertung bei nicht darstellbarer Summierung fehl.
 
 Numerische Kostengrenzen am 21.11.2026: Endliche Eingaben konnten unendliche Lebensdauer-/Energiekosten ergeben; kleine positive Wirkungsgrade konnten durch Produktunterlauf eine Division durch Null auslösen. Gemeinsame Prüfung endlicher Zahlen einschließlich sehr großer Ganzzahlen, normalisierte Rechenwerte und ausdrückliche Prüfung abgeleiteter Kosten/Energien. Nicht darstellbare Ergebnisse werden als ValueError abgewiesen. Null Jahreszyklen bleiben ein zulässiges Szenario ohne kWh-Kostenwert; negative Energiepreise bleiben erlaubt. SOC-Faktor vor Multiplikation bilden, um unnötigen Zwischenüberlauf bei darstellbarer Kapazität zu vermeiden. Keine geänderten Wirtschaftlichkeitsannahmen oder neuen UI-Felder.
 

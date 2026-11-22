@@ -2,6 +2,10 @@
 
 ## Unveröffentlicht
 
+- Lastprognose-Rücktest um Vergleich mit einer einfachen 168-Stunden-Persistenz ergänzt. Beide Verfahren verwenden dieselben Zielintervalle; fehlende Vergleichsmessungen werden abgewiesen. Positive und negative MAE-Differenzen sichtbar, keine automatische Modellauswahl.
+
+- Überlaufende Prognosefehlerstatistiken ausdrücklich abweisen, damit Vergleiche keine unendlichen Kennzahlen oder NaN liefern.
+
 - Kostenrechnung weist numerisch nicht darstellbare Ergebnisse ausdrücklich ab: keine unendlichen Speicherkosten oder Verwechslung von Unterlauf mit ungenutztem Speicher. Sehr kleine Wirkungsgrade führen zu einem Eingabefehler statt Division durch Null.
 
 - Lastprognose berechnet die Ortszeit jeder geeigneten historischen Messung nur einmal pro Aufruf und nutzt gemeinsame Uhrzeitgruppen für alle Zielintervalle. Weniger wiederholte Zeitzonenumrechnungen bei gleichem Prognoseverfahren.

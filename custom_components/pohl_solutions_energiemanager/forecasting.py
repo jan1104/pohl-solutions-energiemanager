@@ -33,6 +33,40 @@ class LoadBacktest:
     bias_kw: float
 
 
+@dataclass(frozen=True)
+class LoadBacktestComparison:
+    model: LoadBacktest
+    baseline: LoadBacktest
+    mae_improvement_kw: float
+
+
+def compare_load_forecast(
+    observations: list[LoadObservation], starts: list[datetime], *,
+    local_zone: tzinfo, lookback_days: int = 56, min_sample_days: int = 3,
+    half_life_days: float = 21.0,
+) -> LoadBacktestComparison:
+    """Compare identical targets with persistence from exactly 168 hours earlier.
+
+    The baseline uses elapsed UTC time, not a local calendar-week offset. Every
+    lagged measurement is required; missing intervals never shrink the cohort.
+    Positive improvement means lower model MAE, not an automatic model choice.
+    """
+    model = backtest_load_forecast(
+        observations, starts, local_zone=local_zone, lookback_days=lookback_days,
+        min_sample_days=min_sample_days, half_life_days=half_life_days)
+    actuals = {item.start.astimezone(timezone.utc): item.load_kw for item in observations}
+    predictions = []
+    for start in starts:
+        lag = start.astimezone(timezone.utc) - timedelta(hours=168)
+        if lag not in actuals:
+            raise ValueError("Für die Vergleichsprognose fehlt eine Messung genau 168 Stunden zuvor.")
+        value = actuals[lag]
+        predictions.append(LoadForecast(start, value, value, value, 1, 'Persistenz 168 Stunden UTC'))
+    metrics = evaluate_load_forecast(predictions, observations)
+    baseline = LoadBacktest(tuple(predictions), metrics['intervals'], metrics['mae_kw'], metrics['bias_kw'])
+    return LoadBacktestComparison(model, baseline, baseline.mae_kw - model.mae_kw)
+
+
 def backtest_load_forecast(
     observations: list[LoadObservation], starts: list[datetime], *,
     local_zone: tzinfo, lookback_days: int = 56, min_sample_days: int = 3,
@@ -194,8 +228,12 @@ def evaluate_load_forecast(
             errors.append(predicted.p50_kw - actual)
     if not errors:
         raise ValueError("Keine gemeinsamen Mess- und Prognoseintervalle.")
+    mae = sum(abs(x) for x in errors) / len(errors)
+    bias = sum(errors) / len(errors)
+    if not isfinite(mae) or not isfinite(bias):
+        raise ValueError("Prognosefehler überschreiten den unterstützten Zahlenbereich.")
     return {
         "intervals": len(errors),
-        "mae_kw": sum(abs(x) for x in errors) / len(errors),
-        "bias_kw": sum(errors) / len(errors),
+        "mae_kw": mae,
+        "bias_kw": bias,
     }
