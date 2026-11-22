@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+- Auf Null gerundete Prognosedauern vor der Preiszuordnung abweisen, damit keine Division durch Null oder lautlos leeren Intervalle entstehen. Übergroße Ganzzahlen auch bei direkt übergebenen Preiswerten als Eingabefehler behandeln.
+
 - Preis-HTTP-Antworten vor dem Zwischenspeichern streng prüfen: doppelte JSON-Schlüssel, nicht endliche Zahlen, ungültiges Unicode und übermäßige Tiefe abweisen. Fehler enthalten keine Antwortinhalte; ungültige Antworten werden nicht gecacht.
 
 - Lastprognose-Rücktest um Vergleich mit einer einfachen 168-Stunden-Persistenz ergänzt. Beide Verfahren verwenden dieselben Zielintervalle; fehlende Vergleichsmessungen werden abgewiesen. Positive und negative MAE-Differenzen sichtbar, keine automatische Modellauswahl.

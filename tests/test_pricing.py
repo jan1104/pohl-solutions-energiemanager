@@ -31,6 +31,29 @@ def test_price_json_depth_boundary_is_explicit():
         decode_price_json(b'[' * 33 + b'0' + b']' * 33)
 
 
+@pytest.mark.parametrize('mode', ['forecast', 'fixed', 'url'])
+@pytest.mark.parametrize('duration', [5e-324, 1e-12])
+def test_duration_that_rounds_to_zero_is_rejected_for_every_price_mode(mode, duration):
+    data = rows(1)
+    data[0].update(duration_hours=duration, import_price_eur_kwh=.1, export_price_eur_kwh=.1)
+    periods = normalize_prices(payload([100]), 'eur_mwh')
+    with pytest.raises(ValueError, match='positives Zeitintervall'):
+        apply_price_sources(data, periods, periods, config(mode, fixed_price=100), config(mode, fixed_price=100))
+
+
+def test_smallest_representable_duration_can_use_external_prices():
+    data = rows(1)
+    data[0]['duration_hours'] = 1 / 3_600_000_000  # One microsecond.
+    periods = normalize_prices(payload([-50]), 'eur_mwh')
+    result = apply_price_sources(data, periods, periods, config(), config())
+    assert result[0]['import_price_eur_kwh'] == pytest.approx(-.05)
+
+
+def test_direct_entity_price_payload_rejects_oversized_integer_without_overflow_error():
+    with pytest.raises(ValueError, match='endliche Zahl'):
+        normalize_prices(payload([10 ** 400]), 'eur_mwh')
+
+
 def test_bom_and_negative_prices_preserve_existing_normalization():
     import json
     body = b'\xef\xbb\xbf' + json.dumps({'prices': payload([-50, 125])}).encode('utf-8')

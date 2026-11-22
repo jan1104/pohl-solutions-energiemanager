@@ -35,6 +35,10 @@ V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberf
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
 
+Preiszuordnungsgrenzen am 22.11.2026: Sehr kleine positive Prognosedauern konnten in der datetime-Auflösung auf Null gerundet werden. Externe Preiszuordnung dividierte dann durch Null; Fest-/Prognosepreise konnten ein leeres Intervall übernehmen. Alle Preisarten verlangen nun ein tatsächlich positives darstellbares Intervall, bevor Preise zugeordnet werden. Ein Mikrosekundenintervall bleibt zulässig. Übergroße Ganzzahlen werden auch bei direkten HA-/Python-Preiswerten als ValueError abgewiesen, statt OverflowError an die Laufzeit durchzureichen. Kein neuer Abruf, Datenersatz oder Oberfläche.
+
+Prüfung: lokal 584 Python-Tests und 31 Untertests erfolgreich; ein Windows-Symlink-Test übersprungen. Ruff erfolgreich. Regressionen decken Prognose-, Fest- und externe Preise sowie die positive Auflösungsgrenze ab; keine UI-Änderung.
+
 Preisantworten am 22.11.2026: Reiner JSON-Dekoder vor dem HTTP-Cache weist doppelte Schlüssel (auch in Metadaten), nicht endliche Zahlen, ungültiges UTF-8/Unicode und Tiefe über 32 ab. Grenze 2 MiB; BOM und gültige negative Preise bleiben unterstützt. Bisher übernahm der Standardparser bei doppelten Feldern still den letzten Wert. Sanitierte Fehler ohne Antwort-/URL-Inhalt; ungültige Daten gelangen nicht in den Cache. Synthetische Parserregressionen sowie HA-Loopback-Prüfung für Ablehnung, erfolgreichen Wiederholungsabruf und anschließende Cache-Nutzung. Kein neuer externer Abruf oder Gerätezugriff.
 
 Prüfung: lokal 576 Python-Tests und 31 Untertests erfolgreich, ein Windows-Symlink-Test übersprungen. 43 Preiskerntests und Ruff erfolgreich. Codeprüfung ohne verbleibenden Befund; übergroße Ganzzahlen werden ebenfalls vor der Preisnormalisierung als ValueError abgewiesen. Echte HA-Loopback-Prüfung erfolgt im GitHub-Linux-Lauf; keine UI-Änderung.

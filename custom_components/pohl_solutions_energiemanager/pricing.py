@@ -73,7 +73,11 @@ class PricePeriod:
 
 
 def _number(value: object, name: str) -> float:
-    if isinstance(value, bool) or not isinstance(value, (int, float)) or not isfinite(value):
+    try:
+        valid = not isinstance(value, bool) and isinstance(value, (int, float)) and isfinite(value)
+    except OverflowError:
+        valid = False
+    if not valid:
         raise ValueError(f"{name} muss eine endliche Zahl sein.")
     return float(value)
 
@@ -273,6 +277,8 @@ def apply_price_sources(
             end = start + timedelta(hours=duration)
         except OverflowError as err:
             raise ValueError("Ungültiges Prognoseende.") from err
+        if end <= start:
+            raise ValueError("Prognosedauer muss als positives Zeitintervall darstellbar sein.")
         copied = dict(row)
         for field, config, (periods, starts) in zip(
             ("import_price_eur_kwh", "export_price_eur_kwh"), configs, sources
