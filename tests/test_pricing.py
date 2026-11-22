@@ -3,10 +3,40 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from pricing import PricePeriod, apply_price_sources, normalize_prices, validate_price_config
+from pricing import PricePeriod, apply_price_sources, decode_price_json, normalize_prices, validate_price_config
 
 UTC = timezone.utc
 START = datetime(2026, 11, 3, tzinfo=UTC)
+
+
+@pytest.mark.parametrize('body', [
+    b'{"value":1,"value":2}', b'{"meta":{"key":1,"key":2}}',
+    b'{"value":NaN}', b'{"value":Infinity}', b'{"value":-Infinity}',
+    b'{"value":1e400}', b'{"value":1,"metadata":1e400}',
+    b'\xff', b'{broken', b'0' * (2 * 1024 * 1024 + 1),
+    b'[' * 1100 + b'0' + b']' * 1100,
+    b'{"meta":"\\ud800"}', b'{"meta":{"\\udfff":1}}',
+    b'{"value":' + b'9' * 400 + b'}',
+])
+def test_ambiguous_or_invalid_price_json_is_sanitized(body):
+    with pytest.raises(ValueError) as error:
+        decode_price_json(body)
+    assert str(error.value) == 'Price response must be bounded, unambiguous finite UTF-8 JSON'
+    assert error.value.__cause__ is None
+
+
+def test_price_json_depth_boundary_is_explicit():
+    assert decode_price_json(b'[' * 32 + b'0' + b']' * 32) is not None
+    with pytest.raises(ValueError):
+        decode_price_json(b'[' * 33 + b'0' + b']' * 33)
+
+
+def test_bom_and_negative_prices_preserve_existing_normalization():
+    import json
+    body = b'\xef\xbb\xbf' + json.dumps({'prices': payload([-50, 125])}).encode('utf-8')
+    parsed = decode_price_json(bytearray(body))
+    result = normalize_prices(parsed, 'eur_mwh')
+    assert [x.price_eur_kwh for x in result] == [-.05, .125]
 
 
 def rows(count=2):

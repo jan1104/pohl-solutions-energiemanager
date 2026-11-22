@@ -1500,6 +1500,14 @@ async def main() -> None:
             boundary = week_start + timedelta(days=6, hours=23, minutes=45)
             boundary_stamp = int(boundary.timestamp() * 1000)
             blocks_requested = []
+            ambiguous_requests = []
+
+            async def ambiguous_response(request):
+                ambiguous_requests.append(True)
+                if len(ambiguous_requests) == 1:
+                    return web.Response(text='{"prices":[],"prices":[],"private":"synthetic-private"}',
+                                        content_type='application/json')
+                return web.json_response({"prices": price_rows})
 
             async def prices_response(request):
                 return web.json_response({"prices": price_rows})
@@ -1515,6 +1523,7 @@ async def main() -> None:
                 return web.json_response({"series": series})
 
             app.router.add_get("/prices", prices_response)
+            app.router.add_get("/ambiguous", ambiguous_response)
             app.router.add_get("/smard/index_quarterhour.json", smard_index)
             app.router.add_get("/smard/4169_DE_quarterhour_{stamp}.json", smard_block)
             runner = web.AppRunner(app)
@@ -1522,6 +1531,17 @@ async def main() -> None:
             site = web.TCPSite(runner, "127.0.0.1", 0)
             await site.start()
             port = site._server.sockets[0].getsockname()[1]
+            boundary_loader = PriceSourceLoader(hass)
+            ambiguous_url = f"http://127.0.0.1:{port}/ambiguous"
+            try:
+                await boundary_loader._json(ambiguous_url)
+                raise AssertionError("Ambiguous price response accepted")
+            except ValueError as error:
+                assert str(error) == "Price source is unavailable or did not return valid JSON"
+                assert error.__cause__ is None
+            assert await boundary_loader._json(ambiguous_url) == {"prices": price_rows}
+            assert await boundary_loader._json(ambiguous_url) == {"prices": price_rows}
+            assert len(ambiguous_requests) == 2  # Failed payload was not cached; valid retry is cached.
             with patch("custom_components.pohl_solutions_energiemanager.price_sources.SMARD_BASE", f"http://127.0.0.1:{port}/smard"):
                 loader = PriceSourceLoader(hass)
                 periods = await loader._smard([

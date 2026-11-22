@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+- Preis-HTTP-Antworten vor dem Zwischenspeichern streng prüfen: doppelte JSON-Schlüssel, nicht endliche Zahlen, ungültiges Unicode und übermäßige Tiefe abweisen. Fehler enthalten keine Antwortinhalte; ungültige Antworten werden nicht gecacht.
+
 - Lastprognose-Rücktest um Vergleich mit einer einfachen 168-Stunden-Persistenz ergänzt. Beide Verfahren verwenden dieselben Zielintervalle; fehlende Vergleichsmessungen werden abgewiesen. Positive und negative MAE-Differenzen sichtbar, keine automatische Modellauswahl.
 
 - Überlaufende Prognosefehlerstatistiken ausdrücklich abweisen, damit Vergleiche keine unendlichen Kennzahlen oder NaN liefern.

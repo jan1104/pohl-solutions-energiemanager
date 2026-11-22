@@ -8,11 +8,61 @@ from bisect import bisect_right
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from math import isfinite
+import json
 import re
 from urllib.parse import urlsplit
 
 MODES = {"forecast", "entity", "url", "fixed", "smard"}
 UNIT_DIVISORS = {"eur_kwh": 1.0, "ct_kwh": 100.0, "eur_mwh": 1000.0}
+
+
+def decode_price_json(body: bytes | bytearray):
+    """Decode a bounded HTTP body without ambiguous or nonfinite JSON values."""
+    def object_pairs(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("Duplicate JSON key")
+            result[key] = value
+        return result
+
+    def invalid_constant(value):
+        raise ValueError("Nonfinite JSON value")
+
+    def finite_float(value):
+        number = float(value)
+        if not isfinite(number):
+            raise ValueError("Nonfinite JSON value")
+        return number
+
+    def finite_int(value):
+        number = int(value)
+        if not isfinite(number):
+            raise ValueError("Nonfinite JSON value")
+        return number
+
+    try:
+        if not isinstance(body, (bytes, bytearray)) or len(body) > 2 * 1024 * 1024:
+            raise ValueError("Invalid price body")
+        result = json.loads(body.decode('utf-8-sig'), object_pairs_hook=object_pairs,
+                            parse_constant=invalid_constant, parse_float=finite_float,
+                            parse_int=finite_int)
+        pending = [(result, 0)]
+        while pending:
+            value, depth = pending.pop()
+            if depth > 32:
+                raise ValueError("Price JSON exceeds depth limit")
+            if isinstance(value, dict):
+                for key in value:
+                    key.encode('utf-8')
+                pending.extend((item, depth + 1) for item in value.values())
+            elif isinstance(value, list):
+                pending.extend((item, depth + 1) for item in value)
+            elif isinstance(value, str):
+                value.encode('utf-8')
+        return result
+    except (ValueError, UnicodeError, RecursionError, OverflowError):
+        raise ValueError("Price response must be bounded, unambiguous finite UTF-8 JSON") from None
 
 
 @dataclass(frozen=True, slots=True)

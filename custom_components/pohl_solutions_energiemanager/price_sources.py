@@ -3,14 +3,13 @@
 import asyncio
 from bisect import bisect_right
 from datetime import timedelta
-import json
 from typing import Any
 
 from aiohttp import ClientError, ClientTimeout
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .pricing import normalize_prices, validate_price_config
+from .pricing import decode_price_json, normalize_prices, validate_price_config
 
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 SMARD_BASE = "https://www.smard.de/app/chart_data/4169/DE"
@@ -54,10 +53,10 @@ class PriceSourceLoader:
                     body.extend(chunk)
                     if len(body) > MAX_RESPONSE_BYTES:
                         raise ValueError("Price response exceeds the size limit")
-                payload = json.loads(body.decode("utf-8-sig"))
-        except (ClientError, asyncio.TimeoutError, UnicodeError, json.JSONDecodeError) as err:
+                payload = decode_price_json(body)
+        except (ClientError, asyncio.TimeoutError, ValueError):
             # Do not expose full URLs, query strings or server bodies in diagnostics.
-            raise ValueError("Price source is unavailable or did not return valid JSON") from err
+            raise ValueError("Price source is unavailable or did not return valid JSON") from None
         self._payloads[url] = payload
         return payload
 
