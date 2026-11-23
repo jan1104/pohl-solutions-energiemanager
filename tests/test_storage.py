@@ -10,6 +10,54 @@ import pytest
 from core.storage import SQLiteStorage, StorageConflict, StorageSchemaError
 
 
+def test_batch_read_keeps_one_snapshot_across_concurrent_commit(tmp_path, monkeypatch):
+    from core.storage import ModuleStorage
+    store = repository(tmp_path)
+    with sqlite3.connect(store.path) as connection:
+        connection.execute('PRAGMA journal_mode=WAL')
+    reader = store.for_module('a', 'meter', schema_version=1)
+    writer = store.for_module('a', 'meter', schema_version=1)
+    reader.put_many({'left': (None, {'value': 1}), 'right': (None, {'value': 1})})
+    original = ModuleStorage._check_schema
+    committed = False
+
+    def commit_after_snapshot(self, connection):
+        nonlocal committed
+        original(self, connection)
+        if not committed:
+            committed = True
+            writer.put_many({'left': (1, {'value': 2}), 'right': (1, {'value': 2})})
+
+    monkeypatch.setattr(ModuleStorage, '_check_schema', commit_after_snapshot)
+    result = reader.get_many(['left', 'missing', 'right'])
+    assert result['missing'] is None
+    assert [result[key].data for key in ('left', 'right')] == [{'value': 1}, {'value': 1}]
+    assert [reader.get_many(['left', 'right'])[key].revision for key in ('left', 'right')] == [2, 2]
+
+
+@pytest.mark.parametrize('keys', [[], 'key', {'key'}, ['key', 'key'], ['bad key'], [None], ['k'] * 129])
+def test_batch_read_rejects_invalid_key_requests(tmp_path, keys):
+    module = repository(tmp_path).for_module('a', 'meter', schema_version=1)
+    with pytest.raises(ValueError):
+        module.get_many(keys)
+
+
+def test_batch_read_is_scoped_detached_and_schema_checked(tmp_path):
+    store = repository(tmp_path)
+    a = store.for_module('a', 'meter', schema_version=1)
+    b = store.for_module('b', 'meter', schema_version=1)
+    a.put('settings', {'value': [1]}, expected_revision=None)
+    assert b.get_many(['settings']) == {'settings': None}
+    assert store.for_module('a', 'forecast', schema_version=1).get_many(['settings']) == {'settings': None}
+    assert len(a.get_many([f'key{i}' for i in range(128)])) == 128
+    result = a.get_many(['settings'])
+    result['settings'].data['value'].append(2)
+    assert a.get('settings').data == {'value': [1]}
+    a.migrate(2, {'settings': (1, {'value': [3]})})
+    with pytest.raises(StorageSchemaError):
+        a.get_many(['settings'])
+
+
 def repository(tmp_path, **kwargs):
     result = SQLiteStorage(tmp_path / "energy.sqlite", **kwargs)
     result.initialize()

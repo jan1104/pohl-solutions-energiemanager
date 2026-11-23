@@ -1,6 +1,6 @@
 # Arbeitsplan
 
-Stand: 2026-11-22. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
+Stand: 2026-11-23. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
 
 ## Auftrag und Grenzen
 
@@ -34,6 +34,10 @@ Stand: 2026-11-22. Dieser Plan steuert die weitere Entwicklung in diesem Chat un
 V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberflächenprüfungen getestet. Die erweiterte echte HA-Laufzeitprüfung ist im GitHub-Lauf 41618373561 auf Commit e02b711 erfolgreich. Die lokale Vorschau ruft keine Preise ab; die aktive Integration kann konfigurierte Quellen lesen. Der SMARD-Nutzungsstatus ist in PRICE_SOURCES.md dokumentiert.
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
+
+Konsistente Konfigurationslesung am 23.11.2026: `ModuleStorage.get_many(keys)` liest bis zu 128 ausdrücklich benannte Dokumente eines Projekt-/Modulbereichs in einer gemeinsamen SQLite-Lesetransaktion. Fehlende Schlüssel bleiben None; Revisionen und Schema werden geprüft. Einzelget nutzt denselben Pfad. `AsyncModuleStorage.async_get_many` friert geprüfte Schlüssel vor dem Executor ein und nutzt den vorhandenen Abbruch-/Drain-Vertrag. Temporäre SQLite-Tests mit explizitem WAL prüfen einen Schreibcommit während des Lesens: beide Dokumente bleiben im ursprünglichen Lesestand. Bereichsgrenzen, Schemakonflikt, getrennte Rückgabedaten, Grenzwerte und veränderte Aufruferliste geprüft. Keine neue Tabelle, Historie, automatische Abfrage oder Oberfläche.
+
+Prüfung: lokal 594 Python-Tests und 31 Untertests erfolgreich; ein Windows-Symlink-Test übersprungen. Ruff und unabhängige Codeprüfung ohne Befund. Keine UI-Änderung oder Datenbankmigration.
 
 Preiszuordnungsgrenzen am 22.11.2026: Sehr kleine positive Prognosedauern konnten in der datetime-Auflösung auf Null gerundet werden. Externe Preiszuordnung dividierte dann durch Null; Fest-/Prognosepreise konnten ein leeres Intervall übernehmen. Alle Preisarten verlangen nun ein tatsächlich positives darstellbares Intervall, bevor Preise zugeordnet werden. Ein Mikrosekundenintervall bleibt zulässig. Übergroße Ganzzahlen werden auch bei direkten HA-/Python-Preiswerten als ValueError abgewiesen, statt OverflowError an die Laufzeit durchzureichen. Kein neuer Abruf, Datenersatz oder Oberfläche.
 

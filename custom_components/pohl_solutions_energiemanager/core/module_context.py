@@ -10,7 +10,7 @@ from functools import partial
 import json
 
 from .modules import ModuleManifest
-from .storage import ModuleStorage, SQLiteStorage, _identifier, _prepare_changes
+from .storage import ModuleStorage, SQLiteStorage, _identifier, _prepare_changes, _prepare_read_keys
 
 
 async def _async_complete(executor, operation):
@@ -54,6 +54,10 @@ class AsyncModuleStorage:
     async def async_get(self, key):
         _identifier(key)
         return await _async_complete(self._executor, partial(self._handle.get, key))
+
+    async def async_get_many(self, keys):
+        snapshot = _prepare_read_keys(keys)
+        return await _async_complete(self._executor, partial(self._handle.get_many, snapshot))
 
     async def async_put(self, key, data, *, expected_revision):
         return (await self.async_put_many({key: (expected_revision, data)}))[key]

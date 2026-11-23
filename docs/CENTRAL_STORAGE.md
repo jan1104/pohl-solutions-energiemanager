@@ -1,5 +1,13 @@
 # Zentrale Datenhaltung im Grundmodul
 
+## Gemeinsamer Lesestand für mehrere Dokumente — 23.11.2026
+
+`ModuleStorage.get_many(keys)` und `AsyncModuleStorage.async_get_many(keys)` liefern ein Dictionary der ausdrücklich angeforderten Schlüssel mit `StoredDocument` oder `None`. Erlaubt sind Listen/Tupel mit 1 bis 128 eindeutigen gültigen Dokumentkennungen. Die asynchrone Variante kopiert und prüft die Schlüssel vor Übergabe an den Executor. Kein fremder Projekt-/Modulbereich kann ausgewählt werden.
+
+Alle Dokumente stammen aus derselben SQLite-Lesetransaktion einschließlich Datenbank-/Schemaprüfung. Ein parallel bestätigter Mehrdokument-Schreibvorgang kann dadurch keine Mischung alter und neuer Konfigurationen innerhalb eines Ergebnisses erzeugen. Einzelne spätere Leseaufrufe sind neue Lesestände. Fehlende Schlüssel werden nicht als leere Konfiguration erfunden. Rückgabedaten sind vom Speicher getrennt; ein Schemawechsel macht veraltete Handles wie bisher unbrauchbar.
+
+Dies ist Konfigurationszugriff für Fachmodule, keine Zeitreihendatenbank, globale SQL-Schnittstelle oder automatische Messwerterfassung. Der bestehende asynchrone Drain-Vertrag gilt auch für Sammellesungen. Speicherformat und öffentliche HA-Oberfläche ändern sich nicht.
+
 Stand: 12.11.2026. Die gemeinsame SQLite-Konfigurationsablage ist an HA angeschlossen. Neue Fachmodule können nun ausdrücklich einen festen Projekt-/Modulkontext mit asynchronem Speicherzugang erhalten. Eine ausdrücklich aufgerufene, überschreibungsfreie Datenbanksicherung ist im Kern verfügbar. Historien, automatische Modulaktivierung, Sicherungsbedienung/Wiederherstellung und vollständige Laufzeitkontexte bleiben offen. Aktueller Prüfablauf: TESTING_0_6.md.
 
 ## Eigentum und Aufteilung

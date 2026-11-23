@@ -22,6 +22,32 @@ def repository(tmp_path):
     return result
 
 
+def test_async_batch_read_freezes_keys_before_executor(tmp_path):
+    async def run():
+        repo = repository(tmp_path)
+        queued, release = asyncio.Event(), asyncio.Event()
+
+        async def executor(operation):
+            queued.set()
+            await release.wait()
+            return await asyncio.to_thread(operation)
+
+        release.set()
+        context = await async_module_context(repo, executor, 'a', manifest(), schema_version=1)
+        await context.storage.async_put('settings', {'value': 1}, expected_revision=None)
+        queued.clear()
+        release.clear()
+        keys = ['settings', 'missing']
+        job = asyncio.create_task(context.storage.async_get_many(keys))
+        await queued.wait()
+        keys[:] = ['different']
+        release.set()
+        result = await job
+        assert result['settings'].data == {'value': 1} and result['missing'] is None
+        assert list(result) == ['settings', 'missing']
+    asyncio.run(run())
+
+
 def test_open_never_initializes_or_migrates_database(tmp_path):
     async def run():
         repo = SQLiteStorage(tmp_path / 'missing.sqlite')

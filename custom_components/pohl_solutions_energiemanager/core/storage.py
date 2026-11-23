@@ -56,6 +56,17 @@ def _prepare_changes(changes, *, max_documents=128):
     return prepared
 
 
+def _prepare_read_keys(keys):
+    if not isinstance(keys, (list, tuple)) or not 1 <= len(keys) <= 128:
+        raise ValueError("Provide between 1 and 128 document keys")
+    keys = tuple(keys)
+    for key in keys:
+        _identifier(key)
+    if len(set(keys)) != len(keys):
+        raise ValueError("Document keys must be unique")
+    return keys
+
+
 @dataclass(frozen=True, slots=True)
 class StoredDocument:
     revision: int
@@ -206,17 +217,27 @@ class ModuleStorage:
             raise StorageSchemaError("Module configuration schema changed")
 
     def get(self, key):
-        _identifier(key)
+        return self.get_many((key,))[key]
+
+    def get_many(self, keys):
+        """Read up to 128 selected documents from one consistent namespace snapshot."""
+        keys = _prepare_read_keys(keys)
         with self._repository._connection() as connection:
             connection.execute("BEGIN")
             self._repository._check_database(connection)
             self._check_schema(connection)
-            row = connection.execute("SELECT revision,body FROM module_documents WHERE project_id=? AND module_id=? AND document_key=?", (self.project_id, self.module_id, key)).fetchone()
-        if row is None:
-            return None
-        data = json.loads(row[1])
-        _encode(data)  # Check stored data as strictly as new writes.
-        return StoredDocument(row[0], data)
+            rows = {key: connection.execute(
+                "SELECT revision,body FROM module_documents WHERE project_id=? AND module_id=? AND document_key=?",
+                (self.project_id, self.module_id, key)).fetchone() for key in keys}
+        result = {}
+        for key, row in rows.items():
+            if row is None:
+                result[key] = None
+            else:
+                data = json.loads(row[1])
+                _encode(data)  # Check stored data as strictly as new writes.
+                result[key] = StoredDocument(row[0], data)
+        return result
 
     def put(self, key, data, *, expected_revision):
         return self.put_many({key: (expected_revision, data)})[key]
