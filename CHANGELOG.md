@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+- Fachmodule können ihre gespeicherten Dokumentkennungen seitenweise im eigenen Projekt-/Modulbereich auflisten, ohne Konfigurationsinhalte zu laden. Strikte Seitengröße und Schemaprüfung; auch im asynchronen Speicherkontext verfügbar.
+
 - Gemeinsamer Modulspeicher kann bis zu 128 ausgewählte Konfigurationsdokumente in einem konsistenten Lesestand liefern. Projekt-/Modulgrenzen, Revisionen und Schemaprüfung bleiben erhalten; auch über den asynchronen Modulkontext nutzbar.
 
 - Auf Null gerundete Prognosedauern vor der Preiszuordnung abweisen, damit keine Division durch Null oder lautlos leeren Intervalle entstehen. Übergroße Ganzzahlen auch bei direkt übergebenen Preiswerten als Eingabefehler behandeln.

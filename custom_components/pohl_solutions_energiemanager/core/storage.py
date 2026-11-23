@@ -67,6 +67,13 @@ def _prepare_read_keys(keys):
     return keys
 
 
+def _validate_key_page(after, limit):
+    if after is not None:
+        _identifier(after)
+    if type(limit) is not int or not 1 <= limit <= 128:
+        raise ValueError("Key page limit must be an integer from 1 to 128")
+
+
 @dataclass(frozen=True, slots=True)
 class StoredDocument:
     revision: int
@@ -218,6 +225,19 @@ class ModuleStorage:
 
     def get(self, key):
         return self.get_many((key,))[key]
+
+    def list_keys(self, *, after=None, limit=50):
+        """List one bounded page in this namespace, without loading document bodies."""
+        _validate_key_page(after, limit)
+        with self._repository._connection() as connection:
+            connection.execute("BEGIN")
+            self._repository._check_database(connection)
+            self._check_schema(connection)
+            rows = connection.execute(
+                "SELECT document_key FROM module_documents WHERE project_id=? AND module_id=? "
+                "AND document_key>? ORDER BY document_key COLLATE BINARY LIMIT ?",
+                (self.project_id, self.module_id, after or '', limit)).fetchall()
+        return tuple(row[0] for row in rows)
 
     def get_many(self, keys):
         """Read up to 128 selected documents from one consistent namespace snapshot."""

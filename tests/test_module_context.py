@@ -48,6 +48,26 @@ def test_async_batch_read_freezes_keys_before_executor(tmp_path):
     asyncio.run(run())
 
 
+def test_async_key_pages_validate_before_executor_and_preserve_scope(tmp_path):
+    async def run():
+        calls = []
+        async def executor(operation):
+            calls.append(operation)
+            return await asyncio.to_thread(operation)
+        context = await async_module_context(repository(tmp_path), executor, 'a', manifest(), schema_version=1)
+        await context.storage.async_put_many({'second': (None, {}), 'first': (None, {})})
+        calls.clear()
+        with pytest.raises(ValueError):
+            await context.storage.async_list_keys(limit=True)
+        with pytest.raises(ValueError):
+            await context.storage.async_list_keys(after='bad key')
+        assert not calls
+        assert await context.storage.async_list_keys(limit=1) == ('first',)
+        assert await context.storage.async_list_keys(after='first', limit=1) == ('second',)
+        assert await context.storage.async_list_keys(after='second') == ()
+    asyncio.run(run())
+
+
 def test_open_never_initializes_or_migrates_database(tmp_path):
     async def run():
         repo = SQLiteStorage(tmp_path / 'missing.sqlite')

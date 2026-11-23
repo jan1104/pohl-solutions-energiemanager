@@ -58,6 +58,43 @@ def test_batch_read_is_scoped_detached_and_schema_checked(tmp_path):
         a.get_many(['settings'])
 
 
+def test_key_pages_are_sorted_exclusive_scoped_and_do_not_load_bodies(tmp_path, monkeypatch):
+    import core.storage as storage
+    store = repository(tmp_path)
+    module = store.for_module('a', 'meter', schema_version=1)
+    for key in ('z', 'A', 'a', 'a.2', 'Z'):
+        module.put(key, {'synthetic': 1}, expected_revision=None)
+    store.for_module('b', 'meter', schema_version=1).put('foreign', {}, expected_revision=None)
+    store.for_module('a', 'forecast', schema_version=1).put('other', {}, expected_revision=None)
+    def no_decode(*args, **kwargs):
+        raise AssertionError('Key enumeration decoded a document body')
+    monkeypatch.setattr(storage.json, 'loads', no_decode)
+    assert module.list_keys(limit=2) == ('A', 'Z')
+    assert module.list_keys(after='Z', limit=2) == ('a', 'a.2')
+    assert module.list_keys(after='a.2', limit=2) == ('z',)
+    assert module.list_keys(after='z') == ()
+    assert module.list_keys(after='a.1', limit=1) == ('a.2',)
+    assert module.list_keys(limit=128) == ('A', 'Z', 'a', 'a.2', 'z')
+
+
+@pytest.mark.parametrize('options', [
+    {'limit': 0}, {'limit': 129}, {'limit': True}, {'limit': 1.5},
+    {'after': ''}, {'after': 'bad key'}, {'after': 1},
+])
+def test_invalid_key_pages_fail(tmp_path, options):
+    module = repository(tmp_path).for_module('a', 'meter', schema_version=1)
+    with pytest.raises(ValueError):
+        module.list_keys(**options)
+
+
+def test_key_enumeration_checks_schema_even_when_empty(tmp_path):
+    module = repository(tmp_path).for_module('a', 'meter', schema_version=1)
+    assert module.list_keys() == ()
+    module.migrate(2, {'new': (None, {})})
+    with pytest.raises(StorageSchemaError):
+        module.list_keys()
+
+
 def repository(tmp_path, **kwargs):
     result = SQLiteStorage(tmp_path / "energy.sqlite", **kwargs)
     result.initialize()

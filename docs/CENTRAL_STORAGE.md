@@ -1,5 +1,11 @@
 # Zentrale Datenhaltung im Grundmodul
 
+## Gespeicherte Dokumentkennungen auflisten — 24.11.2026
+
+`list_keys(after=None, limit=50)` beziehungsweise `async_list_keys(...)` liefert ein Tupel gespeicherter Kennungen im fest gebundenen Projekt-/Modulbereich. So können Fachmodule dynamisch benannte Konfigurationen nach einem Neustart wiederfinden. Die Abfrage lädt keine Dokumentkörper. Erlaubt sind ganzzahlige Seitengrößen von 1 bis 128; Boolean ist ungültig. `after` ist eine gültige Dokumentkennung und wird exklusiv verglichen. Sie muss nicht mehr existieren.
+
+Kennungen sind binär aufsteigend sortiert. Für die nächste Seite die letzte zurückgegebene Kennung als `after` verwenden; ein leeres Tupel beendet die Auflistung. Jede Seite prüft Datenbank und Namensraumschema in einer eigenen Lesetransaktion. Zwischen Seiten können neue Dokumente entstehen oder Änderungen erfolgen: Es gibt keinen eingefrorenen Gesamtbestand. Einträge, die später vor dem Cursor eingefügt werden, erfordern eine neue Auflistung ab Beginn. Inhalte können anschließend über `get_many` in einem neuen konsistenten Lesestand gelesen werden. Der bestehende asynchrone Abbruchvertrag bleibt erhalten.
+
 ## Gemeinsamer Lesestand für mehrere Dokumente — 23.11.2026
 
 `ModuleStorage.get_many(keys)` und `AsyncModuleStorage.async_get_many(keys)` liefern ein Dictionary der ausdrücklich angeforderten Schlüssel mit `StoredDocument` oder `None`. Erlaubt sind Listen/Tupel mit 1 bis 128 eindeutigen gültigen Dokumentkennungen. Die asynchrone Variante kopiert und prüft die Schlüssel vor Übergabe an den Executor. Kein fremder Projekt-/Modulbereich kann ausgewählt werden.
