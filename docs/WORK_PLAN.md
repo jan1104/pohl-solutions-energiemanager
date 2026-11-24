@@ -35,6 +35,10 @@ V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberf
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
 
+Lastprognose-Fachmodul am 24.11.2026: `load_forecast_module` stellt Manifest 0.1.0/API 1 mit Grund-/Speicherabhängigkeiten und Konfigurationsschema 1 bereit. Ausdrücklich registrierter Handler liest optionale `settings` ausschließlich aus dem übergebenen Modulkontext; keine Standardwerte werden gespeichert. Begrenzte unveränderliche Anfrage enthält übergebene Historie, Zielzeiten, Wissensstand und Zeitzone. Bestehender Prognosekern berechnet über einen ausdrücklich injizierten Executor außerhalb der Eventloop. Abbruch wartet auf übergebene reine Rechenarbeit; keine harte CPU-Isolation. Kein Provider, Abruf, Ergebnisspeicherung, Oberfläche oder automatische Aktivierung. Projekt-/Revisionsschutz bleibt bei der vorhandenen BaseRuntime-Registrierung.
+
+Prüfung: lokal 630 Python-Tests und 31 Untertests erfolgreich, ein Windows-Symlink-Test übersprungen. Neue Tests verwenden temporäre echte SQLite-Modulkontexte und prüfen Einstellungen ohne Schreibnebenwirkung, fehlende Historie, gelöste Aufruferlisten, Umfangsgrenzen, fremden Kontext sowie Abbruch-Drain. Ruff erfolgreich. Codeprüfungs-Hinweis zur ausdrücklichen Speicher-Modulkennung umgesetzt; keine UI-Änderung.
+
 Prognose-Eingabevertrag am 24.11.2026: Boolean-Lastwerte und -Prognosebänder wurden durch `isfinite` als Zahlen akzeptiert; eine fehlende lokale Zeitzone verwendete still die Betriebssystemzeitzone. Prognose und Auswertung verlangen nun endliche numerische Werte ohne Boolean; ungültige Typen/übergroße Ganzzahlen ergeben ValueError. Explizite tzinfo-Instanz erforderlich, Tagesanzahlen positive echte Ganzzahlen und Halbwertszeit eine positive endliche Zahl. Nicht darstellbare Historiengrenzen und falsche Zeitstempeltypen werden als Eingabefehler abgewiesen. Keine Wetterdaten, geänderte Prognosemethode oder automatische Planung.
 
 Prüfung: lokal 627 Python-Tests und 31 Untertests erfolgreich; ein Windows-Symlink-Test übersprungen. Ruff erfolgreich; bestehende Zeitumstellungs-, Rücktest- und Zeitzonen-Zähltests bleiben grün. Keine UI-Änderung.

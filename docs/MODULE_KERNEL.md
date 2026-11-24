@@ -1,5 +1,15 @@
 # Grundmodul, Prognosen und Modulversionen
 
+## Ausdrückliches Lastprognose-Fachmodul — 24.11.2026
+
+`load_forecast_module.MANIFEST` beschreibt `load_forecast` 0.1.0, Kernel-API 1 und Abhängigkeiten zu Grundmodul/Speicher im Bereich 0.1.0 bis ausschließlich 0.2.0. `CONFIG_SCHEMA_VERSION` ist 1. Vertrauenswürdiger Anwendungscode kann `LoadForecastModule(executor)` mit der bestehenden `BaseRuntime.async_register_module` registrieren. Das Modul wird durch Import oder HA-Start nicht automatisch aktiviert. Die konkrete HA-Bedienung und automatische Modulverwaltung sind weiterhin offen.
+
+`LoadForecastRequest` kopiert Listen in Tupel und begrenzt Eingaben auf 60000 Beobachtungen und 1–384 Zielintervalle. Messbeobachtungen und Ergebnisse sind unveränderlich. Wissensstand und lokale Zeitzone sind ausdrücklich übergeben. Der vorhandene Kern prüft Zahlen, Zeitqualität und ausreichende Historie; fehlende Werte werden nicht erfunden.
+
+Der Handler prüft Manifest, Speicher-Modulkennung und Schema, liest dann optional das Dokument `settings`. Zulässig sind ausschließlich `lookback_days`, `min_sample_days`, `half_life_days`; ohne Dokument gelten die bestehenden Kernvorgaben 56 Tage, mindestens 3 Vergleichstage und 21 Tage Halbwertszeit. Es werden keine Vorgaben gespeichert und keine Ergebnisse geschrieben. Das Modul besitzt keine separate Datenbank.
+
+Der injizierte asynchrone Executor muss die synchrone Berechnung außerhalb der Eventloop ausführen, in HA etwa über den vorhandenen Executor-Zugang. Der gemeinsame Drain-Helfer wartet bei Abbruch auf bereits übergebene Arbeit. Dies ist keine harte CPU-Unterbrechung oder Prozessisolation; die kooperative Modul-Zeitgrenze kann bei laufendem Worker überschritten werden. Der Runtime-Kontext bleibt für Projekt-/Revisionsschutz zuständig. Keine Providerabfrage, Aktorsteuerung, automatische Planung oder belegte reale Prognosegüte ist enthalten.
+
 Stand: 04.11.2026. Die erste reine Laufzeitgrundlage ist in `core/modules.py` implementiert und separat getestet. Ab 0.5.0 sind Grundmodul, Konfigurationsspeicher und Projektverwaltung als tatsächliche Basisfunktionen in HA registriert und im Panel sichtbar. Allgemeine Modulverwaltung, konkrete Prognoseanbieter und unabhängige Aktualisierung bleiben weitere Schritte. Keine Live-Steuerung. Aktueller Testablauf: TESTING_0_5.md.
 
 ## Aufteilung des Produkts

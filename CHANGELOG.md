@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+- Erstes ausdrücklich registrierbares Lastprognose-Fachmodul vorbereitet: eigene Modulversion, Konfiguration im gemeinsamen Speicher und Berechnung über einen übergebenen Executor. Keine automatische Aktivierung, Datenbeschaffung oder Planung.
+
 - Lastprognose verlangt echte Zahlen und eine ausdrückliche Zeitzone: Boolean wird nicht mehr als kW übernommen, ungültige Typen und nicht darstellbare Historienparameter liefern Eingabefehler statt Laufzeitfehler oder Host-Zeitzonen-Fallback.
 
 - Fachmodule können ihre gespeicherten Dokumentkennungen seitenweise im eigenen Projekt-/Modulbereich auflisten, ohne Konfigurationsinhalte zu laden. Strikte Seitengröße und Schemaprüfung; auch im asynchronen Speicherkontext verfügbar.
