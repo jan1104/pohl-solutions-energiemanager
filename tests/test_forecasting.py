@@ -51,6 +51,39 @@ def test_load_cannot_be_nan_or_negative():
             predict_load(history(value), [NOW], as_of=NOW, local_zone=UTC)
 
 
+@pytest.mark.parametrize('value', [True, False, '10', None, 10 ** 400])
+def test_non_numeric_or_unrepresentable_load_never_becomes_a_forecast(value):
+    with pytest.raises(ValueError):
+        predict_load(history(value), [NOW], as_of=NOW, local_zone=UTC)
+    with pytest.raises(ValueError):
+        evaluate_load_forecast([LoadForecast(NOW, 1, 1, 1, 3, 'Test')], [LoadObservation(NOW, value)])
+
+
+@pytest.mark.parametrize('value', [True, False, '10', None, 10 ** 400])
+def test_invalid_forecast_bands_raise_value_error(value):
+    with pytest.raises(ValueError):
+        evaluate_load_forecast([LoadForecast(NOW, value, value, value, 3, 'Test')], [LoadObservation(NOW, 1)])
+
+
+@pytest.mark.parametrize('options', [
+    {'lookback_days': True}, {'lookback_days': 2.5}, {'min_sample_days': True},
+    {'min_sample_days': float('nan')}, {'half_life_days': True},
+    {'half_life_days': '21'}, {'half_life_days': 10 ** 400},
+    {'local_zone': None}, {'local_zone': 'Europe/Berlin'},
+    {'lookback_days': 10 ** 400},
+])
+def test_forecast_configuration_is_explicit_and_typed(options):
+    kwargs = {'local_zone': UTC, **options}
+    with pytest.raises(ValueError):
+        predict_load(history(), [NOW], as_of=NOW, **kwargs)
+
+
+@pytest.mark.parametrize('instant', [None, '2026-11-03T12:00:00Z', 123])
+def test_wrong_timestamp_types_raise_value_error(instant):
+    with pytest.raises(ValueError):
+        predict_load(history(), [instant], as_of=NOW, local_zone=UTC)
+
+
 def test_local_clock_time_matching():
     local = timezone(timedelta(hours=1))
     result = predict_load(history(), [NOW.astimezone(local)], as_of=NOW, local_zone=local)

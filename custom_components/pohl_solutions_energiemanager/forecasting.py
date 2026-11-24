@@ -104,10 +104,17 @@ def backtest_load_forecast(
 
 
 def _aware(value: datetime, *, aligned: bool = True) -> None:
-    if value.tzinfo is None or value.utcoffset() is None:
+    if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None:
         raise ValueError("Zeitstempel benötigen eine Zeitzone.")
     if aligned and (value.minute % 15 or value.second or value.microsecond):
         raise ValueError("Messwerte müssen an Viertelstunden beginnen.")
+
+
+def _finite_number(value):
+    try:
+        return not isinstance(value, bool) and isinstance(value, (int, float)) and isfinite(value)
+    except OverflowError:
+        return False
 
 
 def _weighted_quantile(values: list[tuple[float, float]], quantile: float) -> float:
@@ -140,16 +147,22 @@ def predict_load(
     """
     _aware(as_of, aligned=False)
     as_of = as_of.astimezone(timezone.utc)
-    if lookback_days < 1 or min_sample_days < 1:
+    if (type(lookback_days) is not int or type(min_sample_days) is not int
+            or lookback_days < 1 or min_sample_days < 1):
         raise ValueError("Historie und Mindestanzahl der Tage müssen positiv sein.")
-    if not isfinite(half_life_days) or half_life_days <= 0:
+    if not _finite_number(half_life_days) or half_life_days <= 0:
         raise ValueError("Die zeitliche Gewichtung muss positiv sein.")
+    if not isinstance(local_zone, tzinfo):
+        raise ValueError("Für die Prognose ist eine ausdrückliche lokale Zeitzone erforderlich.")
     history: list[LoadObservation] = []
     seen: set[datetime] = set()
-    lower = as_of - timedelta(days=lookback_days)
+    try:
+        lower = as_of - timedelta(days=lookback_days)
+    except OverflowError:
+        raise ValueError("Der Historienzeitraum ist nicht darstellbar.") from None
     for item in observations:
         _aware(item.start)
-        if not isfinite(item.load_kw) or item.load_kw < 0:
+        if not _finite_number(item.load_kw) or item.load_kw < 0:
             raise ValueError("Hauslast muss eine endliche, nichtnegative Zahl sein.")
         instant = item.start.astimezone(timezone.utc)
         if instant in seen:
@@ -207,7 +220,7 @@ def evaluate_load_forecast(
     """Evaluate matching intervals; caller must construct predictions without leakage."""
     for item in observations:
         _aware(item.start)
-        if not isfinite(item.load_kw) or item.load_kw < 0:
+        if not _finite_number(item.load_kw) or item.load_kw < 0:
             raise ValueError("Ungültige Lastmessung.")
     actuals = {item.start.astimezone(timezone.utc): item.load_kw for item in observations}
     if len(actuals) != len(observations):
@@ -221,7 +234,7 @@ def evaluate_load_forecast(
             raise ValueError("Doppelte Prognoseintervalle sind nicht erlaubt.")
         seen.add(instant)
         bands = (predicted.p10_kw, predicted.p50_kw, predicted.p90_kw)
-        if not all(isfinite(x) and x >= 0 for x in bands) or not bands[0] <= bands[1] <= bands[2]:
+        if not all(_finite_number(x) and x >= 0 for x in bands) or not bands[0] <= bands[1] <= bands[2]:
             raise ValueError("Prognosebänder müssen endlich, nichtnegativ und geordnet sein.")
         if instant in actuals:
             actual = actuals[instant]

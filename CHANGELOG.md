@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+- Lastprognose verlangt echte Zahlen und eine ausdrückliche Zeitzone: Boolean wird nicht mehr als kW übernommen, ungültige Typen und nicht darstellbare Historienparameter liefern Eingabefehler statt Laufzeitfehler oder Host-Zeitzonen-Fallback.
+
 - Fachmodule können ihre gespeicherten Dokumentkennungen seitenweise im eigenen Projekt-/Modulbereich auflisten, ohne Konfigurationsinhalte zu laden. Strikte Seitengröße und Schemaprüfung; auch im asynchronen Speicherkontext verfügbar.
 
 - Gemeinsamer Modulspeicher kann bis zu 128 ausgewählte Konfigurationsdokumente in einem konsistenten Lesestand liefern. Projekt-/Modulgrenzen, Revisionen und Schemaprüfung bleiben erhalten; auch über den asynchronen Modulkontext nutzbar.

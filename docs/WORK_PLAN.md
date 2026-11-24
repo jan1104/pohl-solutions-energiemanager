@@ -35,6 +35,10 @@ V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberf
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
 
+Prognose-Eingabevertrag am 24.11.2026: Boolean-Lastwerte und -Prognosebänder wurden durch `isfinite` als Zahlen akzeptiert; eine fehlende lokale Zeitzone verwendete still die Betriebssystemzeitzone. Prognose und Auswertung verlangen nun endliche numerische Werte ohne Boolean; ungültige Typen/übergroße Ganzzahlen ergeben ValueError. Explizite tzinfo-Instanz erforderlich, Tagesanzahlen positive echte Ganzzahlen und Halbwertszeit eine positive endliche Zahl. Nicht darstellbare Historiengrenzen und falsche Zeitstempeltypen werden als Eingabefehler abgewiesen. Keine Wetterdaten, geänderte Prognosemethode oder automatische Planung.
+
+Prüfung: lokal 627 Python-Tests und 31 Untertests erfolgreich; ein Windows-Symlink-Test übersprungen. Ruff erfolgreich; bestehende Zeitumstellungs-, Rücktest- und Zeitzonen-Zähltests bleiben grün. Keine UI-Änderung.
+
 Begrenztes Dokumentverzeichnis am 24.11.2026: Fachmodule können dynamisch benannte gespeicherte Konfigurationen über `list_keys`/`async_list_keys` im eigenen Projekt-/Modulbereich wiederfinden. Nur Kennungen, keine Körper, bis 128 pro Seite, Standard 50; explizite binäre Sortierung und exklusiver Cursor. Datenbank-/Schemaprüfung bleibt in der Seitentransaktion. Asynchrone Parameterprüfung erfolgt vor Executor-Arbeit. Seiten sind getrennte Lesestände, kein eingefrorenes Gesamtverzeichnis. Keine neue Tabelle, automatische Aktivierung oder Oberfläche.
 
 Prüfung: lokal 604 Python-Tests und 31 Untertests erfolgreich, ein Windows-Symlink-Test übersprungen. Ruff und unabhängige Codeprüfung ohne Befund. Sortierung, Cursor, Bereichsgrenzen, fehlende Körperdekodierung, Schemawechsel und Prüfung vor Executor-Arbeit getestet. Keine UI-Änderung oder Datenbankmigration.
