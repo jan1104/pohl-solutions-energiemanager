@@ -616,6 +616,7 @@ async def load_forecast_module_runtime_checks(hass):
                     return operation()
                 return await hass.async_add_executor_job(work)
 
+            pending = None
             try:
                 context = await runtime.async_register_module(
                     MANIFEST, LoadForecastModule(executor), schema_version=CONFIG_SCHEMA_VERSION)
@@ -640,7 +641,7 @@ async def load_forecast_module_runtime_checks(hass):
                 entered.clear()
                 release.clear()
                 pending = asyncio.create_task(runtime.registry.async_call(MANIFEST.module_id, request))
-                await entered.wait()
+                await asyncio.wait_for(entered.wait(), timeout=5)
                 project = json.loads(store.export()["project_json"])
                 project["name"] = "Synthetic revision change during forecast"
                 await store.async_import(json.dumps(project), expected_revision=store.revision)
@@ -650,9 +651,12 @@ async def load_forecast_module_runtime_checks(hass):
                 assert (await context.storage.async_get("settings")).revision == 3
             finally:
                 release.set()
+                if pending is not None:
+                    await asyncio.gather(pending, return_exceptions=True)
                 await runtime.async_stop()
             before = len(calls)
             await expect(ModuleUnavailable, runtime.registry.async_call(MANIFEST.module_id, request))
+            await expect(ModuleUnavailable, runtime.registry.async_call("core"))
             assert len(calls) == before
 
 
