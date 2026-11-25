@@ -112,12 +112,15 @@ def evaluate_power(
                 raise ValueError("Power formula exceeds depth or term limit")
             if not isinstance(formula.grid_id, str) or not formula.grid_id.strip() or not formula.terms:
                 raise ValueError(f"{key}: grid ID and nonempty terms are required")
+            # Freeze the exact mapping used for this calculation. A frozen
+            # dataclass alone cannot detach caller-owned lists of terms.
+            terms = tuple((source, coefficient) for source, coefficient in formula.terms)
             visiting.add(key)
             sources: set[str] = set()
             times = []
             issues = []
             total = 0.0
-            for source, coefficient in formula.terms:
+            for source, coefficient in terms:
                 if not _finite_number(coefficient) or coefficient == 0:
                     raise ValueError(f"{key}: coefficients must be finite and nonzero")
                 child = resolve(source)
@@ -138,7 +141,7 @@ def evaluate_power(
                 issues.append(f"{key}: nonfinite_result")
             result = PowerValue(formula.grid_id, None if issues else total, "calculated",
                                 tuple(sorted(sources)), min(times) if times else None,
-                                max(times) if times else None, formula.terms,
+                                max(times) if times else None, terms,
                                 tuple(dict.fromkeys(issues)))
         else:
             # An absent source is unknown configuration, not zero consumption.

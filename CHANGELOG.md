@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+- Herkunft berechneter Leistungswerte von veränderlichen Formellisten lösen. Nachträgliche Änderungen einer Eingabeformel verändern keine bereits ausgegebenen Berechnungsnachweise mehr, auch bei ungültigem Messwert.
+
 - Lastprognose-Fachmodul zusätzlich durch die echte HA-Grundlaufzeit prüfen: ausdrückliche Registrierung, gemeinsamer Speicher, Executor-Ausführung, Fehlerisolation und Verwerfen überholter Ergebnisse. Keine automatische Aktivierung ergänzt.
 
 - Erstes ausdrücklich registrierbares Lastprognose-Fachmodul vorbereitet: eigene Modulversion, Konfiguration im gemeinsamen Speicher und Berechnung über einen übergebenen Executor. Keine automatische Aktivierung, Datenbeschaffung oder Planung.

@@ -1,5 +1,7 @@
 # Laufzeitwerte: Herkunft und zeitliche Gültigkeit
 
+Berechnete Leistungswerte übernehmen seit 25.11.2026 eine getrennte Tupelkopie der tatsächlich verwendeten Quellen-/Koeffizientenpaare. Auch wenn Anwendungscode eine Formel aus veränderlichen Listen übergibt, bleiben bereits ausgegebene Leistung und Formelnachweis zusammengehörig. Eine spätere explizite Auswertung kann die geänderte Formel nutzen; frühere Ergebnisse werden dadurch nicht umgeschrieben. Diese Zusicherung gilt auch für ungültige Ergebnisse und bedeutet keine automatische Historienablage.
+
 ## Übergebene HA-Leistungszustände — 18.11.2026
 
 `adapters/ha_measurement.py` bietet `bind_ha_power_state(...)` als reine Grenze für bereits übergebene Zustandsdaten. Gespeicherte Quelle muss HA sein; zugestellte Entitätskennung und Einheit müssen exakt der Konfiguration entsprechen. Nur Wirkleistung in W/kW wird verarbeitet. Eine abweichende Einheit wird abgewiesen, damit eine später geänderte HA-Entität nicht unbemerkt um Faktor 1000 falsch eingeht.

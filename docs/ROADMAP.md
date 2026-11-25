@@ -22,6 +22,7 @@ Auswählbare Bezugs-/Einspeisequellen, JSON-URL, HA-Sensor, Festpreis, beobachte
 - Vorhandene HA-Entitäten und Node-RED-Flows inventarisieren, ohne Zugangsdaten ins Repository zu übernehmen.
 - Reiner Adapter für ausdrücklich übergebene HA-Leistungszustände implementiert: gespeicherte Entität/Einheit und Zeitqualität prüfen. Zustandsabruf, Ereignisabonnement und automatische Übernahme bleiben offen; noch nicht im HACS-Release 0.6.0.
 - Vorzeichen/Einheiten und Messstellenbilanz Eastron/Janitza abgleichen.
+- Berechnungsnachweise von Leistungswerten bleiben auch bei später veränderten Eingabe-Formellisten unverändert. Tatsächliche Messabdeckung und Gerätezuordnung müssen weiterhin belegt werden.
 - Reine Laufzeitprüfung von Messwertalter, Originalmesszeit, Quellenherkunft und Ableitungen sowie explizite Einzelmessstellenbindung an übergebene Rohwerte umgesetzt. Automatische Quellenidentität, elektrische Abdeckung und lesende Adapteranbindung noch offen. Siehe [RUNTIME_METERING.md](RUNTIME_METERING.md).
 - Verfügbarkeit der Preisquellen einschließlich Zeitumstellung und verzögerter Folgetagsveröffentlichung weiter überwachen und einen geeigneten produktiven Datenanbieter festlegen.
 - HTTP-Preis-JSON wird vor dem Cache auf eindeutige Schlüssel, endliche Zahlen, Unicode und begrenzte Tiefe geprüft; ungültige Antworten werden nicht als Preise übernommen. Produktive Anbieter-/Vertragsklärung bleibt offen.

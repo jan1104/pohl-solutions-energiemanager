@@ -35,6 +35,10 @@ V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberf
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
 
+Belegter Herkunftsfehler am 25.11.2026: Formeleingaben konnten Listen enthalten, obwohl das Ergebnis als unveränderliches PowerValue ausgegeben wird. Bisher referenzierte dessen Formelfeld dieselbe Eingabeliste; spätere Änderungen konnten Nachweis und bereits berechnete Leistung widersprüchlich machen. Die Berechnung friert jetzt die verwendeten Quellen-/Koeffizientenpaare ein und verwendet genau diese Kopie für Rechnung und Ausgabe. Neue Auswertungen dürfen weiterhin geänderte Konfigurationen nutzen. Regressionen prüfen äußere/innere Listenänderung sowie ungültige Messwerte; keine Änderung von Einheiten, Bilanzformeln oder Gerätezugriff.
+
+Prüfung: lokal 632 Python-Tests und 31 Untertests erfolgreich; ein Windows-Symlink-Test übersprungen. 25 gezielte Messwerttests und Ruff erfolgreich. Keine UI-Änderung.
+
 Laufzeitabnahme des Lastprognose-Fachmoduls am 25.11.2026: Die echte HA-Smoke-Prüfung registriert erstmals die konkrete Implementierung über BaseRuntime mit temporärer SQLite-Projektablage und HA-Executor. Synthetische Historie prüft keine Ausführung bei Registrierung/Status, gemeinsame Einstellungen ohne Ergebnis-Schreibvorgang, Berechnung außerhalb der Eventloop, isolierten Fehler mit ausdrücklicher Quittierung, Projektänderung während ausstehender Berechnung und Sperre nach Stop. Keine Produktaktivierung, UI, Geräteverbindung oder reale Prognosegüte. Diese Integrationsprüfung wird unter Linux/HA auf GitHub ausgeführt; lokale Prüfung ersetzt keine echte HA-Ausführung.
 
 Lokale Prüfung: 22 gezielte Fachmodul-/Kerneltests erfolgreich; Ruff, Kompilierung der HA-Prüfung und Diff-Prüfung erfolgreich. HA-Laufzeitprüfung bleibt der nachfolgende GitHub-Check dieses Commits.

@@ -35,6 +35,28 @@ def test_total_house_consumption_from_net_pv_and_battery_conserves_balance():
             assert result.formula == formula["house"].terms
 
 
+def test_calculated_provenance_is_detached_from_mutable_formula_terms():
+    terms = [['a', 1]]
+    formulas = {'total': PowerFormula('main', terms)}
+    samples = {'a': sample(3), 'b': sample(4)}
+    first = evaluate('total', samples, formulas)
+    assert first.power_kw == 3 and first.formula == (('a', 1),)
+    terms[0][:] = ['b', 2]
+    second = evaluate('total', samples, formulas)
+    assert second.power_kw == 8 and second.formula == (('b', 2),)
+    terms.clear()
+    assert first.power_kw == 3 and first.sources == ('a',) and first.formula == (('a', 1),)
+    assert second.power_kw == 8 and second.sources == ('b',) and second.formula == (('b', 2),)
+
+
+def test_invalid_calculated_value_also_keeps_detached_provenance():
+    terms = [['a', 1]]
+    result = evaluate('total', {'a': sample(None)}, {'total': PowerFormula('main', terms)})
+    terms[0][1] = -1
+    assert not result.valid and result.power_kw is None
+    assert result.formula == (('a', 1),)
+
+
 def test_mixed_branch_and_heater_change_do_not_become_pv_generation():
     formulas = {"residual": PowerFormula("main", (("grid", 1), ("house", -1), ("branch", -1)))}
     for heat in (0, 12):
