@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+- Lastprognose-Fachmodul zusätzlich durch die echte HA-Grundlaufzeit prüfen: ausdrückliche Registrierung, gemeinsamer Speicher, Executor-Ausführung, Fehlerisolation und Verwerfen überholter Ergebnisse. Keine automatische Aktivierung ergänzt.
+
 - Erstes ausdrücklich registrierbares Lastprognose-Fachmodul vorbereitet: eigene Modulversion, Konfiguration im gemeinsamen Speicher und Berechnung über einen übergebenen Executor. Keine automatische Aktivierung, Datenbeschaffung oder Planung.
 
 - Lastprognose verlangt echte Zahlen und eine ausdrückliche Zeitzone: Boolean wird nicht mehr als kW übernommen, ungültige Typen und nicht darstellbare Historienparameter liefern Eingabefehler statt Laufzeitfehler oder Host-Zeitzonen-Fallback.

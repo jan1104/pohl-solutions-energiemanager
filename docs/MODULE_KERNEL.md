@@ -2,6 +2,8 @@
 
 ## Ausdrückliches Lastprognose-Fachmodul — 24.11.2026
 
+Seit 25.11.2026 enthält `tools/ha_smoke.py` zusätzlich einen Integrationsablauf für genau dieses Fachmodul: temporäres HA-Projekt, ausdrückliche BaseRuntime-Registrierung, gemeinsame Einstellungen und echter HA-Executor. Die Prüfung verwendet ausschließlich synthetische Lastbeobachtungen. Fehlerisolation, manuelle Fehlerquittierung, ausstehende Berechnung bei Projektänderung und Sperre nach Stop gehören zur Abnahme. Daraus entsteht keine automatische Aktivierung in der Integration.
+
 `load_forecast_module.MANIFEST` beschreibt `load_forecast` 0.1.0, Kernel-API 1 und Abhängigkeiten zu Grundmodul/Speicher im Bereich 0.1.0 bis ausschließlich 0.2.0. `CONFIG_SCHEMA_VERSION` ist 1. Vertrauenswürdiger Anwendungscode kann `LoadForecastModule(executor)` mit der bestehenden `BaseRuntime.async_register_module` registrieren. Das Modul wird durch Import oder HA-Start nicht automatisch aktiviert. Die konkrete HA-Bedienung und automatische Modulverwaltung sind weiterhin offen.
 
 `LoadForecastRequest` kopiert Listen in Tupel und begrenzt Eingaben auf 60000 Beobachtungen und 1–384 Zielintervalle. Messbeobachtungen und Ergebnisse sind unveränderlich. Wissensstand und lokale Zeitzone sind ausdrücklich übergeben. Der vorhandene Kern prüft Zahlen, Zeitqualität und ausreichende Historie; fehlende Werte werden nicht erfunden.

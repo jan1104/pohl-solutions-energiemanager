@@ -578,6 +578,84 @@ async def module_context_registration_checks(hass):
             await runtime.async_stop()
 
 
+async def load_forecast_module_runtime_checks(hass):
+    """Exercise the actual feature through HA runtime; supplied synthetic data only."""
+    from threading import get_ident
+    from custom_components.pohl_solutions_energiemanager.base_runtime import BaseRuntime
+    from custom_components.pohl_solutions_energiemanager.core.modules import ModuleExecutionError, ModuleUnavailable
+    from custom_components.pohl_solutions_energiemanager.forecasting import LoadObservation
+    from custom_components.pohl_solutions_energiemanager.load_forecast_module import CONFIG_SCHEMA_VERSION, MANIFEST, LoadForecastModule, LoadForecastRequest
+    from custom_components.pohl_solutions_energiemanager.project_store import ProjectStore
+
+    async def expect(error, operation):
+        try:
+            await operation
+        except error:
+            return
+        raise AssertionError(f"Expected {error.__name__}")
+
+    with tempfile.TemporaryDirectory() as isolated:
+        root = Path(isolated)
+        with patch.object(hass.config, "path", side_effect=lambda *parts: str(root.joinpath(*parts))):
+            store = ProjectStore(hass)
+            await store.async_load()
+            await store.async_ensure_project("Synthetic forecast module", "forecast-runtime")
+            runtime = BaseRuntime(store)
+            await runtime.async_start()
+            calls, worker_threads = [], []
+            entered, release = asyncio.Event(), asyncio.Event()
+            release.set()
+            loop_thread = get_ident()
+
+            async def executor(operation):
+                calls.append(True)
+                entered.set()
+                await release.wait()
+                def work():
+                    worker_threads.append(get_ident())
+                    return operation()
+                return await hass.async_add_executor_job(work)
+
+            try:
+                context = await runtime.async_register_module(
+                    MANIFEST, LoadForecastModule(executor), schema_version=CONFIG_SCHEMA_VERSION)
+                await runtime.async_system_status()
+                assert not calls
+                assert await context.storage.async_get("settings") is None
+                now = datetime(2026, 11, 25, tzinfo=timezone.utc)
+                request = LoadForecastRequest([LoadObservation(now - timedelta(days=1), 12)],
+                                              [now], now, timezone.utc)
+                await context.storage.async_put("settings", {"min_sample_days": 1}, expected_revision=None)
+                result = await runtime.registry.async_call(MANIFEST.module_id, request)
+                assert result[0].p50_kw == 12 and all(t != loop_thread for t in worker_threads)
+                await context.storage.async_put("settings", {"invalid": True}, expected_revision=1)
+                await expect(ModuleExecutionError, runtime.registry.async_call(MANIFEST.module_id, request))
+                assert runtime.registry.states()[MANIFEST.module_id].status == "failed"
+                assert (await runtime.registry.async_call("core"))["planning_only"] is True
+                await runtime.async_system_status()
+                assert runtime.registry.states()[MANIFEST.module_id].status == "failed"
+                await context.storage.async_put("settings", {"min_sample_days": 1}, expected_revision=2)
+                runtime.registry.reset_failure(MANIFEST.module_id)
+                assert (await runtime.registry.async_call(MANIFEST.module_id, request))[0].p50_kw == 12
+                entered.clear()
+                release.clear()
+                pending = asyncio.create_task(runtime.registry.async_call(MANIFEST.module_id, request))
+                await entered.wait()
+                project = json.loads(store.export()["project_json"])
+                project["name"] = "Synthetic revision change during forecast"
+                await store.async_import(json.dumps(project), expected_revision=store.revision)
+                release.set()
+                await expect(ModuleUnavailable, pending)
+                assert runtime.registry.states()[MANIFEST.module_id].status == "disabled"
+                assert (await context.storage.async_get("settings")).revision == 3
+            finally:
+                release.set()
+                await runtime.async_stop()
+            before = len(calls)
+            await expect(ModuleUnavailable, runtime.registry.async_call(MANIFEST.module_id, request))
+            assert len(calls) == before
+
+
 async def unload_shared_cleanup_checks(hass, entry, sibling, admin_ws):
     """Cleanup registrations after injected post-shutdown errors/abort signals."""
     from homeassistant.components import frontend
@@ -1140,6 +1218,7 @@ async def main() -> None:
             await sqlite_migration_checks(hass)
             await connection_lifecycle_checks(hass)
             await module_context_registration_checks(hass)
+            await load_forecast_module_runtime_checks(hass)
             await fresh_project_creation_checks(hass)
             await sqlite_project_version_checks(hass)
             await cancelled_project_migration_check(hass)

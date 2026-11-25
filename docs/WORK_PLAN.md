@@ -1,6 +1,6 @@
 # Arbeitsplan
 
-Stand: 2026-11-24. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
+Stand: 2026-11-25. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
 
 ## Auftrag und Grenzen
 
@@ -34,6 +34,10 @@ Stand: 2026-11-24. Dieser Plan steuert die weitere Entwicklung in diesem Chat un
 V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberflächenprüfungen getestet. Die erweiterte echte HA-Laufzeitprüfung ist im GitHub-Lauf 41618373561 auf Commit e02b711 erfolgreich. Die lokale Vorschau ruft keine Preise ab; die aktive Integration kann konfigurierte Quellen lesen. Der SMARD-Nutzungsstatus ist in PRICE_SOURCES.md dokumentiert.
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
+
+Laufzeitabnahme des Lastprognose-Fachmoduls am 25.11.2026: Die echte HA-Smoke-Prüfung registriert erstmals die konkrete Implementierung über BaseRuntime mit temporärer SQLite-Projektablage und HA-Executor. Synthetische Historie prüft keine Ausführung bei Registrierung/Status, gemeinsame Einstellungen ohne Ergebnis-Schreibvorgang, Berechnung außerhalb der Eventloop, isolierten Fehler mit ausdrücklicher Quittierung, Projektänderung während ausstehender Berechnung und Sperre nach Stop. Keine Produktaktivierung, UI, Geräteverbindung oder reale Prognosegüte. Diese Integrationsprüfung wird unter Linux/HA auf GitHub ausgeführt; lokale Prüfung ersetzt keine echte HA-Ausführung.
+
+Lokale Prüfung: 22 gezielte Fachmodul-/Kerneltests erfolgreich; Ruff, Kompilierung der HA-Prüfung und Diff-Prüfung erfolgreich. HA-Laufzeitprüfung bleibt der nachfolgende GitHub-Check dieses Commits.
 
 Lastprognose-Fachmodul am 24.11.2026: `load_forecast_module` stellt Manifest 0.1.0/API 1 mit Grund-/Speicherabhängigkeiten und Konfigurationsschema 1 bereit. Ausdrücklich registrierter Handler liest optionale `settings` ausschließlich aus dem übergebenen Modulkontext; keine Standardwerte werden gespeichert. Begrenzte unveränderliche Anfrage enthält übergebene Historie, Zielzeiten, Wissensstand und Zeitzone. Bestehender Prognosekern berechnet über einen ausdrücklich injizierten Executor außerhalb der Eventloop. Abbruch wartet auf übergebene reine Rechenarbeit; keine harte CPU-Isolation. Kein Provider, Abruf, Ergebnisspeicherung, Oberfläche oder automatische Aktivierung. Projekt-/Revisionsschutz bleibt bei der vorhandenen BaseRuntime-Registrierung.
 
