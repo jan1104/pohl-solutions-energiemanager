@@ -34,6 +34,15 @@ test('rejects malformed JSON, excessive depth and oversized input', () => {
   assert.throws(() => M.loadProjectJson('['.repeat(26) + '0' + ']'.repeat(26)), /tief/);
   assert.throws(() => M.loadProjectJson(' '.repeat(M.MAX_BYTES + 1)), /MiB/);
 });
+test('v2 channel quantities require strings even without a measurement assignment', () => {
+  const p = M.migrateProjectV1ToV2(fixture()); p.measurements = [];
+  for (const quantity of [['active_power'], ['soc'], [], {}, null, true, 0]) {
+    p.channels[0].quantity = quantity;
+    assert.throws(() => M.validateProjectV2(p), /Messgröße/);
+    assert.throws(() => M.loadProjectDocument(JSON.stringify(p)), /Messgröße/);
+  }
+});
+
 test('rejects hidden credentials and actuator flags recursively', () => {
   for (const key of ['password', 'TOKEN', 'credentials', 'enabled_control', 'actuator_enabled']) {
     const p = fixture(); p.settings.nested = {[key]: false}; assert.throws(() => M.validateProject(p), /nicht erlaubt/);

@@ -35,6 +35,10 @@ V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberf
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
 
+Belegter Importvertragsfehler am 26.11.2026: JavaScript konnte eine Messgröße als Array wie `["active_power"]` durch implizite Eigenschaftsschlüssel-Konvertierung akzeptieren, wenn der Kanal noch keiner Bilanzmessung zugewiesen war. Python wies dasselbe Projekt ab. Der gemeinsame Browservalidator verlangt nun ausdrücklich einen String vor dem Nachschlagen der Messgröße. Modell- und Python/JS-Vertragstests prüfen direkte Validierung und Import verschiedener falscher Typen. Frontend-Kopie synchronisiert. Reine Datenvalidierung, keine Änderung von Layout, Formularen oder Desktop-/Mobilbedienung und keine Projektmigration.
+
+Prüfung: lokal 641 Python-Tests und 31 Untertests sowie 84 JavaScript-Tests erfolgreich. Ein Windows-Symlink-Test übersprungen. Ruff, Synchronisations-/Pakettests und unabhängige Vertragsprüfung erfolgreich.
+
 Gespeicherte JSON-Eindeutigkeit am 26.11.2026: Der bisherige Lesepfad prüfte gespeicherte Daten erst nach Standard-JSON-Dekodierung; doppelte Schlüssel wurden dabei bereits still zusammengeführt. Ein eigener begrenzter Dekoder weist nun doppelte Schlüssel einschließlich verschachtelter Objekte und beschädigte JSON-/Unicode-Daten vor der Übernahme ab. Fehler enthalten keine Dokumentinhalte. Die vorhandene Prüfung neuer Schreibdaten bleibt zusätzlich erhalten. Temporäre SQLite-Korruptionstests prüfen vollständiges Scheitern einer betroffenen Sammellesung, weiterhin lesbare andere Dokumente sowie unveränderte Körper/Revisionen ohne Reparatur. Die reine Kennungsauflistung lädt weiterhin keine Körper. Keine Migration oder Oberfläche.
 
 Prüfung: lokal 641 Python-Tests und 31 Untertests erfolgreich; ein Windows-Symlink-Test übersprungen. 48 gezielte Speichertests und Ruff erfolgreich. Keine UI-Änderung oder Zugriff auf tatsächliche Projektdaten.

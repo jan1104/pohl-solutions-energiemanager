@@ -100,6 +100,10 @@ def test_staged_browser_migration_validation_and_issues_match_backend():
     ):
         invalid(draft, change)
     invalid(migrated[0], lambda p: p["areas"][0].update(plant_id="missing"))
+    channel_draft = deepcopy(migrated[0])
+    channel_draft['measurements'] = []
+    for quantity in (['active_power'], ['soc'], [], {}, None, True, 0):
+        invalid(channel_draft, lambda p, value=quantity: p['channels'][0].update(quantity=value))
     invalid(migrated[0], lambda p: p["measurements"].append({**p["measurements"][0], "id": "duplicate"}))
     mismatch = deepcopy(migrated[0])
     mismatch["plants"].append({"id": "empty", "name": "Ohne Anschluss", "grid_ids": []})

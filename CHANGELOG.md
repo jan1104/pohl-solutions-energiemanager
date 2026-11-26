@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+- Browserimport verlangt für Messgrößen ausdrücklich Text. Arrays wie `["active_power"]` werden nicht mehr versehentlich als gültige Messgröße akzeptiert; Prüfung stimmt mit dem Python-Backend überein.
+
 - Gespeicherte Konfigurationsdokumente beim Lesen auf doppelte JSON-Schlüssel prüfen. Beschädigte oder mehrdeutige Daten werden ausdrücklich abgewiesen, statt still den letzten Wert zu übernehmen; keine automatische Reparatur.
 
 - Herkunft berechneter Leistungswerte von veränderlichen Formellisten lösen. Nachträgliche Änderungen einer Eingabeformel verändern keine bereits ausgegebenen Berechnungsnachweise mehr, auch bei ungültigem Messwert.

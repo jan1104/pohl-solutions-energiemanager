@@ -96,7 +96,7 @@
     });
     rows('channels', (v, p) => {
       shape(v, p, ['id', 'name', 'device_id', 'quantity', 'unit', 'source'], ['phase']); ref('devices', v.device_id, `${p}.device_id`);
-      if (!Object.hasOwn(units, v.quantity)) fail(`${p}.quantity`, 'unbekannte Messgröße'); choose(v.unit, `${p}.unit`, units[v.quantity]);
+      if (typeof v.quantity !== 'string' || !Object.hasOwn(units, v.quantity)) fail(`${p}.quantity`, 'unbekannte Messgröße'); choose(v.unit, `${p}.unit`, units[v.quantity]);
       if (v.phase != null) choose(v.phase, `${p}.phase`, ['L1', 'L2', 'L3', 'total']);
       const s = v.source; shape(s, `${p}.source`, ['kind'], ['address', 'function_code', 'data_type', 'scale', 'topic', 'json_path', 'entity_id']);
       choose(s.kind, `${p}.source.kind`, ['unconfigured', 'modbus', 'mqtt', 'ha']);
