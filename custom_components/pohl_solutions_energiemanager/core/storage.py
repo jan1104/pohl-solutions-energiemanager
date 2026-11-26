@@ -43,6 +43,25 @@ def _encode(data):
     return encoded
 
 
+def _decode(encoded):
+    def unique_object(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("Duplicate stored JSON key")
+            result[key] = value
+        return result
+
+    try:
+        if not isinstance(encoded, str) or len(encoded.encode('utf-8')) > MAX_BYTES:
+            raise ValueError("Invalid stored JSON body")
+        data = json.loads(encoded, object_pairs_hook=unique_object)
+        _encode(data)
+        return data
+    except (ValueError, UnicodeError, RecursionError, OverflowError):
+        raise ValueError("Stored configuration must be bounded unambiguous valid JSON") from None
+
+
 def _prepare_changes(changes, *, max_documents=128):
     if (not isinstance(changes, dict) or not changes
             or (max_documents is not None and len(changes) > max_documents)):
@@ -254,8 +273,7 @@ class ModuleStorage:
             if row is None:
                 result[key] = None
             else:
-                data = json.loads(row[1])
-                _encode(data)  # Check stored data as strictly as new writes.
+                data = _decode(row[1])
                 result[key] = StoredDocument(row[0], data)
         return result
 

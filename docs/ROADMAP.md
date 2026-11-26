@@ -10,6 +10,7 @@ Auswählbare Bezugs-/Einspeisequellen, JSON-URL, HA-Sensor, Festpreis, beobachte
 
 ## Danach — echte Datengrundlage
 
+- Gespeicherte Konfigurationen werden beim Lesen zusätzlich auf eindeutige JSON-Schlüssel geprüft; beschädigte Inhalte werden abgewiesen, nicht automatisch repariert. Wiederherstellungsbedienung bleibt offen.
 - Lastprognose-Fachmodul mit Manifest 0.1.0, gemeinsamem Konfigurationskontext und ausdrücklich übergebenem Berechnungs-Executor implementiert. Automatische Aktivierung, Provider, GUI und produktive Laufzeitanbindung bleiben offen.
 - Konkretes Lastprognose-Fachmodul in die echte HA-Smoke-Abnahme aufgenommen: explizite Registrierung, HA-Executor, Fehlerisolation, Revisionsschutz und Stop werden mit temporärem Projekt geprüft. Dies aktiviert das Modul nicht in Anwenderprojekten.
 - Fachmodule können gespeicherte Dokumentkennungen begrenzt im eigenen Bereich auflisten (`list_keys`/`async_list_keys`); keine globale Datenfreigabe oder automatische Modulaktivierung.

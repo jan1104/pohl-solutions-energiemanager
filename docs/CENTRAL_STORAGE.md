@@ -1,5 +1,7 @@
 # Zentrale Datenhaltung im Grundmodul
 
+Beim Lesen von Dokumentkörpern werden seit 26.11.2026 auch doppelte JSON-Schlüssel vor der Dekodierung in ein Objekt abgewiesen. Die ursprüngliche JSON-Größe bleibt auf 2 MiB begrenzt; danach gelten dieselben Inhaltsprüfungen wie für neue Schreibdaten. Ungültige Körper führen zum Fehler der gesamten angeforderten Sammellesung, ohne teilweise Ergebnisse oder Datenbankänderung. Andere Dokumente können weiterhin einzeln gelesen werden. Die reine Kennungsauflistung prüft kein Körperformat und ersetzt diese Inhaltsprüfung nicht. Es gibt keine automatische Reparatur beschädigter Daten.
+
 ## Gespeicherte Dokumentkennungen auflisten — 24.11.2026
 
 `list_keys(after=None, limit=50)` beziehungsweise `async_list_keys(...)` liefert ein Tupel gespeicherter Kennungen im fest gebundenen Projekt-/Modulbereich. So können Fachmodule dynamisch benannte Konfigurationen nach einem Neustart wiederfinden. Die Abfrage lädt keine Dokumentkörper. Erlaubt sind ganzzahlige Seitengrößen von 1 bis 128; Boolean ist ungültig. `after` ist eine gültige Dokumentkennung und wird exklusiv verglichen. Sie muss nicht mehr existieren.

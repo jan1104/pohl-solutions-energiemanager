@@ -1,6 +1,6 @@
 # Arbeitsplan
 
-Stand: 2026-11-25. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
+Stand: 2026-11-26. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
 
 ## Auftrag und Grenzen
 
@@ -34,6 +34,10 @@ Stand: 2026-11-25. Dieser Plan steuert die weitere Entwicklung in diesem Chat un
 V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberflächenprüfungen getestet. Die erweiterte echte HA-Laufzeitprüfung ist im GitHub-Lauf 41618373561 auf Commit e02b711 erfolgreich. Die lokale Vorschau ruft keine Preise ab; die aktive Integration kann konfigurierte Quellen lesen. Der SMARD-Nutzungsstatus ist in PRICE_SOURCES.md dokumentiert.
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
+
+Gespeicherte JSON-Eindeutigkeit am 26.11.2026: Der bisherige Lesepfad prüfte gespeicherte Daten erst nach Standard-JSON-Dekodierung; doppelte Schlüssel wurden dabei bereits still zusammengeführt. Ein eigener begrenzter Dekoder weist nun doppelte Schlüssel einschließlich verschachtelter Objekte und beschädigte JSON-/Unicode-Daten vor der Übernahme ab. Fehler enthalten keine Dokumentinhalte. Die vorhandene Prüfung neuer Schreibdaten bleibt zusätzlich erhalten. Temporäre SQLite-Korruptionstests prüfen vollständiges Scheitern einer betroffenen Sammellesung, weiterhin lesbare andere Dokumente sowie unveränderte Körper/Revisionen ohne Reparatur. Die reine Kennungsauflistung lädt weiterhin keine Körper. Keine Migration oder Oberfläche.
+
+Prüfung: lokal 641 Python-Tests und 31 Untertests erfolgreich; ein Windows-Symlink-Test übersprungen. 48 gezielte Speichertests und Ruff erfolgreich. Keine UI-Änderung oder Zugriff auf tatsächliche Projektdaten.
 
 Belegter Herkunftsfehler am 25.11.2026: Formeleingaben konnten Listen enthalten, obwohl das Ergebnis als unveränderliches PowerValue ausgegeben wird. Bisher referenzierte dessen Formelfeld dieselbe Eingabeliste; spätere Änderungen konnten Nachweis und bereits berechnete Leistung widersprüchlich machen. Die Berechnung friert jetzt die verwendeten Quellen-/Koeffizientenpaare ein und verwendet genau diese Kopie für Rechnung und Ausgabe. Neue Auswertungen dürfen weiterhin geänderte Konfigurationen nutzen. Regressionen prüfen äußere/innere Listenänderung sowie ungültige Messwerte; keine Änderung von Einheiten, Bilanzformeln oder Gerätezugriff.
 

@@ -95,6 +95,27 @@ def test_key_enumeration_checks_schema_even_when_empty(tmp_path):
         module.list_keys()
 
 
+@pytest.mark.parametrize('body', [
+    '{"value":1,"value":2}', '{"nested":{"value":1,"value":2}}',
+    '{broken', '[1,2]', '{"value":NaN}', '{"value":1e400}',
+    '{"value":"\\ud800"}', '[' * 1100 + '0' + ']' * 1100,
+    '{"value":"' + 'x' * (2 * 1024 * 1024) + '"}',
+])
+def test_corrupt_stored_body_is_rejected_without_partial_batch_or_repair(tmp_path, body):
+    store = repository(tmp_path)
+    module = store.for_module('a', 'meter', schema_version=1)
+    module.put_many({'good': (None, {'value': 1}), 'bad': (None, {'value': 2})})
+    with sqlite3.connect(store.path) as connection:
+        connection.execute("UPDATE module_documents SET body=? WHERE document_key='bad'", (body,))
+    with pytest.raises(ValueError) as error:
+        module.get_many(['good', 'bad'])
+    assert str(error.value) == 'Stored configuration must be bounded unambiguous valid JSON'
+    assert module.get('good').data == {'value': 1}
+    assert module.list_keys() == ('bad', 'good')
+    with sqlite3.connect(store.path) as connection:
+        assert connection.execute("SELECT body,revision FROM module_documents WHERE document_key='bad'").fetchone() == (body, 1)
+
+
 def repository(tmp_path, **kwargs):
     result = SQLiteStorage(tmp_path / "energy.sqlite", **kwargs)
     result.initialize()
