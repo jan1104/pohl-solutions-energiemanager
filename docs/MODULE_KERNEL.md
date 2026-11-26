@@ -1,10 +1,14 @@
 # Grundmodul, Prognosen und Modulversionen
 
+Lastprognose 0.1.1 verlangt mindestens Grundmodul 0.1.6 (bis ausschließlich 0.2.0), da erst diese Version ausdrückliche Nichtverfügbarkeit ohne dauerhaften Fehler weitergibt. Die Speicherabhängigkeit bleibt 0.1.0 bis ausschließlich 0.2.0; das Konfigurationsschema bleibt 1.
+
+Seit 27.11.2026 prüft Lastprognose 0.1.1 die Revision ihres Einstellungsdokuments nach der Berechnung erneut. Auch das erstmalige Anlegen während einer Berechnung macht den alten Stand überholt. Bei Abweichung wird kein Ergebnis zurückgegeben. Grundmodul 0.1.6 behandelt ausdrücklich geworfenes `ModuleUnavailable` als abgewiesene Anfrage mit generischer Modulmeldung und erhält den vorhandenen Modulzustand. Ein späterer Aufruf muss ausdrücklich erfolgen; andere Fehler markieren das Modul weiterhin als fehlgeschlagen. Diese Kontrolle ergänzt den Projekt-/Revisionsschutz der BaseRuntime und garantiert keine Aktualität nach der letzten Prüfung oder nach Rückgabe. Speicher-Schema 1 bleibt unverändert.
+
 ## Ausdrückliches Lastprognose-Fachmodul — 24.11.2026
 
 Seit 25.11.2026 enthält `tools/ha_smoke.py` zusätzlich einen Integrationsablauf für genau dieses Fachmodul: temporäres HA-Projekt, ausdrückliche BaseRuntime-Registrierung, gemeinsame Einstellungen und echter HA-Executor. Die Prüfung verwendet ausschließlich synthetische Lastbeobachtungen. Fehlerisolation, manuelle Fehlerquittierung, ausstehende Berechnung bei Projektänderung und Sperre nach Stop gehören zur Abnahme. Daraus entsteht keine automatische Aktivierung in der Integration.
 
-`load_forecast_module.MANIFEST` beschreibt `load_forecast` 0.1.0, Kernel-API 1 und Abhängigkeiten zu Grundmodul/Speicher im Bereich 0.1.0 bis ausschließlich 0.2.0. `CONFIG_SCHEMA_VERSION` ist 1. Vertrauenswürdiger Anwendungscode kann `LoadForecastModule(executor)` mit der bestehenden `BaseRuntime.async_register_module` registrieren. Das Modul wird durch Import oder HA-Start nicht automatisch aktiviert. Die konkrete HA-Bedienung und automatische Modulverwaltung sind weiterhin offen.
+Die ursprüngliche Version `load_forecast` 0.1.0 verwendete Kernel-API 1 und Abhängigkeiten zu Grundmodul/Speicher im Bereich 0.1.0 bis ausschließlich 0.2.0; die aktuellen Versionsgrenzen von 0.1.1 stehen oben. `CONFIG_SCHEMA_VERSION` bleibt 1. Vertrauenswürdiger Anwendungscode kann `LoadForecastModule(executor)` mit der bestehenden `BaseRuntime.async_register_module` registrieren. Das Modul wird durch Import oder HA-Start nicht automatisch aktiviert. Die konkrete HA-Bedienung und automatische Modulverwaltung sind weiterhin offen.
 
 `LoadForecastRequest` kopiert Listen in Tupel und begrenzt Eingaben auf 60000 Beobachtungen und 1–384 Zielintervalle. Messbeobachtungen und Ergebnisse sind unveränderlich. Wissensstand und lokale Zeitzone sind ausdrücklich übergeben. Der vorhandene Kern prüft Zahlen, Zeitqualität und ausreichende Historie; fehlende Werte werden nicht erfunden.
 

@@ -26,6 +26,23 @@ async def echo(request):
     return request
 
 
+def test_explicit_unavailable_request_is_sanitized_without_poisoning_module():
+    async def run():
+        registry = ModuleRegistry()
+        async def handler(request):
+            if request == 'old':
+                raise ModuleUnavailable('synthetic private details')
+            return request
+        registry.register(manifest('forecast'), handler)
+        with pytest.raises(ModuleUnavailable) as error:
+            await registry.async_call('forecast', 'old')
+        assert str(error.value) == 'Module unavailable: forecast'
+        assert error.value.__cause__ is None
+        assert registry.states()['forecast'].status == 'ready'
+        assert await registry.async_call('forecast', 'current') == 'current'
+    asyncio.run(run())
+
+
 def test_registration_is_inert_versions_are_numeric_and_manifests_immutable():
     registry = ModuleRegistry()
     dependencies = [depends("forecast", "1.2.0", "1.11.0")]

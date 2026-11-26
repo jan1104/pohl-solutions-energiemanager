@@ -1,6 +1,6 @@
 # Arbeitsplan
 
-Stand: 2026-11-26. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
+Stand: 2026-11-27. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
 
 ## Auftrag und Grenzen
 
@@ -34,6 +34,12 @@ Stand: 2026-11-26. Dieser Plan steuert die weitere Entwicklung in diesem Chat un
 V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberflächenprüfungen getestet. Die erweiterte echte HA-Laufzeitprüfung ist im GitHub-Lauf 41618373561 auf Commit e02b711 erfolgreich. Die lokale Vorschau ruft keine Preise ab; die aktive Integration kann konfigurierte Quellen lesen. Der SMARD-Nutzungsstatus ist in PRICE_SOURCES.md dokumentiert.
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
+
+Überholte Prognoseeinstellungen am 27.11.2026: Änderungen im Fachmodulspeicher ändern nicht die Projektrevision. Eine bereits laufende Lastprognose konnte deshalb noch Ergebnisse alter Einstellungen liefern. Lastprognose 0.1.1 prüft nach Berechnung die gespeicherte Einstellungsrevision erneut, einschließlich bisher fehlender Einstellungen. Abweichungen liefern ModuleUnavailable ohne Ergebnis. Grundmodul 0.1.6 reicht ausdrückliche Nichtverfügbarkeit mit sanitierter Meldung weiter, ohne einen dauerhaften Ausführungsfehler zu erfinden; bereits deaktivierte Zustände bleiben erhalten. Keine automatische Wiederholung. Die Zusicherung gilt zum abschließenden Lesen, nicht für zukünftige Änderungen nach Rückgabe. Synthetische Kern-/SQLite- und HA-Laufzeittests prüfen Revisionwechsel und ausdrücklich erfolgreichen Neuaufruf.
+
+Codeprüfungs-Hinweise umgesetzt: Fachmodul deklariert Grundmodul 0.1.6 als Mindestversion; Kompatibilität mit 0.1.5/0.1.6 wird getestet. Gesteuerte Rechentests geben ihr Gate auch im Fehlerfall frei und warten auf ausstehende Tasks. Lokal 27 gezielte Fachmodul-/Kerneltests und Ruff erfolgreich; echte HA-Abnahme folgt im GitHub-Lauf.
+
+Gesamtprüfung: lokal 646 Python-Tests und 31 Untertests erfolgreich, ein Windows-Symlink-Test übersprungen. Keine UI-Änderung oder Datenbankmigration.
 
 Belegter Importvertragsfehler am 26.11.2026: JavaScript konnte eine Messgröße als Array wie `["active_power"]` durch implizite Eigenschaftsschlüssel-Konvertierung akzeptieren, wenn der Kanal noch keiner Bilanzmessung zugewiesen war. Python wies dasselbe Projekt ab. Der gemeinsame Browservalidator verlangt nun ausdrücklich einen String vor dem Nachschlagen der Messgröße. Modell- und Python/JS-Vertragstests prüfen direkte Validierung und Import verschiedener falscher Typen. Frontend-Kopie synchronisiert. Reine Datenvalidierung, keine Änderung von Layout, Formularen oder Desktop-/Mobilbedienung und keine Projektmigration.
 

@@ -642,13 +642,22 @@ async def load_forecast_module_runtime_checks(hass):
                 release.clear()
                 pending = asyncio.create_task(runtime.registry.async_call(MANIFEST.module_id, request))
                 await asyncio.wait_for(entered.wait(), timeout=5)
+                await context.storage.async_put('settings', {'min_sample_days': 1, 'half_life_days': 1}, expected_revision=3)
+                release.set()
+                await expect(ModuleUnavailable, pending)
+                assert runtime.registry.states()[MANIFEST.module_id].status == 'ready'
+                assert (await runtime.registry.async_call(MANIFEST.module_id, request))[0].p50_kw == 12
+                entered.clear()
+                release.clear()
+                pending = asyncio.create_task(runtime.registry.async_call(MANIFEST.module_id, request))
+                await asyncio.wait_for(entered.wait(), timeout=5)
                 project = json.loads(store.export()["project_json"])
                 project["name"] = "Synthetic revision change during forecast"
                 await store.async_import(json.dumps(project), expected_revision=store.revision)
                 release.set()
                 await expect(ModuleUnavailable, pending)
                 assert runtime.registry.states()[MANIFEST.module_id].status == "disabled"
-                assert (await context.storage.async_get("settings")).revision == 3
+                assert (await context.storage.async_get("settings")).revision == 4
             finally:
                 release.set()
                 if pending is not None:
@@ -1424,7 +1433,7 @@ async def main() -> None:
                     assert system["database"]["backend"] == "sqlite" and system["database"]["project_persisted"] is True
                     assert {module["id"] for module in system["modules"]} == {"core", "storage", "project"}
                     assert {module["id"]: module["version"] for module in system["modules"]} == {
-                        "core": "0.1.5", "storage": "0.1.0", "project": "0.1.3"}
+                        "core": "0.1.6", "storage": "0.1.0", "project": "0.1.3"}
                     assert all(module["status"] == "ready" for module in system["modules"])
                     assert DATA_BASE_RUNTIME in hass.data
                     empty = await hass.services.async_call(DOMAIN, "project_status", {}, blocking=True, return_response=True)

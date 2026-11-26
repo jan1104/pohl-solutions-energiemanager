@@ -18,7 +18,7 @@ from .core.modules import (
 from .project_store import ProjectConflictError, ProjectStore
 
 DATA_BASE_RUNTIME = "pohl_solutions_energiemanager_base_runtime"
-CORE_MODULE_VERSION = "0.1.5"
+CORE_MODULE_VERSION = "0.1.6"
 STORAGE_MODULE_VERSION = "0.1.0"
 PROJECT_MODULE_VERSION = "0.1.3"
 

@@ -5,12 +5,12 @@ from datetime import datetime, tzinfo
 from functools import partial
 
 from .core.module_context import _async_complete
-from .core.modules import ModuleDependency, ModuleManifest, ModuleVersion
+from .core.modules import ModuleDependency, ModuleManifest, ModuleUnavailable, ModuleVersion
 from .forecasting import LoadObservation, predict_load
 
 MANIFEST = ModuleManifest(
-    'load_forecast', 'Lastprognose', ModuleVersion(0, 1, 0), 1,
-    tuple(ModuleDependency(key, ModuleVersion(0, 1, 0), ModuleVersion(0, 2, 0))
+    'load_forecast', 'Lastprognose', ModuleVersion(0, 1, 1), 1,
+    tuple(ModuleDependency(key, ModuleVersion(0, 1, 6 if key == 'core' else 0), ModuleVersion(0, 2, 0))
           for key in ('core', 'storage')))
 CONFIG_SCHEMA_VERSION = 1
 
@@ -57,4 +57,8 @@ class LoadForecastModule:
             raise ValueError('Unknown load forecast setting')
         operation = partial(predict_load, list(request.observations), list(request.starts),
                             as_of=request.as_of, local_zone=request.local_zone, **settings)
-        return tuple(await _async_complete(self._executor, operation))
+        result = tuple(await _async_complete(self._executor, operation))
+        latest = await context.storage.async_get('settings')
+        if (latest.revision if latest is not None else None) != (document.revision if document is not None else None):
+            raise ModuleUnavailable('Load forecast settings changed during computation')
+        return result

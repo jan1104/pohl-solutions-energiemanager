@@ -203,6 +203,10 @@ class ModuleRegistry:
                     acquired = True
                     try:
                         result = await entry.handler(request)
+                    except ModuleUnavailable:
+                        # Obsolete requests are not broken modules. Preserve
+                        # state changes made by the owner without leaking details.
+                        raise ModuleUnavailable(f"Module unavailable: {module_id}") from None
                     except Exception:
                         if entry.generation != generation or entry.state.status != "ready":
                             raise ModuleUnavailable(f"Module changed: {module_id}") from None
