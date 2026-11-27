@@ -35,6 +35,10 @@ V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberf
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
 
+Historische Lastdaten am 27.11.2026: Reiner Adapter `normalize_load_history` übernimmt ausdrücklich gelieferte vollständige Viertelstunden-Mittelwerte in W/kW mit Quellenkennung. Ergebnis enthält unveränderliche LoadObservation-Tupel in UTC/kW für vorhandene Prognose-/Rücktestfunktionen. Strikte chronologische Reihenfolge, eindeutige Instanzen und Viertelstundenraster; Zeitumstellungs-Offsets bleiben verschiedene Messintervalle. Lücken werden nicht interpoliert oder auf Null gesetzt. `aggregation='mean'` ist eine ausdrückliche Aussage des Aufrufers, kein Nachweis der Messqualität. Kein Lesen von Dateien, Geräten oder Providern und keine Datenbank-/UI-Anbindung; diese Schritte bleiben offen.
+
+Eingabevertrag: 1–60000 Datensätze mit ausschließlich `start`, `duration_minutes` (15) und `value`; Einheit, Mittelwertdeklaration und Quellenkennung separat. Lokal 666 Python-Tests und 31 Untertests erfolgreich, ein Windows-Symlink-Test übersprungen. 20 neue synthetische Adapter-/Kompositionstests und Ruff erfolgreich; keine UI-Änderung.
+
 Legacy-Importvertrag am 27.11.2026: Format 2 prüfte Unicode-Faltungen gesperrter Feldnamen bereits wie Python; der gemeinsame ältere Browserpfad verwendete dagegen nur Kleinschreibung. Dadurch konnten etwa `paßword` oder `ſecret` im Format-1-Entwurf/Export passieren, während das Backend sie ablehnte. Beide Browserpfade verwenden nun denselben bestehenden Faltungsvergleich. Tests prüfen verschachtelte synthetische Feldnamen, direkte Prüfung, Import/Export und Python-/JS-Vertrag. Keine Untersuchung tatsächlicher Projektdateien oder Zugangsdaten; keine Aussage über einen erfolgten Datenabfluss. Reine Modellvalidierung ohne Änderung von Layout, Formularen oder Desktop-/Mobilbedienung; Frontend synchronisiert.
 
 Prüfung: lokal 646 Python-Tests und 31 Untertests sowie 84 JavaScript-Tests erfolgreich; ein Windows-Symlink-Test übersprungen. Ruff und Synchronisations-/Pakettests erfolgreich. Die bestehende strengere Python-Prüfung bleibt unverändert.

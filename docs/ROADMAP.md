@@ -34,6 +34,7 @@ Auswählbare Bezugs-/Einspeisequellen, JSON-URL, HA-Sensor, Festpreis, beobachte
 - Separate tatsächliche Bezugs- und Einspeiseverträge abbilden.
 - Numerische Grenzen der Kostenrechnung geprüft: nicht darstellbare abgeleitete Kosten/Energien werden abgewiesen; keine unendlichen Ergebnisse oder stille Unterlauf-Nullen. Reale Vertrags-/Lebensdauerdaten bleiben erforderlich.
 - PV-/Wetterprognose anbinden; historische Lastmessungen importieren.
+- Reiner Normalisierer für gelieferte historische 15-Minuten-Lastmittelwerte in W/kW samt Quellenkennung implementiert. Übergabe an bestehenden Rücktest geprüft; Datei-/Provider-/Datenbank- und GUI-Anbindung bleiben offen.
 - Prognose-Eingabevertrag prüft numerische Typen ohne Boolean und eine ausdrückliche lokale Zeitzone; kein stiller Host-Zeitzonen-Fallback. Reale Quelldaten und Provideranbindung bleiben offen.
 - Rollierender Offline-Rücktest mit Einzelprognosen, MAE/Bias und vollständiger Istabdeckung implementiert (`forecasting.backtest_load_forecast`). `compare_load_forecast` ergänzt eine einfache Persistenz-Baseline genau 168 Stunden zuvor mit identischen Zielintervallen. Reale historische Daten und Nachweis tatsächlicher Prognosegüte bleiben offen. Jeder Zielbeginn ist eigener Wissensstand; keine automatische Planung, Modellauswahl oder Datenerfassung.
 - Numerische Stabilität der historischen Lastprognose: Altersgewichte relativ zur neuesten passenden Messung normalisiert, damit kurze Halbwertszeiten nicht alle Gewichte auslöschen. Regressionsfälle synthetisch geprüft; keine Aussage zur realen Prognosegüte.
