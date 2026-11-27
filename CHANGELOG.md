@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+- Unicode-Schreibvarianten gesperrter Zugangsdaten-Feldnamen auch im Browserpfad für Projektformat 1 abweisen. Import, Export und direkte Prüfung verwenden jetzt dieselbe Regel wie Format 2 und das Backend.
+
 - Lastprognose 0.1.1 verwirft Ergebnisse, wenn sich ihre gespeicherten Einstellungen während der Berechnung ändern. Grundmodul 0.1.6 behandelt ausdrücklich nicht verfügbare Modulergebnisse als abgewiesene Anfrage statt dauerhaften Modulfehler; erneute Aufrufe bleiben ausdrücklich erforderlich.
 
 - Browserimport verlangt für Messgrößen ausdrücklich Text. Arrays wie `["active_power"]` werden nicht mehr versehentlich als gültige Messgröße akzeptiert; Prüfung stimmt mit dem Python-Backend überein.

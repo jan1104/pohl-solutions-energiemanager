@@ -44,8 +44,10 @@ test('v2 channel quantities require strings even without a measurement assignmen
 });
 
 test('rejects hidden credentials and actuator flags recursively', () => {
-  for (const key of ['password', 'TOKEN', 'credentials', 'enabled_control', 'actuator_enabled']) {
+  for (const key of ['password', 'TOKEN', 'credentials', 'enabled_control', 'actuator_enabled', 'paßword', 'paẞword', 'paſſword', 'ſecret', 'acceß_token']) {
     const p = fixture(); p.settings.nested = {[key]: false}; assert.throws(() => M.validateProject(p), /nicht erlaubt/);
+    assert.throws(() => M.exportProjectJson(p), /nicht erlaubt/);
+    assert.throws(() => M.loadProjectJson(JSON.stringify(p)), /nicht erlaubt/);
   }
 });
 test('rejects unsupported version, mode, fields, nonfinite values and duplicate IDs', () => {

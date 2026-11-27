@@ -10,6 +10,7 @@ Auswählbare Bezugs-/Einspeisequellen, JSON-URL, HA-Sensor, Festpreis, beobachte
 
 ## Danach — echte Datengrundlage
 
+- Gesperrte Feldnamen werden auch im Legacy-Browserpfad mit denselben relevanten Unicode-Faltungen wie im Backend geprüft. Keine Änderung gültiger Projektzuordnungen.
 - Lastprognose 0.1.1 prüft auch ihre Einstellungsrevision vor Rückgabe. Überholte Ergebnisse werden ohne automatische Wiederholung abgewiesen; Grundmodul 0.1.6 unterscheidet ausdrückliche Nichtverfügbarkeit von einem Ausführungsfehler.
 - Python-/Browservertrag für Messgrößentypen vereinheitlicht: Arrays und andere Nicht-Textwerte werden auch bei unzugewiesenen Format-2-Kanälen abgewiesen. Keine Änderung gültiger Projektzuordnungen.
 - Gespeicherte Konfigurationen werden beim Lesen zusätzlich auf eindeutige JSON-Schlüssel geprüft; beschädigte Inhalte werden abgewiesen, nicht automatisch repariert. Wiederherstellungsbedienung bleibt offen.

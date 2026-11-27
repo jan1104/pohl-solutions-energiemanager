@@ -41,6 +41,8 @@ def test_browser_and_backend_import_contract():
     change("invented single phase", lambda p: p["devices"][0].update(phases=2))
     change("password", lambda p: p["settings"].update(password="must-not-export"))
     change("nested secret", lambda p: p["settings"].update(nested={"api_key": "must-not-export"}))
+    for key in ('paßword', 'paẞword', 'paſſword', 'ſecret', 'acceß_token'):
+        change(f'Unicode forbidden key {key}', lambda p, key=key: p['settings'].update(nested={key: 'synthetic'}))
     change("unknown device field", lambda p: p["devices"][0].update(unrecognized=True))
     change("unmapped modbus", lambda p: p["channels"][0].update(source={"kind": "modbus"}))
     change("duplicate measurement", lambda p: p["measurements"].append({**p["measurements"][0], "id": "duplicate_grid"}))

@@ -4,6 +4,7 @@
   const LIMIT = 2 * 1024 * 1024;
   const collections = ['grids', 'areas', 'nodes', 'connections', 'devices', 'channels', 'measurements'];
   const forbidden = new Set(['password', 'passwd', 'token', 'access_token', 'refresh_token', 'api_key', 'secret', 'credentials', 'enabled_control', 'actuator_enabled']);
+  const forbiddenKey = key => forbidden.has(key.toLowerCase().replace(/ß/g, 'ss').replace(/ſ/g, 's'));
   const idPattern = /^[a-zA-Z0-9_-]{1,80}$/;
   const kinds = ['gateway', 'meter', 'pv_inverter', 'hybrid_inverter', 'storage_inverter', 'battery', 'ev_charger', 'heater'];
   const connectionKinds = ['modbus_tcp', 'modbus_rtu_usb', 'modbus_tcp_rtu_gateway', 'rtu_over_tcp', 'mqtt', 'solarman', 'ha'];
@@ -25,7 +26,7 @@
     if (typeof v !== 'object') fail(p, 'nur JSON-Werte erlaubt');
     if (!Array.isArray(v) && ![Object.prototype, null].includes(Object.getPrototypeOf(v))) fail(p, 'einfaches JSON-Objekt erwartet');
     for (const k of Object.keys(v)) {
-      if (forbidden.has(k.toLowerCase())) fail(`${p}.${k}`, 'Zugangsdaten und Steuerfreigaben sind nicht erlaubt');
+      if (forbiddenKey(k)) fail(`${p}.${k}`, 'Zugangsdaten und Steuerfreigaben sind nicht erlaubt');
       safeWalk(v[k], `${p}.${k}`, depth + 1);
     }
   }
@@ -152,7 +153,7 @@
     if (Array.isArray(value) && (keys.length !== value.length || keys.some((key, i) => key !== String(i)))) fail('$', 'Dichte JSON-Liste erwartet');
     // ASCII aliases produced by Unicode casefold in the Python secret-key check.
     if (!Array.isArray(value)) for (const key of keys) {
-      if (forbidden.has(key.toLowerCase().replace(/ß/g, 'ss').replace(/ſ/g, 's'))) fail('$', 'Zugangsdaten sind nicht erlaubt');
+      if (forbiddenKey(key)) fail('$', 'Zugangsdaten sind nicht erlaubt');
     }
     const entries = Array.isArray(value) ? value : Object.entries(value);
     return 2 + Math.max(0, entries.length - 1) * 2 + entries.reduce((sum, entry) =>
