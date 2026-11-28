@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+- Nicht darstellbare Kosten im Planer ausdrücklich abweisen: Netz-/Intervallkosten, Pfadkosten, Gesamtkosten, Baseline und Ersparnis dürfen weder Infinity noch NaN ergeben. Große Ganzzahlen melden einen Eingabefehler; endliche Werte werden nicht begrenzt oder durch Ersatzwerte ersetzt.
+
 - Planer weist auf Null gerundete oder in UTC nicht darstellbare Zeitintervalle als Eingabefehler ab. Lücken und Überlappungen werden auch unter einer Millisekunde abgewiesen; gültige gekürzte HA-Intervalle und Zeitumstellung bleiben unterstützt.
 
 - Übergebene historische Viertelstunden-Mittelwerte mit expliziter Einheit und Quellenkennung für Lastprognose/Rücktest normalisieren. UTC-Reihenfolge, Werte und Intervalle prüfen; Lücken bleiben offen. Noch kein Dateiimport, Provider oder automatische Erfassung.

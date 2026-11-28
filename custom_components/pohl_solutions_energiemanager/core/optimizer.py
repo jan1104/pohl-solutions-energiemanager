@@ -16,7 +16,11 @@ EPS = 1e-8
 
 
 def _finite(name: str, value: float) -> None:
-    if isinstance(value, bool) or not isinstance(value, (int, float)) or not isfinite(value):
+    try:
+        valid = not isinstance(value, bool) and isinstance(value, (int, float)) and isfinite(value)
+    except OverflowError:
+        valid = False
+    if not valid:
         raise ValueError(f"{name} must be a finite number")
 
 
@@ -69,7 +73,9 @@ def _validate(slots: list[ForecastSlot], cfg: BatteryConfig) -> float:
 
 
 def _grid_cost(power_kw: float, duration: float, slot: ForecastSlot) -> float:
-    return power_kw * duration * (slot.import_price_eur_kwh if power_kw >= 0 else slot.export_price_eur_kwh)
+    cost = power_kw * duration * (slot.import_price_eur_kwh if power_kw >= 0 else slot.export_price_eur_kwh)
+    _finite("Derived grid cost", cost)
+    return cost
 
 
 def _self_consumption_states(slots, config, low, high, initial):
@@ -146,6 +152,8 @@ def optimize(slots: list[ForecastSlot], config: BatteryConfig) -> Plan:
                 grid_kw = net + battery_kw
                 cost = cost_so_far + _grid_cost(grid_kw, duration, slot) + max(0.0, -ac_energy) * config.wear_cost_eur_per_kwh
                 travel = throughput + abs(ac_energy)
+                _finite("Accumulated plan cost", cost)
+                _finite("Accumulated battery throughput", travel)
                 previous = next_values.get(dest)
                 if previous is None or cost < previous[0] - 1e-10 or (abs(cost - previous[0]) <= 1e-10 and travel < previous[1] - EPS):
                     next_values[dest] = (cost, travel)
@@ -169,6 +177,7 @@ def optimize(slots: list[ForecastSlot], config: BatteryConfig) -> Plan:
         power = ac_energy / slot.duration_hours
         grid = slot.load_kw - slot.pv_kw + power
         cost = _grid_cost(grid, slot.duration_hours, slot) + max(0.0, -ac_energy) * config.wear_cost_eur_per_kwh
+        _finite("Derived slot cost", cost)
         if power > EPS:
             reason = "Laden: im berechneten Preis- und Prognoseszenario wirtschaftlich; Ladezustandsziel berücksichtigt."
         elif power < -EPS:
@@ -180,6 +189,9 @@ def optimize(slots: list[ForecastSlot], config: BatteryConfig) -> Plan:
                                 power, states[route[i + 1]] / config.capacity_kwh * 100, grid, cost, reason))
     total = sum(slot.cost_eur for slot in planned)
     baseline = sum(_grid_cost(slot.load_kw - slot.pv_kw, slot.duration_hours, slot) for slot in slots)
+    savings = baseline - total
+    for name, value in (("Total plan cost", total), ("Idle baseline cost", baseline), ("Savings", savings)):
+        _finite(name, value)
     assumptions = [
         f"Deterministische Näherung mit {config.soc_step_kwh:g} kWh Zustandsraster; keine Garantie eines kontinuierlichen Optimums.",
         "PV- und Lastprognosen sowie Preise werden als gegeben behandelt; keine garantierten Einsparungen.",
@@ -193,4 +205,4 @@ def optimize(slots: list[ForecastSlot], config: BatteryConfig) -> Plan:
         assumptions.append("Eigenverbrauchspfad wegen Grenze von 1001 Energiezuständen nicht ergänzt; kleine Leistungen können weiterhin vom Raster begrenzt sein.")
     if abs(target_pct - config.initial_soc_pct) > EPS:
         assumptions.append("Endziel und Anfangsladezustand unterscheiden sich: Baseline-Vergleich ist nicht energiegleich.")
-    return Plan(planned, total, baseline, baseline - total, assumptions)
+    return Plan(planned, total, baseline, savings, assumptions)

@@ -209,6 +209,42 @@ class OptimizerTests(unittest.TestCase):
         self.assertTrue(math.isclose(plan.total_cost_eur, .3 * 2 / 3_600_000_000,
                                      rel_tol=1e-12, abs_tol=0))
 
+    def test_nonfinite_derived_slot_cost_is_rejected(self):
+        cfg = replace(self.cfg, max_charge_kw=0, max_discharge_kw=0)
+        for forecast in (slots([0], [10], imports=[1e308]),
+                         slots([10], [0], exports=[1e308]),
+                         slots([0], [10], imports=[-1e308])):
+            with self.subTest(forecast=forecast), self.assertRaises(ValueError):
+                optimize(forecast, cfg)
+
+    def test_nonfinite_horizon_cost_is_rejected(self):
+        cfg = replace(self.cfg, max_charge_kw=0, max_discharge_kw=0)
+        with self.assertRaises(ValueError):
+            optimize(slots([0, 0], [1, 1], imports=[1e308, 1e308]), cfg)
+
+    def test_nonfinite_idle_baseline_is_rejected_even_if_plan_cost_is_finite(self):
+        cfg = replace(self.cfg, capacity_kwh=1, max_charge_kw=1, max_discharge_kw=1)
+        with self.assertRaisesRegex(ValueError, "Idle baseline cost"):
+            optimize(slots([1, 0, 0], [0, 1, 1], imports=[0, 0, 1e308],
+                           exports=[-1e308, 0, 0]), cfg)
+
+    def test_nonfinite_savings_are_rejected_with_finite_plan_and_baseline(self):
+        cfg = replace(self.cfg, capacity_kwh=1, initial_soc_pct=100, terminal_soc_pct=100,
+                      max_charge_kw=1, max_discharge_kw=1, allow_grid_charge=True)
+        with self.assertRaisesRegex(ValueError, "Savings"):
+            optimize(slots([0, 0], [1, 0], imports=[1e308, -1e308]), cfg)
+
+    def test_oversized_integer_inputs_are_reported_as_input_errors(self):
+        with self.assertRaises(ValueError):
+            optimize(slots([0], [0], imports=[10 ** 400]), self.cfg)
+
+    def test_large_but_representable_costs_are_not_clamped(self):
+        cfg = replace(self.cfg, max_charge_kw=0, max_discharge_kw=0)
+        plan = optimize(slots([0, 0], [1, 1], imports=[1e307, 1e307]), cfg)
+        self.assertTrue(math.isclose(plan.total_cost_eur, 2e307, rel_tol=1e-12))
+        self.assertEqual(plan.total_cost_eur, plan.baseline_cost_eur)
+        self.assertEqual(plan.savings_eur, 0)
+
     def test_dst_repeat_compared_in_utc(self):
         from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
         try:
