@@ -7,7 +7,7 @@ must be the user's actual marginal tariffs. No commands are sent to any device.
 """
 
 from bisect import bisect_left, bisect_right
-from datetime import timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from math import isfinite
 
 from .models import BatteryConfig, ForecastSlot, Plan, PlanSlot
@@ -53,12 +53,18 @@ def _validate(slots: list[ForecastSlot], cfg: BatteryConfig) -> float:
             raise ValueError("Each slot duration must be positive and at most 24 hours")
         if min(slot.pv_kw, slot.load_kw) < 0:
             raise ValueError("PV and load forecasts must not be negative")
-        if slot.start.tzinfo is None or slot.start.utcoffset() is None:
+        if not isinstance(slot.start, datetime) or slot.start.tzinfo is None or slot.start.utcoffset() is None:
             raise ValueError("Slot start timestamps must include a timezone")
-        instant = slot.start.astimezone(timezone.utc)
-        if previous_end is not None and abs((instant - previous_end).total_seconds()) > 0.001:
+        try:
+            instant = slot.start.astimezone(timezone.utc)
+            end = instant + timedelta(hours=slot.duration_hours)
+        except OverflowError:
+            raise ValueError("Slot interval must be representable in UTC") from None
+        if end <= instant:
+            raise ValueError("Slot interval must have positive representable duration")
+        if previous_end is not None and instant != previous_end:
             raise ValueError("Forecast slots must be chronological and contiguous in UTC")
-        previous_end = instant + timedelta(hours=slot.duration_hours)
+        previous_end = end
     return target
 
 

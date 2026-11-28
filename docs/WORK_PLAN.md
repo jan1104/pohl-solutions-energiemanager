@@ -1,6 +1,6 @@
 # Arbeitsplan
 
-Stand: 2026-11-27. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
+Stand: 2026-11-28. Dieser Plan steuert die weitere Entwicklung in diesem Chat und die wiederkehrenden Läufe alle sechs Stunden.
 
 ## Auftrag und Grenzen
 
@@ -34,6 +34,10 @@ Stand: 2026-11-27. Dieser Plan steuert die weitere Entwicklung in diesem Chat un
 V0.2 ist implementiert und lokal mit 83 Python-Tests sowie JavaScript- und Oberflächenprüfungen getestet. Die erweiterte echte HA-Laufzeitprüfung ist im GitHub-Lauf 41618373561 auf Commit e02b711 erfolgreich. Die lokale Vorschau ruft keine Preise ab; die aktive Integration kann konfigurierte Quellen lesen. Der SMARD-Nutzungsstatus ist in PRICE_SOURCES.md dokumentiert.
 
 ## Überarbeitete Arbeitsliste nach Logikprüfung
+
+Planer-Zeitvertrag am 28.11.2026: Direkte Planeranfragen akzeptierten positive Dauern, deren datetime-Intervall auf Null rundet, sowie Lücken/Überlappungen bis zu einer Millisekunde. Ungültige Zeitstempeltypen oder UTC-/Endzeitüberläufe konnten außerdem ungeordnete Laufzeitfehler auslösen. Vor der Optimierung werden nun ausdrückliche datetime-Zeitstempel, positive darstellbare UTC-Intervalle und exakt anschließende UTC-Grenzen verlangt. Synthetische Regressionen wurden zunächst gegen den bisherigen Stand reproduziert. Ein Mikrosekundenintervall bleibt gültig; Tests führen tatsächlich gekürzte HA-Intervalle einschließlich Mikrosekunden durch den Planer. Bestehender Herbst-Zeitumstellungstest bleibt erhalten. Keine Änderung des Zustandsrasters, von Kosten, Leistungsgrenzen oder UI und kein Gerätezugriff.
+
+Prüfung: lokal 672 Python-Tests und 39 Untertests erfolgreich, ein Windows-Symlink-Test übersprungen. Ruff und Diff-Prüfung erfolgreich. Keine UI-Änderung; echte HA-Abnahme läuft nach dem Push im vorhandenen GitHub-Check.
 
 Historische Lastdaten am 27.11.2026: Reiner Adapter `normalize_load_history` übernimmt ausdrücklich gelieferte vollständige Viertelstunden-Mittelwerte in W/kW mit Quellenkennung. Ergebnis enthält unveränderliche LoadObservation-Tupel in UTC/kW für vorhandene Prognose-/Rücktestfunktionen. Strikte chronologische Reihenfolge, eindeutige Instanzen und Viertelstundenraster; Zeitumstellungs-Offsets bleiben verschiedene Messintervalle. Lücken werden nicht interpoliert oder auf Null gesetzt. `aggregation='mean'` ist eine ausdrückliche Aussage des Aufrufers, kein Nachweis der Messqualität. Kein Lesen von Dateien, Geräten oder Providern und keine Datenbank-/UI-Anbindung; diese Schritte bleiben offen.
 

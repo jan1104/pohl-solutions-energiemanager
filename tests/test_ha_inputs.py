@@ -6,6 +6,8 @@ import math
 import pytest
 
 from const import BATTERY_DEFAULTS
+from core.models import BatteryConfig, ForecastSlot
+from core.optimizer import optimize
 from input_validation import finite_number, parse_forecast_rows, validate_battery_settings
 
 
@@ -38,6 +40,19 @@ def test_dst_fall_back_remains_contiguous_in_utc():
     rows[0]["start"] = "2026-10-25T02:45:00+02:00"
     rows[1]["start"] = "2026-10-25T02:00:00+01:00"
     assert len(parse_forecast_rows(rows, datetime(2026, 10, 25, 0, 45, tzinfo=timezone.utc))) == 4
+
+
+@pytest.mark.parametrize('elapsed', [timedelta(minutes=7, microseconds=123456),
+                                    timedelta(microseconds=1),
+                                    timedelta(minutes=15, microseconds=-1)])
+def test_clipped_ha_intervals_still_form_an_exact_optimizer_horizon(elapsed):
+    start = datetime(2026, 11, 3, 12, tzinfo=timezone.utc)
+    rows = parse_forecast_rows(forecast(start), start + elapsed)
+    plan = optimize([ForecastSlot(**row) for row in rows],
+                    BatteryConfig(max_charge_kw=0, max_discharge_kw=0))
+    assert len(plan.slots) == 4
+    assert plan.slots[0].start == start + elapsed
+    assert plan.total_cost_eur == pytest.approx(plan.baseline_cost_eur)
 
 
 @pytest.mark.parametrize("value", [math.nan, math.inf, -math.inf, True, "unavailable", None])

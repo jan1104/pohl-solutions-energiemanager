@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+- Planer weist auf Null gerundete oder in UTC nicht darstellbare Zeitintervalle als Eingabefehler ab. Lücken und Überlappungen werden auch unter einer Millisekunde abgewiesen; gültige gekürzte HA-Intervalle und Zeitumstellung bleiben unterstützt.
+
 - Übergebene historische Viertelstunden-Mittelwerte mit expliziter Einheit und Quellenkennung für Lastprognose/Rücktest normalisieren. UTC-Reihenfolge, Werte und Intervalle prüfen; Lücken bleiben offen. Noch kein Dateiimport, Provider oder automatische Erfassung.
 
 - Unicode-Schreibvarianten gesperrter Zugangsdaten-Feldnamen auch im Browserpfad für Projektformat 1 abweisen. Import, Export und direkte Prüfung verwenden jetzt dieselbe Regel wie Format 2 und das Backend.

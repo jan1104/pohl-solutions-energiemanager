@@ -184,6 +184,31 @@ class OptimizerTests(unittest.TestCase):
             with self.subTest(forecast=forecast), self.assertRaises(ValueError):
                 optimize(forecast, self.cfg)
 
+    def test_empty_or_unrepresentable_time_intervals_are_rejected(self):
+        base = slots([0], [1])[0]
+        for duration in (5e-324, 1e-12):
+            with self.subTest(duration=duration), self.assertRaises(ValueError):
+                optimize([replace(base, duration_hours=duration)], self.cfg)
+        for start in (None, "2026-11-03T00:00:00Z",
+                      datetime(9999, 12, 31, 23, 45, tzinfo=timezone.utc),
+                      datetime(1, 1, 1, tzinfo=timezone(timedelta(hours=1)))):
+            with self.subTest(start=start), self.assertRaises(ValueError):
+                optimize([replace(base, start=start)], self.cfg)
+
+    def test_microsecond_gaps_and_overlaps_are_rejected(self):
+        forecast = slots([0, 0], [1, 1], duration=.25)
+        for offset in (-1, 1):
+            shifted = replace(forecast[1], start=forecast[1].start + timedelta(microseconds=offset))
+            with self.subTest(offset=offset), self.assertRaisesRegex(ValueError, "contiguous"):
+                optimize([forecast[0], shifted], self.cfg)
+
+    def test_smallest_representable_interval_remains_supported(self):
+        forecast = slots([0, 0], [1, 1], duration=1 / 3_600_000_000)
+        plan = optimize(forecast, self.cfg)
+        self.assertEqual(len(plan.slots), 2)
+        self.assertTrue(math.isclose(plan.total_cost_eur, .3 * 2 / 3_600_000_000,
+                                     rel_tol=1e-12, abs_tol=0))
+
     def test_dst_repeat_compared_in_utc(self):
         from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
         try:

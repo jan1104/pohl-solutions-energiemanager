@@ -10,6 +10,7 @@ Auswählbare Bezugs-/Einspeisequellen, JSON-URL, HA-Sensor, Festpreis, beobachte
 
 ## Danach — echte Datengrundlage
 
+- Direkter Planer verlangt positive darstellbare UTC-Intervalle mit exakt anschließenden Grenzen. Auch kleine Lücken/Überlappungen werden abgewiesen; gekürzte HA-Intervalle und Zeitumstellung sind durch Regressionen abgesichert.
 - Gesperrte Feldnamen werden auch im Legacy-Browserpfad mit denselben relevanten Unicode-Faltungen wie im Backend geprüft. Keine Änderung gültiger Projektzuordnungen.
 - Lastprognose 0.1.1 prüft auch ihre Einstellungsrevision vor Rückgabe. Überholte Ergebnisse werden ohne automatische Wiederholung abgewiesen; Grundmodul 0.1.6 unterscheidet ausdrückliche Nichtverfügbarkeit von einem Ausführungsfehler.
 - Python-/Browservertrag für Messgrößentypen vereinheitlicht: Arrays und andere Nicht-Textwerte werden auch bei unzugewiesenen Format-2-Kanälen abgewiesen. Keine Änderung gültiger Projektzuordnungen.
